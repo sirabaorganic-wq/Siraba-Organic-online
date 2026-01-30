@@ -87,6 +87,7 @@ function App() {
                               <Route path="/cart" element={<Cart />} />
 
                               <Route path="/our-story" element={<About />} />
+                              <Route path="/about" element={<About />} />
                               <Route path="/about-us" element={<About />} />
                               <Route
                                 path="/why-siraba"
@@ -149,7 +150,10 @@ function App() {
 
                               {/* Vendor Portal Routes */}
                               <Route path="/vendor" element={<VendorIntro />} />
-                              <Route path="/vendor/intro" element={<VendorIntro />} />
+                              <Route
+                                path="/vendor/intro"
+                                element={<VendorIntro />}
+                              />
                               <Route
                                 path="/vendor/login"
                                 element={<VendorLogin />}

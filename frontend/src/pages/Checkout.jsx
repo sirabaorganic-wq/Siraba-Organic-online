@@ -46,6 +46,20 @@ const Checkout = () => {
   // GST State
   const [gstClaimed, setGstClaimed] = useState(false);
   const [buyerGstNumber, setBuyerGstNumber] = useState("");
+  const [gstError, setGstError] = useState("");
+
+  // GST Validation Function
+  const validateGST = (gstNumber) => {
+    const gstRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstNumber) {
+      return "GST number is required when claiming GST";
+    }
+    if (!gstRegex.test(gstNumber)) {
+      return "Invalid GST number format (e.g., 29ABCDE1234F1Z5)";
+    }
+    return "";
+  };
 
   useEffect(() => {
     if (user) {
@@ -130,6 +144,17 @@ const Checkout = () => {
       return;
     }
 
+    // Validate GST if claimed
+    if (gstClaimed) {
+      const error = validateGST(buyerGstNumber);
+      if (error) {
+        setGstError(error);
+        alert(error);
+        return;
+      }
+      setGstError("");
+    }
+
     const selectedAddress = user.addresses[selectedAddressIndex];
     if (!selectedAddress) {
       alert("Please select a valid address");
@@ -157,7 +182,7 @@ const Checkout = () => {
     const orderData = {
       orderItems,
       shippingAddress: selectedAddress,
-      paymentMethod: paymentMethod === 'Online' ? 'Online' : 'COD',
+      paymentMethod: paymentMethod === "Online" ? "Online" : "COD",
       itemsPrice: subtotal,
       taxPrice,
       shippingPrice,
@@ -187,8 +212,8 @@ const Checkout = () => {
           {
             amount: totalPrice,
             currency: "INR",
-            receipt: newOrder._id
-          }
+            receipt: newOrder._id,
+          },
         );
 
         // 3. Open Razorpay Options
@@ -203,15 +228,12 @@ const Checkout = () => {
           handler: async function (response) {
             try {
               // 4. Verify Payment on Backend
-              const verifyRes = await api.post(
-                "/payment/verify",
-                {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  order_id: newOrder._id
-                }
-              );
+              const verifyRes = await api.post("/payment/verify", {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                order_id: newOrder._id,
+              });
 
               if (verifyRes.status === 200) {
                 setOrderSuccess(true);
@@ -220,7 +242,9 @@ const Checkout = () => {
               }
             } catch (err) {
               console.error("Payment Verification Failed", err);
-              alert("Payment verification failed. Please contact support if money was deducted.");
+              alert(
+                "Payment verification failed. Please contact support if money was deducted.",
+              );
             }
           },
           prefill: {
@@ -244,7 +268,6 @@ const Checkout = () => {
 
         rzp1.open();
       }
-
     } catch (error) {
       alert("Failed to place order. Please try again.");
       console.error(error);
@@ -287,25 +310,27 @@ const Checkout = () => {
               </h2>
 
               {!isAddingNewAddress &&
-                user.addresses &&
-                user.addresses.length > 0 ? (
+              user.addresses &&
+              user.addresses.length > 0 ? (
                 <div className="space-y-4">
                   {user.addresses.map((addr, index) => (
                     <div
                       key={index}
-                      className={`relative border p-4 rounded-sm cursor-pointer transition-all ${selectedAddressIndex === index
-                        ? "border-primary bg-primary/5"
-                        : "border-secondary/20 hover:border-secondary/40"
-                        }`}
+                      className={`relative border p-4 rounded-sm cursor-pointer transition-all ${
+                        selectedAddressIndex === index
+                          ? "border-primary bg-primary/5"
+                          : "border-secondary/20 hover:border-secondary/40"
+                      }`}
                       onClick={() => setSelectedAddressIndex(index)}
                     >
                       <div className="flex items-start">
                         <div className="mt-1 mr-3">
                           <div
-                            className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${selectedAddressIndex === index
-                              ? "bg-primary"
-                              : "bg-transparent"
-                              }`}
+                            className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${
+                              selectedAddressIndex === index
+                                ? "bg-primary"
+                                : "bg-transparent"
+                            }`}
                           >
                             {selectedAddressIndex === index && (
                               <div className="w-2 h-2 rounded-full bg-white"></div>
@@ -447,15 +472,19 @@ const Checkout = () => {
                 {/* Online Payment Option */}
                 <div
                   onClick={() => setPaymentMethod("Online")}
-                  className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${paymentMethod === "Online"
-                    ? "border-primary bg-primary/5"
-                    : "border-secondary/20 hover:border-secondary/40"
-                    }`}
+                  className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${
+                    paymentMethod === "Online"
+                      ? "border-primary bg-primary/5"
+                      : "border-secondary/20 hover:border-secondary/40"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${paymentMethod === "Online" ? "bg-primary" : "bg-transparent"
-                        }`}
+                      className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${
+                        paymentMethod === "Online"
+                          ? "bg-primary"
+                          : "bg-transparent"
+                      }`}
                     >
                       {paymentMethod === "Online" && (
                         <div className="w-2 h-2 rounded-full bg-white"></div>
@@ -471,15 +500,19 @@ const Checkout = () => {
                 {/* COD Option */}
                 <div
                   onClick={() => setPaymentMethod("COD")}
-                  className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${paymentMethod === "COD"
-                    ? "border-primary bg-primary/5"
-                    : "border-secondary/20 hover:border-secondary/40"
-                    }`}
+                  className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-colors ${
+                    paymentMethod === "COD"
+                      ? "border-primary bg-primary/5"
+                      : "border-secondary/20 hover:border-secondary/40"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${paymentMethod === "COD" ? "bg-primary" : "bg-transparent"
-                        }`}
+                      className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${
+                        paymentMethod === "COD"
+                          ? "bg-primary"
+                          : "bg-transparent"
+                      }`}
                     >
                       {paymentMethod === "COD" && (
                         <div className="w-2 h-2 rounded-full bg-white"></div>
@@ -503,48 +536,123 @@ const Checkout = () => {
 
             {/* Tax Information / GST Claim */}
             <div className="bg-surface p-8 rounded-sm shadow-sm border border-secondary/10">
-              <h2 className="font-heading text-xl font-bold text-primary mb-6 flex items-center">
+              <h2 className="font-heading text-xl font-bold text-primary mb-4 flex items-center">
                 <div className="w-5 h-5 rounded-full border border-primary flex items-center justify-center mr-2 text-xs font-bold text-primary">
                   %
                 </div>{" "}
-                Tax Information
+                GST & Tax Information
               </h2>
 
-              <div className="bg-background p-4 rounded-sm border border-secondary/10">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="font-bold text-sm text-primary">
-                      Claim GST Input Credit
+              {/* Info Banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-sm p-4 mb-6">
+                <div className="flex gap-2">
+                  <AlertCircle
+                    size={16}
+                    className="text-blue-600 flex-shrink-0 mt-0.5"
+                  />
+                  <div className="text-xs text-blue-800 space-y-1">
+                    <p className="font-semibold">About GST Invoicing:</p>
+                    <ul className="list-disc ml-4 space-y-1">
+                      <li>All orders include 18% GST as per Indian tax laws</li>
+                      <li>Enable GST claim if you have a registered GSTIN</li>
+                      <li>Invoice will show your GSTIN for input tax credit</li>
+                      <li>
+                        Vendor GST number will be included on all invoices
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-background p-6 rounded-sm border border-secondary/10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <p className="font-bold text-sm text-primary mb-1">
+                      I want to claim GST Input Credit
                     </p>
-                    <p className="text-xs text-text-secondary mt-1">
-                      Enable to get GST invoice with your GSTIN.
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      Enable this if you have a registered GST number and want
+                      to claim input tax credit. Your GSTIN will be mentioned on
+                      the tax invoice.
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className="relative inline-flex items-center cursor-pointer ml-4 flex-shrink-0">
                     <input
                       type="checkbox"
                       className="sr-only peer"
                       checked={gstClaimed}
-                      onChange={(e) => setGstClaimed(e.target.checked)}
+                      onChange={(e) => {
+                        setGstClaimed(e.target.checked);
+                        if (!e.target.checked) {
+                          setGstError("");
+                        }
+                      }}
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
                   </label>
                 </div>
 
                 {gstClaimed && (
-                  <div className="space-y-2 animate-fade-in">
-                    <label className="text-xs uppercase text-text-secondary tracking-wider font-bold">
-                      Your GST Number
-                    </label>
-                    <input
-                      type="text"
-                      value={buyerGstNumber}
-                      onChange={(e) =>
-                        setBuyerGstNumber(e.target.value.toUpperCase())
-                      }
-                      placeholder="e.g. 29ABCDE1234F1Z5"
-                      className="w-full border-b border-secondary/20 bg-transparent py-2 focus:outline-none focus:border-accent text-primary uppercase font-mono"
-                    />
+                  <div className="space-y-3 pt-4 border-t border-secondary/10 animate-fade-in">
+                    <div>
+                      <label className="text-xs uppercase text-text-secondary tracking-wider font-bold flex items-center gap-2">
+                        Your GST Number (GSTIN) *
+                        <span className="normal-case text-[10px] text-red-600 font-normal">
+                          Required
+                        </span>
+                      </label>
+                      <div className="mt-2 relative">
+                        <input
+                          type="text"
+                          value={buyerGstNumber}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
+                            setBuyerGstNumber(value);
+                            if (value) {
+                              const error = validateGST(value);
+                              setGstError(error);
+                            } else {
+                              setGstError("");
+                            }
+                          }}
+                          placeholder="29ABCDE1234F1Z5"
+                          maxLength={15}
+                          className={`w-full border ${gstError ? "border-red-500 bg-red-50" : "border-secondary/20 bg-transparent"} rounded-sm px-4 py-3 focus:outline-none focus:border-accent text-primary uppercase font-mono text-sm transition-colors`}
+                        />
+                        {buyerGstNumber && !gstError && (
+                          <CheckCircle
+                            size={16}
+                            className="absolute right-3 top-3.5 text-green-600"
+                          />
+                        )}
+                      </div>
+                      {gstError && (
+                        <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          {gstError}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-text-secondary mt-2 flex items-start gap-1">
+                        <span className="text-blue-600">ℹ️</span>
+                        <span>
+                          Format: 2 digits (State) + 10 digits (PAN) + 1 digit +
+                          Z + 1 digit
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!gstClaimed && (
+                  <div className="pt-4 border-t border-secondary/10">
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      <strong className="text-primary">
+                        Standard Invoice:
+                      </strong>{" "}
+                      If not claiming GST, your invoice will show the vendor's
+                      GST number. GST of 18% will be included in your total
+                      amount.
+                    </p>
                   </div>
                 )}
               </div>
@@ -604,9 +712,25 @@ const Checkout = () => {
                   </span>
                 </div>
                 <div className="flex justify-between text-text-secondary">
-                  <span>Tax (18% GST)</span>
+                  <span className="flex items-center gap-1">
+                    Tax (18% GST)
+                    {gstClaimed && buyerGstNumber && !gstError && (
+                      <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">
+                        CLAIMABLE
+                      </span>
+                    )}
+                  </span>
                   <span>{formatPrice(taxPrice)}</span>
                 </div>
+                {gstClaimed && buyerGstNumber && !gstError && (
+                  <div className="bg-green-50 border border-green-200 rounded p-2 -mx-2">
+                    <p className="text-[10px] text-green-800 leading-relaxed">
+                      <strong>✓ GST Input Credit Eligible:</strong> Your GSTIN
+                      will be on the invoice. You can claim{" "}
+                      {formatPrice(taxPrice)} as input tax credit.
+                    </p>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold text-primary pt-3 border-t border-secondary/10 mt-3">
                   <span>Total</span>
                   <span>{formatPrice(totalPrice)}</span>
@@ -618,7 +742,11 @@ const Checkout = () => {
                 disabled={loading}
                 className="w-full mt-6 bg-primary text-surface py-4 text-sm font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg flex items-center justify-center gap-2 rounded-sm disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {loading ? "Processing..." : paymentMethod === "COD" ? "Place Order" : "Pay Now"}
+                {loading
+                  ? "Processing..."
+                  : paymentMethod === "COD"
+                    ? "Place Order"
+                    : "Pay Now"}
                 {!loading && <CheckCircle size={18} />}
               </button>
             </div>

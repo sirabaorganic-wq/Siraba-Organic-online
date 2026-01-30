@@ -36,6 +36,7 @@ const VendorShopPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("products");
+  const [showUnavailableNotice, setShowUnavailableNotice] = useState(false);
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -56,6 +57,47 @@ const VendorShopPage = () => {
       fetchShopData();
     }
   }, [slug]);
+
+  // Show an unavailable notice to regular users when shop is unpublished
+  useEffect(() => {
+    if (!shopData) return;
+    if (shopData.isPublished) return;
+
+    const canViewUnpublished = () => {
+      if (!user) return false;
+      if (user.isAdmin) return true;
+      if (
+        shopData.vendorId &&
+        user._id &&
+        String(shopData.vendorId) === String(user._id)
+      )
+        return true;
+      if (
+        shopData.owner &&
+        user._id &&
+        String(shopData.owner) === String(user._id)
+      )
+        return true;
+      if (
+        shopData.userId &&
+        user._id &&
+        String(shopData.userId) === String(user._id)
+      )
+        return true;
+      if (
+        shopData.vendor &&
+        typeof shopData.vendor === "object" &&
+        shopData.vendor._id &&
+        String(shopData.vendor._id) === String(user._id)
+      )
+        return true;
+      return false;
+    };
+
+    // if user cannot view unpublished shops, we'll mark that and render a friendly notice
+    // (render logic below uses `showUnavailableNotice`)
+    setShowUnavailableNotice(!canViewUnpublished());
+  }, [shopData, user]);
 
   if (loading) {
     return (
@@ -91,10 +133,33 @@ const VendorShopPage = () => {
 
   const { shop } = { shop: shopData };
 
+  if (showUnavailableNotice) {
+    return (
+      <div className="min-h-screen pt-20 bg-background flex items-center justify-center">
+        <div className="max-w-xl text-center p-8 bg-surface rounded-lg shadow-md border border-secondary/10">
+          <h2 className="text-2xl font-heading font-bold text-primary mb-4">
+            Shop Not Available
+          </h2>
+          <p className="text-text-secondary mb-6">
+            This vendor has not yet set up their public shop. It will be visible
+            once published.
+          </p>
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Shop
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pt-20 bg-background">
-      {/* Not Published Warning */}
-      {shop && !shop.isPublished && (
+      {/* Not Published Warning (visible to owners/admins) */}
+      {shop && !shop.isPublished && !showUnavailableNotice && (
         <div className="bg-amber-500 text-white px-4 py-3 text-center">
           <p className="font-medium">
             ⚠️ This shop is not yet published publicly. Only visible via direct
@@ -325,7 +390,7 @@ const VendorShopPage = () => {
                         <a
                           href={`https://instagram.com/${shop.socialLinks.instagram.replace(
                             "@",
-                            ""
+                            "",
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -338,7 +403,7 @@ const VendorShopPage = () => {
                         <a
                           href={`https://twitter.com/${shop.socialLinks.twitter.replace(
                             "@",
-                            ""
+                            "",
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"

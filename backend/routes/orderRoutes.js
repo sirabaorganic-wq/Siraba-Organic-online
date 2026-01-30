@@ -79,8 +79,17 @@ router.post("/", protect, async (req, res) => {
 
     let gstClaimed = false;
     let buyerGstNumber = null;
-    // Always capture seller GST if it exists in settings, regardless of enabled status
-    let sellerGstNumber = gstSettings.admin_gst_number || null;
+    // Get seller GST: First try to get from vendor's profile, fallback to admin settings
+    let sellerGstNumber = null;
+
+    // If this is from a vendor, use their GST number
+    if (req.user.vendor) {
+      sellerGstNumber =
+        req.user.vendor.gstNumber || gstSettings.admin_gst_number || null;
+    } else {
+      // Otherwise use admin GST
+      sellerGstNumber = gstSettings.admin_gst_number || null;
+    }
 
     // Check request body first (from Checkout), then fallback to User Profile
     if (gstSettings.gst_enabled) {
@@ -683,7 +692,7 @@ router.post("/:id/return", protect, async (req, res) => {
 // @desc    User Cancel Order
 // @route   POST /api/orders/:id/cancel
 // @access  Private
-// 
+//
 // CANCELLATION POLICY:
 // 1. Vendor DOES NOT receive commission as sale is not completed
 // 2. User receives FULL REFUND for product cost + tax

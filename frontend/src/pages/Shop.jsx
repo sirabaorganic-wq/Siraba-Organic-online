@@ -22,7 +22,7 @@ const Shop = () => {
   const { addToCart } = useCart();
   const { searchProducts } = useProducts();
   const { toggleWishlist, user } = useAuth();
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency } = useCurrency();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -107,7 +107,8 @@ const Shop = () => {
         <div
           className="absolute top-0 right-0 w-96 h-96 opacity-10"
           style={{
-            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%)'
+            background:
+              "radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%)",
           }}
         ></div>
 
@@ -121,15 +122,23 @@ const Shop = () => {
               Discover Our Products
             </h1>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              100% Pure, Lab-tested organic products delivered to your doorstep
+              Lab-tested organic products from certified farms, delivered to
+              your doorstep
             </p>
             {!loading && (
               <div className="flex items-center justify-center gap-2 text-sm text-text-secondary pt-2">
                 <Search size={16} className="text-emerald-600" />
                 <span>
-                  Showing <span className="font-bold text-emerald-600">{products.length}</span> premium products
+                  Showing{" "}
+                  <span className="font-bold text-emerald-600">
+                    {products.length}
+                  </span>{" "}
+                  premium products
                   {filters.keyword && ` for "${filters.keyword}"`}
                   {filters.category && ` in ${filters.category}`}
+                </span>
+                <span className="ml-4 text-xs text-text-secondary">
+                  Prices shown in selected currency ({currency})
                 </span>
               </div>
             )}
@@ -158,8 +167,9 @@ const Shop = () => {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar / Filters */}
           <aside
-            className={`md:w-72 flex-shrink-0 ${showFilters ? "block" : "hidden md:block"
-              } space-y-6`}
+            className={`md:w-72 flex-shrink-0 ${
+              showFilters ? "block" : "hidden md:block"
+            } space-y-6`}
           >
             {/* Glassmorphic container */}
             <div className="bg-white rounded-2xl shadow-lg border border-emerald-100 overflow-hidden">
@@ -169,7 +179,10 @@ const Shop = () => {
                     <Filter size={20} />
                     Filters
                   </h2>
-                  <button onClick={() => setShowFilters(false)} className="md:hidden text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="md:hidden text-white hover:bg-white/20 rounded-lg p-1 transition-colors"
+                  >
                     <X size={24} />
                   </button>
                 </div>
@@ -191,7 +204,10 @@ const Shop = () => {
                       placeholder="Search products..."
                       className="w-full bg-gray-50 border-2 border-gray-200 p-3 pl-10 text-sm rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all"
                     />
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Search
+                      size={16}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
                   </div>
                 </div>
 
@@ -328,7 +344,7 @@ const Shop = () => {
                             user?.wishlist?.some(
                               (item) =>
                                 (typeof item === "object" ? item._id : item) ===
-                                (product._id || product.id)
+                                (product._id || product.id),
                             )
                               ? "fill-current"
                               : ""
@@ -372,7 +388,9 @@ const Shop = () => {
                             />
                           ))}
                           <span className="ml-2 text-text-secondary text-xs font-medium">
-                            ({product.numReviews || product.reviews?.length || 0})
+                            (
+                            {product.numReviews || product.reviews?.length || 0}
+                            )
                           </span>
                         </div>
                         <span className="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full font-semibold">
@@ -390,11 +408,12 @@ const Shop = () => {
                       {product.isVendorProduct && product.vendor && (
                         <div className="flex items-center gap-2 mb-3 text-sm">
                           <Link
-                            to={`/shop/vendor/${typeof product.vendor === "object" &&
+                            to={`/shop/vendor/${
+                              typeof product.vendor === "object" &&
                               product.vendor.shopSettings?.shopSlug
-                              ? product.vendor.shopSettings.shopSlug
-                              : product.vendor._id || product.vendor
-                              }`}
+                                ? product.vendor.shopSettings.shopSlug
+                                : product.vendor._id || product.vendor
+                            }`}
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors shadow-sm"
                           >
@@ -432,7 +451,8 @@ const Shop = () => {
                   No Products Found
                 </h3>
                 <p className="text-text-secondary mb-8 text-lg">
-                  Try adjusting your search or filters to find what you're looking for.
+                  Try adjusting your search or filters to find what you're
+                  looking for.
                 </p>
                 <button
                   onClick={clearFilters}
@@ -445,85 +465,6 @@ const Shop = () => {
           </div>
         </div>
       </div>
-
-      {/* Trust Section */}
-      <section className="relative bg-gradient-to-br from-emerald-50 via-white to-green-50 border-t border-emerald-100 py-20 mt-16 overflow-hidden">
-        {/* Decorative background */}
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(16, 185, 129, 0.15) 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }}
-        ></div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="font-heading text-3xl md:text-4xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-3">
-              Why Choose Us
-            </h2>
-            <p className="text-text-secondary text-lg">
-              Premium quality backed by trust and transparency
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="group bg-white rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-all duration-300 border border-emerald-100 transform hover:-translate-y-2">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300"
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
-                }}
-              >
-                <Shield size={32} className="text-white" />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Lab Tested
-              </h3>
-              <p className="text-text-secondary font-light leading-relaxed">
-                Every batch rigorously tested by Eurofins Germany for purity and quality
-              </p>
-            </div>
-
-            <div className="group bg-white rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-all duration-300 border border-emerald-100 transform hover:-translate-y-2">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300"
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
-                }}
-              >
-                <ShoppingBag size={32} className="text-white" />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Secure Checkout
-              </h3>
-              <p className="text-text-secondary font-light leading-relaxed">
-                256-bit SSL encrypted payments with multiple secure payment options
-              </p>
-            </div>
-
-            <div className="group bg-white rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-all duration-300 border border-emerald-100 transform hover:-translate-y-2">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300"
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
-                }}
-              >
-                <ArrowRight size={32} className="text-white" />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Fast Delivery
-              </h3>
-              <p className="text-text-secondary font-light leading-relaxed">
-                Express shipping worldwide with real-time tracking for your orders
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };

@@ -3,8 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const crypto = require("crypto");
 const path = require("path");
-const { uploadPdfToR2 } = require("../config/r2");
-const { uploadImageToImageKit } = require("../config/imagekit");
+const { uploadToCloudinary } = require("../config/firebase");
 
 const allowedMimeTypes = new Set([
   "application/pdf",
@@ -30,7 +29,7 @@ const upload = multer({
 });
 
 // @route POST /api/upload
-// @desc  Uploads file to R2 (PDFs) or ImageKit (Images)
+// @desc  Uploads file to Firebase Storage (PDFs and Images)
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -41,78 +40,59 @@ router.post("/", upload.single("file"), async (req, res) => {
     const isPdf = fileType === "application/pdf";
     const isImage = fileType.startsWith("image/");
 
-    // Validate upload service is configured
-    if (isPdf) {
-      if (
-        !process.env.R2_ACCESS_KEY_ID ||
-        !process.env.R2_SECRET_ACCESS_KEY ||
-        !process.env.R2_BUCKET_NAME
-      ) {
-        console.error("R2 not properly configured");
-        return res
-          .status(500)
-          .json({ message: "PDF upload service not configured" });
-      }
-    } else if (isImage) {
-      if (
-        !process.env.IMAGEKIT_PUBLIC_KEY ||
-        !process.env.IMAGEKIT_PRIVATE_KEY
-      ) {
-        console.error("ImageKit not properly configured");
-        return res
-          .status(500)
-          .json({ message: "Image upload service not configured" });
-      }
+    // Validate Cloudinary is configured
+    if (
+      !process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      console.error("Cloudinary not properly configured");
+      return res.status(500).json({ message: "Upload service not configured" });
     }
 
-    const folder = req.body.folder || "uploads";
+    const folder = req.body.folder || (isPdf ? "pdfs" : "images");
     const baseName =
       req.body.publicId || path.parse(req.file.originalname).name;
     const uniqueId = crypto.randomBytes(6).toString("hex");
     const fileName =
-      `${folder}/${baseName}-${uniqueId}${path.extname(req.file.originalname)}`.replace(
-        /[^a-zA-Z0-9-_\/\.]/g,
+      `${baseName}-${uniqueId}${path.extname(req.file.originalname)}`.replace(
+        /[^a-zA-Z0-9-_\.]/g,
         "",
       );
 
     try {
-      let url, metadata;
+      // Upload to Cloudinary
+      const result = await uploadToCloudinary(
+        fileName,
+        req.file.buffer,
+        fileType,
+        folder,
+      );
 
-      if (isPdf) {
-        // Upload to R2
-        url = await uploadPdfToR2(fileName, req.file.buffer, fileType);
-        metadata = {
-          url,
-          fileName: req.file.originalname,
-          fileType: "pdf",
-          size: req.file.size,
-          service: "R2",
-        };
-      } else if (isImage) {
-        // Upload to ImageKit
-        const result = await uploadImageToImageKit(
-          req.file.originalname,
-          req.file.buffer,
-        );
-        url = result.url;
-        metadata = {
-          url,
-          fileName: result.name,
-          fileId: result.fileId,
-          fileType: "image",
-          size: req.file.size,
-          service: "ImageKit",
-        };
-      }
+      const metadata = {
+        url: result.url,
+        fileName: result.fileName,
+        publicId: result.publicId,
+        fileType: result.fileType,
+        size: req.file.size,
+        service: "Cloudinary",
+      };
 
       return res.status(201).json({
-        url,
+        url: result.url,
         ...metadata,
-        download_url: url,
+        download_url: result.url,
       });
     } catch (uploadError) {
-      console.error("Upload error:", uploadError);
-      return res.status(500).json({ message: "Error uploading file" });
+      console.error("Upload error:", uploadError.message);
+      console.error("Full error:", uploadError);
+      return res.status(500).json({
+        message: uploadError.message || "Error uploading file",
+        error:
+          process.env.NODE_ENV === "development"
+            ? uploadError.message
+            : undefined,
+      });
     }
   } catch (error) {
     console.error("Upload endpoint error:", error);

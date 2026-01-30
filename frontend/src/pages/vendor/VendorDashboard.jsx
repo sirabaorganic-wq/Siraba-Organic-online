@@ -57,7 +57,10 @@ import {
   Headphones, // New
   ArrowLeft, // New
   RotateCcw, // New
+  Info, // New for Vendor Info
 } from "lucide-react";
+
+import ImageUploadField from "../../components/ImageUploadField";
 
 import Logo from "../../assets/SIRABALOGO.png";
 import NotificationDropdown from "../../components/vendor/NotificationDropdown";
@@ -75,6 +78,7 @@ const VendorSidebar = ({
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "vendor-info", label: "Vendor Info", icon: Info },
     { id: "products", label: "My Products", icon: ShoppingBag },
     { id: "orders", label: "Orders", icon: Package },
     { id: "returns", label: "Returns", icon: RotateCcw },
@@ -359,6 +363,218 @@ const StatCard = ({
         <Icon className="w-6 h-6" />
       </div>
     </div>
+  </div>
+);
+
+// Vendor Info Content - Display all vendor onboarding details
+const VendorInfoContent = ({ vendor }) => {
+  if (!vendor) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-text-secondary">Loading vendor information...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-primary to-accent rounded-sm p-6 text-surface shadow-xl">
+        <div className="flex items-center gap-4">
+          <div className="p-4 bg-surface/10 rounded-sm backdrop-blur-sm">
+            <Info className="w-8 h-8 text-surface" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-heading font-bold">
+              Vendor Information
+            </h2>
+            <p className="text-surface/80 text-sm mt-1">
+              View all your business details submitted during onboarding
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Business Information */}
+      <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <Store className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-bold text-primary">
+            Business Information
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoField label="Business Name" value={vendor.businessName} />
+          <InfoField label="Shop Name" value={vendor.shopName} />
+          <InfoField label="Email" value={vendor.email} />
+          <InfoField label="Phone" value={vendor.phone} />
+          <InfoField
+            label="Business Description"
+            value={vendor.businessDescription}
+            fullWidth
+          />
+          <InfoField label="Business Type" value={vendor.businessType} />
+          <InfoField
+            label="Registration Number"
+            value={vendor.registrationNumber}
+          />
+        </div>
+      </div>
+
+      {/* Tax Information */}
+      <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <FileText className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-bold text-primary">Tax Information</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoField label="GST Number" value={vendor.gstNumber} />
+          <InfoField label="PAN Number" value={vendor.panNumber} />
+        </div>
+      </div>
+
+      {/* Bank Details */}
+      <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <CreditCard className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-bold text-primary">
+            Bank Account Details
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoField
+            label="Account Holder Name"
+            value={vendor.bankDetails?.accountHolderName}
+          />
+          <InfoField
+            label="Account Number"
+            value={vendor.bankDetails?.accountNumber}
+          />
+          <InfoField label="IFSC Code" value={vendor.bankDetails?.ifscCode} />
+          <InfoField label="Bank Name" value={vendor.bankDetails?.bankName} />
+          <InfoField
+            label="Branch Name"
+            value={vendor.bankDetails?.branchName}
+          />
+        </div>
+      </div>
+
+      {/* Address Information */}
+      <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <Globe className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-bold text-primary">Address</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoField label="Street Address" value={vendor.address?.street} />
+          <InfoField label="City" value={vendor.address?.city} />
+          <InfoField label="State" value={vendor.address?.state} />
+          <InfoField label="PIN Code" value={vendor.address?.pincode} />
+          <InfoField
+            label="Country"
+            value={vendor.address?.country || "India"}
+          />
+        </div>
+      </div>
+
+      {/* Account Status */}
+      <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <Shield className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-bold text-primary">Account Status</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs text-text-secondary uppercase tracking-wider">
+              Approval Status
+            </label>
+            <div className="flex items-center gap-2">
+              {vendor.isApproved ? (
+                <>
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="font-medium text-green-600">Approved</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-5 h-5 text-yellow-500" />
+                  <span className="font-medium text-yellow-600">
+                    Pending Approval
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <InfoField
+            label="Joined On"
+            value={new Date(vendor.createdAt).toLocaleDateString()}
+          />
+          <InfoField
+            label="Onboarding Step"
+            value={`${vendor.onboardingStep || 0} of 4`}
+          />
+          <div className="space-y-2">
+            <label className="text-xs text-text-secondary uppercase tracking-wider">
+              Account Status
+            </label>
+            <div className="flex items-center gap-2">
+              {vendor.isActive ? (
+                <>
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="font-medium text-green-600">Active</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <span className="font-medium text-red-600">Inactive</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Subscription Info */}
+      {vendor.subscription && (
+        <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <Crown className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold text-primary">Subscription</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoField
+              label="Current Plan"
+              value={vendor.subscription.plan || "Starter"}
+            />
+            <InfoField
+              label="Commission Rate"
+              value={`${vendor.commissionRate || 15}%`}
+            />
+            {vendor.subscription.expiresAt && (
+              <InfoField
+                label="Expires On"
+                value={new Date(
+                  vendor.subscription.expiresAt,
+                ).toLocaleDateString()}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper component for displaying info fields
+const InfoField = ({ label, value, fullWidth = false }) => (
+  <div className={`space-y-2 ${fullWidth ? "md:col-span-2" : ""}`}>
+    <label className="text-xs text-text-secondary uppercase tracking-wider font-semibold">
+      {label}
+    </label>
+    <p className="text-primary font-medium text-sm">
+      {value || (
+        <span className="text-text-secondary italic">Not provided</span>
+      )}
+    </p>
   </div>
 );
 
@@ -1111,7 +1327,6 @@ const ProductsContent = ({
     sku: "",
   });
   const [newFeature, setNewFeature] = useState("");
-  const [newImageUrl, setNewImageUrl] = useState("");
 
   useEffect(() => {
     fetchVendorProducts(statusFilter);
@@ -1133,7 +1348,6 @@ const ProductsContent = ({
       sku: "",
     });
     setNewFeature("");
-    setNewImageUrl("");
     setEditingProduct(null);
   };
 
@@ -1200,23 +1414,6 @@ const ProductsContent = ({
     setFormData({
       ...formData,
       features: formData.features.filter((_, i) => i !== index),
-    });
-  };
-
-  const addImage = () => {
-    if (newImageUrl.trim() && formData.images.length < 5) {
-      setFormData({
-        ...formData,
-        images: [...formData.images, newImageUrl.trim()],
-      });
-      setNewImageUrl("");
-    }
-  };
-
-  const removeImage = (index) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
     });
   };
 
@@ -1580,49 +1777,14 @@ const ProductsContent = ({
               </div>
 
               {/* Images */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-text-secondary uppercase tracking-wide">
-                  Product Images (max 5)
-                </label>
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="url"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="flex-1 px-4 py-3 border border-secondary/20 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent bg-background/50 transition-all font-light"
-                    placeholder="Enter image URL"
-                  />
-                  <button
-                    type="button"
-                    onClick={addImage}
-                    disabled={formData.images.length >= 5}
-                    className="px-6 py-3 bg-secondary/10 rounded-sm hover:bg-secondary/20 text-text-secondary font-medium tracking-wide disabled:opacity-50"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex gap-3 flex-wrap">
-                  {formData.images.map((img, i) => (
-                    <div
-                      key={i}
-                      className="relative w-24 h-24 rounded-sm border border-secondary/20 overflow-hidden group"
-                    >
-                      <img
-                        src={img}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(i)}
-                        className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white p-1 rounded-sm backdrop-blur-sm transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ImageUploadField
+                images={formData.images}
+                onImagesChange={(images) =>
+                  setFormData({ ...formData, images })
+                }
+                maxImages={5}
+                disabled={!isApproved}
+              />
 
               {/* Features */}
               <div>
@@ -4213,6 +4375,7 @@ const VendorDashboard = () => {
           {activeTab === "dashboard" && (
             <DashboardContent dashboardData={dashboardData} vendor={vendor} />
           )}
+          {activeTab === "vendor-info" && <VendorInfoContent vendor={vendor} />}
           {activeTab === "products" && (
             <ProductsContent
               vendorProducts={vendorProducts}
