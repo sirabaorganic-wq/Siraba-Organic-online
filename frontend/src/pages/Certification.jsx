@@ -259,12 +259,14 @@ const Certification = () => {
         </div>
       </section>
 
-      <section className="py-6 px-4 max-w-7xl mx-auto text-center text-sm text-text-secondary">
-        <p>
-          Siraba Organic operates as a technology platform. Vendors are
-          responsible for product compliance, certifications, testing, and
-          export documentation.
-        </p>
+      <section className="py-6 px-4 max-w-7xl mx-auto text-center">
+        <div className="inline-block w-full md:w-3/4 mx-auto bg-accent/10 border-l-4 border-accent p-4 rounded-md">
+          <p className="text-sm text-primary font-bold">
+            Siraba Organic operates as a technology platform. Vendors are
+            responsible for product compliance, certifications, testing, and
+            export documentation.
+          </p>
+        </div>
       </section>
     </div>
   );
