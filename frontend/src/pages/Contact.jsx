@@ -51,8 +51,10 @@ const Contact = () => {
             CONTACT US
           </h1>
           <p className="text-surface/80 font-light max-w-2xl mx-auto text-lg px-4">
-            We'd love to hear from you. Get in touch with us for any queries or
-            support.
+            We'd love to hear from you. Use this form for platform-level
+            questions about products listed on our platform; for vendor-specific
+            issues (shipping delays, certifications, refunds) please contact the
+            vendor from their shop page.
           </p>
         </div>
       </div>
@@ -69,7 +71,7 @@ const Contact = () => {
                 Contact Siraba Organic
               </h2>
               <p className="text-text-secondary text-lg font-light leading-relaxed">
-                Whether you're curious about our organic farming practices,
+                Whether you're curious about products listed on our platform,
                 interested in bulk orders, or just want to say hello, we're here
                 to help.
               </p>
