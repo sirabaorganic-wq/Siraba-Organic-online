@@ -11,6 +11,7 @@ const {
   protectVendor,
   approvedVendor,
   onboardingComplete,
+  certifiedVendor,
 } = require("../middleware/vendorMiddleware");
 const {
   vendorCache,
@@ -326,7 +327,7 @@ router.get("/products", protectVendor, async (req, res) => {
 // @desc    Add a new product
 // @route   POST /api/vendors/products
 // @access  Private/Vendor (Approved only)
-router.post("/products", protectVendor, approvedVendor, async (req, res) => {
+router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (req, res) => {
   try {
     const {
       name,
@@ -342,7 +343,36 @@ router.post("/products", protectVendor, approvedVendor, async (req, res) => {
       stockQuantity,
       sku,
       hsn,
+      certifications,
     } = req.body;
+
+    // Validate certifications
+    const validCerts = ["USDA Organic", "EU Organic", "NPOP"];
+    if (!certifications || certifications.length === 0) {
+      return res.status(400).json({
+        message: "At least one certification is required to list a product",
+      });
+    }
+
+    // Check all requested certifications are valid
+    const invalidCerts = certifications.filter((c) => !validCerts.includes(c));
+    if (invalidCerts.length > 0) {
+      return res.status(400).json({
+        message: `Invalid certifications: ${invalidCerts.join(", ")}. Allowed: ${validCerts.join(", ")}`,
+      });
+    }
+
+    // Ensure vendor possesses all requested certifications
+    const vendorCerts = req.vendor.certifications || [];
+    const unauthorizedCerts = certifications.filter(
+      (c) => !vendorCerts.includes(c)
+    );
+    if (unauthorizedCerts.length > 0) {
+      return res.status(400).json({
+        message: `You cannot assign certifications you do not possess: ${unauthorizedCerts.join(", ")}`,
+        vendorCertifications: vendorCerts,
+      });
+    }
 
     // Generate slug
     const slug =
@@ -369,6 +399,7 @@ router.post("/products", protectVendor, approvedVendor, async (req, res) => {
       stockQuantity: stockQuantity || 0,
       sku: sku || `VND-${req.vendor._id.toString().slice(-6)}-${Date.now()}`,
       hsn: hsn || "0909",
+      certifications,
       vendor: req.vendor._id,
       isVendorProduct: true,
       vendorStatus: "pending", // Requires admin approval
@@ -419,7 +450,30 @@ router.put(
         sku,
         hsn,
         isActive,
+        certifications,
       } = req.body;
+
+      // Validate certifications if provided
+      if (certifications) {
+        const validCerts = ["USDA Organic", "EU Organic", "NPOP"];
+        const invalidCerts = certifications.filter((c) => !validCerts.includes(c));
+        if (invalidCerts.length > 0) {
+          return res.status(400).json({
+            message: `Invalid certifications: ${invalidCerts.join(", ")}. Allowed: ${validCerts.join(", ")}`,
+          });
+        }
+
+        const vendorCerts = req.vendor.certifications || [];
+        const unauthorizedCerts = certifications.filter(
+          (c) => !vendorCerts.includes(c)
+        );
+        if (unauthorizedCerts.length > 0) {
+          return res.status(400).json({
+            message: `You cannot assign certifications you do not possess: ${unauthorizedCerts.join(", ")}`,
+            vendorCertifications: vendorCerts,
+          });
+        }
+      }
 
       if (name) {
         product.name = name;
@@ -447,6 +501,7 @@ router.put(
       if (sku) product.sku = sku;
       if (hsn) product.hsn = hsn;
       if (isActive !== undefined) product.isActive = isActive;
+      if (certifications) product.certifications = certifications;
 
       // If product was rejected and updated, set back to pending for re-review
       if (product.vendorStatus === "rejected") {
@@ -1495,8 +1550,8 @@ router.get("/dashboard", protectVendor, approvedVendor, async (req, res) => {
     const vendor = await Vendor.findById(vendorId);
     const lowStockItems = vendor.inventory
       ? vendor.inventory.filter(
-          (item) => item.stockQuantity <= item.reorderLevel && item.isActive,
-        )
+        (item) => item.stockQuantity <= item.reorderLevel && item.isActive,
+      )
       : [];
 
     // Get monthly revenue (last 6 months)

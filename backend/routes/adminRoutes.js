@@ -269,6 +269,74 @@ router.post("/vendors/:id/notes", protect, admin, async (req, res) => {
   }
 });
 
+// @desc    Verify/Update vendor certifications
+// @route   PUT /api/admin/vendors/:id/certifications
+// @access  Private/Admin
+router.put("/vendors/:id/certifications", protect, admin, async (req, res) => {
+  try {
+    const { certifications, verified } = req.body;
+    const vendor = await Vendor.findById(req.params.id);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    // Validate certifications
+    const validCerts = ["USDA Organic", "EU Organic", "NPOP"];
+    if (certifications) {
+      const invalidCerts = certifications.filter((c) => !validCerts.includes(c));
+      if (invalidCerts.length > 0) {
+        return res.status(400).json({
+          message: `Invalid certifications: ${invalidCerts.join(", ")}. Allowed: ${validCerts.join(", ")}`,
+        });
+      }
+      vendor.certifications = certifications;
+    }
+
+    // Update verification status with audit trail
+    if (verified !== undefined) {
+      vendor.certificationsVerified = verified;
+      vendor.certificationsVerifiedAt = new Date();
+      vendor.certificationsVerifiedBy = req.user._id;
+    }
+
+    // Add admin note for audit
+    vendor.adminNotes.push({
+      note: `Certifications ${verified ? "verified" : "updated"}: ${(certifications || vendor.certifications).join(", ")}`,
+      addedBy: req.user._id,
+    });
+
+    await vendor.save();
+    invalidateCache.vendors();
+
+    // Send notification to vendor
+    try {
+      const Notification = require("../models/Notification");
+      await Notification.create({
+        recipient: vendor._id,
+        recipientModel: "Vendor",
+        type: verified ? "success" : "info",
+        title: verified ? "Certifications Verified" : "Certifications Updated",
+        message: verified
+          ? `Your organic certifications (${vendor.certifications.join(", ")}) have been verified by the admin team.`
+          : `Your certifications have been updated to: ${vendor.certifications.join(", ")}`,
+      });
+    } catch (err) {
+      console.error("Failed to create certification notification", err);
+    }
+
+    res.json({
+      certifications: vendor.certifications,
+      certificationsVerified: vendor.certificationsVerified,
+      certificationsVerifiedAt: vendor.certificationsVerifiedAt,
+      certificationsVerifiedBy: vendor.certificationsVerifiedBy,
+      message: `Vendor certifications ${verified ? "verified" : "updated"} successfully`,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ================== ANALYTICS & REPORTS ==================
 
 // @desc    Get vendor analytics overview

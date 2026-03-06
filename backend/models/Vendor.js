@@ -245,6 +245,15 @@ const vendorSchema = mongoose.Schema(
     // Categories vendor can sell in
     allowedCategories: [{ type: String }],
 
+    // Organic Certifications
+    certifications: [{
+      type: String,
+      enum: ["USDA Organic", "EU Organic", "NPOP"],
+    }],
+    certificationsVerified: { type: Boolean, default: false },
+    certificationsVerifiedAt: { type: Date },
+    certificationsVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     // Admin Notes
     adminNotes: [
       {

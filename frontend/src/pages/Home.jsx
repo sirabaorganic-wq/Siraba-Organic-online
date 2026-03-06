@@ -1,4 +1,4 @@
-import { ArrowRight, Star, Leaf, ShieldCheck, Globe } from "lucide-react";
+import { ArrowRight, Star, Leaf, ShieldCheck, Globe, Clock, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
 import HeroVideo from "../assets/Siraba_s_Organic_Spices_Video_Ready.mp4";
@@ -45,32 +45,31 @@ const Home = () => {
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in-up">
           <span className="font-subheading text-accent text-xs md:text-sm tracking-[0.15em] uppercase font-bold text-shadow-sm border border-accent/30 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm mb-4">
-            USDA Organic • NPOP Certified • Globally Certified • Export-Ready
+            EU Organic • USDA Organic • NPOP Certified
           </span>
           <h1 className="font-heading text-4xl md:text-6xl lg:text-7xl text-surface leading-tight text-shadow max-w-6xl mx-auto">
-            World’s Finest Organic Kashmiri Saffron (Keshar){" "}
-            <span className="italic text-accent">&</span> Premium Asafetida
-            (Asafoetida)
+            Verified Organic.{" "}
+            <br />
+            <span className="italic text-accent">Not Organic by Claim.</span>
           </h1>
           <p className="font-body text-white/90 text-base md:text-lg max-w-3xl mx-auto font-light leading-relaxed">
-            From the pristine valleys of Kashmir to certified Indian spice
-            laboratories, Siraba Organic delivers globally trusted,
-            lab-verified, premium organic ingredients to conscious kitchens
-            worldwide.
+            Siraba Organic is a certification-led platform offering premium
+            organic ingredients from vendors who meet globally recognized
+            organic standards.
           </p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-6">
             <Link
               to="/shop"
               className="bg-accent text-primary font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto"
             >
-              Shop Products
+              Explore Certified Products
             </Link>
 
             <Link
               to="/vendor/intro"
               className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto"
             >
-              Become Vendor
+              For Certified Vendors
             </Link>
           </div>
         </div>
@@ -116,6 +115,104 @@ const Home = () => {
                 Fresh from Kashmir's heritage farms delivered securely to your
                 doorstep.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Flagship Products (Coming Soon) */}
+      <section className="py-20 md:py-28 bg-gradient-to-b from-background via-surface to-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 space-y-4">
+            <span className="inline-flex items-center gap-2 text-accent text-sm tracking-[0.2em] uppercase font-bold">
+              <Clock size={16} />
+              Coming Soon
+            </span>
+            <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-primary">
+              Our Flagship Organic Ingredients
+            </h2>
+            <p className="text-text-secondary text-lg max-w-2xl mx-auto font-light">
+              Premium saffron and asafoetida, sourced with care and certified for global standards.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
+            {/* Kashmiri Saffron */}
+            <div className="group relative bg-surface border border-secondary/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="absolute top-4 right-4 z-10">
+                <span className="bg-accent/90 text-primary text-xs font-bold uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                  <Clock size={12} />
+                  Coming Soon
+                </span>
+              </div>
+              <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex items-center justify-center">
+                <img
+                  src={SaffronImg}
+                  alt="Kashmiri Saffron"
+                  className="max-h-[220px] w-auto object-contain opacity-95 group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="p-6 md:p-8 space-y-5">
+                <h3 className="font-heading text-2xl md:text-3xl text-primary font-bold">
+                  Kashmiri Saffron
+                </h3>
+                <p className="text-text-secondary leading-relaxed">
+                  Hand-harvested from the high-altitude valleys of Kashmir, known globally for its deep color, aroma, and potency.
+                </p>
+                <ul className="space-y-2">
+                  {["Premium grade stigmas", "Naturally high crocin content", "Certified organic supply chains", "Globally compliant processing"].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-primary">
+                      <Sparkles size={14} className="text-accent flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-accent">Used in:</span>
+                  <p className="text-text-secondary text-sm mt-1">
+                    Gourmet cooking • Wellness formulations • Nutraceuticals and cosmetics
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Premium Asafoetida */}
+            <div className="group relative bg-surface border border-secondary/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="absolute top-4 right-4 z-10">
+                <span className="bg-accent/90 text-primary text-xs font-bold uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                  <Clock size={12} />
+                  Coming Soon
+                </span>
+              </div>
+              <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex items-center justify-center">
+                <img
+                  src={AsafoetidaImg}
+                  alt="Premium Asafoetida (Hing)"
+                  className="max-h-[220px] w-auto object-contain opacity-95 group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="p-6 md:p-8 space-y-5">
+                <h3 className="font-heading text-2xl md:text-3xl text-primary font-bold">
+                  Premium Asafoetida (Hing)
+                </h3>
+                <p className="text-text-secondary leading-relaxed">
+                  Sourced from high-altitude regions, this prized resin delivers a potent, aromatic profile essential for authentic Indian cuisine and traditional wellness.
+                </p>
+                <ul className="space-y-2">
+                  {["Premium-grade resin", "Traditionally compounded", "Certified organic sourcing", "Lab-tested purity & potency"].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-primary">
+                      <Sparkles size={14} className="text-accent flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-accent">Used in:</span>
+                  <p className="text-text-secondary text-sm mt-1">
+                    Indian & regional cuisine • Digestive supplements • Traditional medicine & ayurveda
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -198,7 +295,9 @@ const Home = () => {
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-primary/90 via-primary/80 to-primary/90"></div>
+        <div className="absolute inset-0 bg-primary/40 md:bg-primary/30 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-transparent to-transparent" />
+        <div className="absolute inset-0 z-0 "></div>
 
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10 space-y-8">
           <span className="text-accent text-sm tracking-[0.2em] uppercase font-bold">
@@ -223,16 +322,16 @@ const Home = () => {
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link
-              to="/shop?category=Saffron"
+              to="/contact"
               className="w-full sm:w-auto bg-accent text-primary px-10 py-4 font-bold uppercase tracking-widest hover:bg-surface transition-all duration-300 shadow-lg transform hover:-translate-y-1"
             >
-              Shop Kashmiri Saffron
+              Get Notified — Saffron
             </Link>
             <Link
-              to="/shop?category=Asafoetida"
+              to="/contact"
               className="w-full sm:w-auto bg-transparent border border-accent text-surface px-10 py-4 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg transform hover:-translate-y-1"
             >
-              Shop Premium Asafoetida
+              Get Notified — Asafoetida
             </Link>
           </div>
         </div>

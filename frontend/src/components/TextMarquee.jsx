@@ -26,7 +26,7 @@ const TextMarquee = () => {
 
   const MarqueeText = () => (
     <span
-      className="inline-block text-3xl md:text-4xl lg:text-5xl font-heading font-bold uppercase tracking-wide"
+      className="inline-block text-lg md:text-xl lg:text-2xl font-heading font-bold uppercase tracking-wide"
       style={{
         background:
           "linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)",
@@ -42,7 +42,7 @@ const TextMarquee = () => {
           {word.trim()}
           {idx < textStr.split("•").length - 1 && (
             <span
-              className="inline-block mx-4 md:mx-6 lg:mx-8 text-xl md:text-2xl lg:text-2xl"
+              className="inline-block mx-2 md:mx-3 lg:mx-4 text-sm md:text-base lg:text-lg"
               style={{
                 opacity: 0.9,
                 filter: "drop-shadow(0 0 8px rgba(16, 185, 129, 0.12))",
@@ -69,15 +69,18 @@ const TextMarquee = () => {
         }}
       ></div>
 
-      <div className="relative py-8 md:py-12 lg:py-16 overflow-hidden">
+      <div className="relative py-2 md:py-3 lg:py-4 overflow-hidden">
         <div
           ref={trackRef}
           className="flex whitespace-nowrap will-change-transform"
         >
-          <div className="flex-shrink-0 px-10 md:px-14 lg:px-20">
+          <div className="flex-shrink-0 px-6 md:px-8 lg:px-10">
             <MarqueeText />
           </div>
-          <div className="flex-shrink-0 px-10 md:px-14 lg:px-20">
+          <div className="flex-shrink-0 px-6 md:px-8 lg:px-10">
+            <MarqueeText />
+          </div>
+          <div className="flex-shrink-0 px-6 md:px-8 lg:px-10">
             <MarqueeText />
           </div>
         </div>
