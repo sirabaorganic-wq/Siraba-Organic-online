@@ -74,4 +74,21 @@ const onboardingComplete = (req, res, next) => {
   }
 };
 
-module.exports = { protectVendor, approvedVendor, onboardingComplete };
+// Check if vendor has at least one organic certification
+const certifiedVendor = (req, res, next) => {
+  if (
+    req.vendor &&
+    req.vendor.certifications &&
+    req.vendor.certifications.length > 0
+  ) {
+    next();
+  } else {
+    res.status(403).json({
+      message:
+        "Vendor must have at least one organic certification (USDA Organic, EU Organic, or NPOP) to list products",
+      certifications: req.vendor?.certifications || [],
+    });
+  }
+};
+
+module.exports = { protectVendor, approvedVendor, onboardingComplete, certifiedVendor };

@@ -64,6 +64,12 @@ const productSchema = mongoose.Schema(
     sku: { type: String },
     isActive: { type: Boolean, default: true },
 
+    // Organic certifications
+    certifications: [{
+      type: String,
+      enum: ["USDA Organic", "EU Organic", "NPOP"],
+    }],
+
     // Computed field for fast public visibility queries
     // Replaces complex $or query with simple equality check
     isPublic: { type: Boolean, default: true, index: true },

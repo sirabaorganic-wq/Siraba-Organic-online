@@ -38,8 +38,7 @@ const About = () => {
             The Siraba Legacy
           </h1>
           <p className="text-xl md:text-2xl font-heading italic text-surface/90 font-light">
-            "Purity is a guiding principle — defined by testing, traceability,
-            and documented controls."
+            "Built on Certification, Integrity, and Trust."
           </p>
 
           <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce opacity-70">
@@ -69,24 +68,31 @@ const About = () => {
                   <strong className="text-primary font-bold">
                     Siraba Organic
                   </strong>{" "}
-                  was born from a singular, powerful realization: in a world
-                  flooding with "organic" labels, authentic trust was the rarest
-                  ingredient of all.
+                  was born from a simple but powerful question: Why is it so
+                  difficult to trust what we eat, even when it is labeled
+                  “organic”?
+                </p>
+                <p>
+                  Across global markets, consumers are surrounded by products
+                  that claim purity, authenticity, and organic origins. Yet
+                  behind many of these labels, there is little transparency,
+                  inconsistent quality, and limited verification. For high-value
+                  spices like saffron and asafoetida—two of the most adulterated
+                  ingredients in the world—this trust gap becomes even more
+                  serious.
                 </p>
                 <p>
                   Founded by{" "}
-                  <strong className="text-primary">Rajesh Thakur</strong>, who
-                  established Siraba Organic in 2019. Rajesh is a
-                  founder-operator with over a decade of experience in supply
-                  chain, procurement and enterprise systems. His background
-                  includes solution architecture at Mahindra Comviva and leading
-                  procurement and ERP projects (Oracle ERP implementations in
-                  partnership with consulting teams), which inform Siraba’s
-                  focus on traceability, testing and operational controls.
+                  <strong className="text-primary">Rajesh Thakur</strong>—an
+                  entrepreneur, business growth strategist, and author—Siraba
+                  Organic was created to close that gap. Through his journey
+                  across multiple ventures, he observed a consistent pattern:
+                  markets may reward speed and scale in the short term, but
+                  customers ultimately reward trust and transparency.
                 </p>
                 <blockquote className="border-l-4 border-accent pl-6 py-2 my-8 text-primary font-heading text-2xl italic">
-                  "We measure quality through independent testing, traceability
-                  and documented controls."
+                  "Not just another brand — a certification-led platform where
+                  quality is governed, not merely promised."
                 </blockquote>
               </div>
             </div>
@@ -94,12 +100,12 @@ const About = () => {
             {/* Image Block with Artistic Borders */}
             <div className="w-full md:w-1/2 relative order-1 md:order-2 group">
               <div className="absolute -inset-4 border border-secondary/20 translate-x-4 translate-y-4 transition-transform duration-500 group-hover:translate-x-2 group-hover:translate-y-2"></div>
-              <div className="relative aspect-[3/4] max-w-md mx-auto overflow-hidden shadow-2xl">
+              <div className="relative aspect-[3/4] max-w-sm mx-auto overflow-hidden shadow-2xl rounded-full">
                 <div className="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors duration-500 z-10 mx-auto"></div>
                 <img
                   src={BgImage2}
                   alt="Founder Vision"
-                  className="w-full h-full object-cover object-center transform scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out grayscale hover:grayscale-0"
+                  className="w-full h-full object-cover object-center transform scale-90 group-hover:scale-95 transition-transform duration-1000 ease-out grayscale hover:grayscale-0 rounded-full"
                 />
               </div>
               <div className="absolute -bottom-4 -left-4 bg-surface p-4 shadow-xl max-w-xs z-20 block text-left border border-secondary/10">
@@ -122,56 +128,73 @@ const About = () => {
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-heading font-bold text-primary mb-4">
-            Credentials
+            A Certification-Gated Organic Platform
           </h3>
-          <ul className="list-disc pl-6 text-text-secondary space-y-2">
-            <li>
-              <strong>Rajesh Thakur — Founder & CEO</strong>: Founded Siraba
-              Organic in 2019; 10+ years leading supply chain, procurement and
-              enterprise systems.
-            </li>
-            <li>
-              Former Solution Architect at Mahindra Comviva; led large-scale
-              solution design and integrations.
-            </li>
-            <li>
-              Led procurement and ERP implementations (Oracle ERP) and
-              operational programs focused on traceability and controls.
-            </li>
-            <li>
-              Hands-on experience building traceable supply chains, QC/testing
-              workflows and system-driven operations.
-            </li>
+          <p className="text-text-secondary mb-6 leading-relaxed">
+            Siraba Organic is not an open marketplace. We are a
+            certification-led platform that welcomes vendors who meet globally
+            recognized organic standards. Vendors who hold any of the following
+            certifications are eligible to list their products:
+          </p>
+          <ul className="list-disc pl-6 text-text-secondary space-y-2 mb-6">
+            <li><strong>USDA Organic</strong></li>
+            <li><strong>EU Organic</strong></li>
+            <li><strong>NPOP</strong> (India Organic – Government of India, APEDA)</li>
           </ul>
+          <p className="text-text-secondary mb-4 leading-relaxed">
+            We are open to listing all products that carry valid organic
+            certification, meet our quality and traceability parameters, and
+            comply with food-grade packaging and documentation standards.
+            Alongside these certified listings, saffron and asafoetida remain
+            our flagship focus, representing the core of Siraba's commitment to
+            purity and authenticity.
+          </p>
+          <h3 className="text-3xl font-heading font-bold text-primary mt-10 mb-4">
+            Our Quality and Compliance Approach
+          </h3>
+          <p className="text-text-secondary mb-4 leading-relaxed">
+            Certification is only the starting point. Siraba follows a
+            disciplined quality system that includes:
+          </p>
+          <ul className="list-disc pl-6 text-text-secondary space-y-2">
+            <li>Traceable sourcing</li>
+            <li>Documented processing</li>
+            <li>Batch-wise quality checks</li>
+            <li>Export-grade packaging standards</li>
+          </ul>
+          <p className="text-text-secondary mt-4 leading-relaxed">
+            This approach ensures that what reaches customers is not organic by
+            claim — but certified, verified, and globally compliant.
+          </p>
         </div>
       </section>
 
       {/* Transition Strip */}
-      <div className="w-full bg-primary text-surface py-12 overflow-hidden whitespace-nowrap">
+      <div className="w-full bg-primary text-surface py-4 overflow-hidden whitespace-nowrap">
         <div className="inline-block animate-marquee">
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • HONESTY
           </span>
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • INTEGRITY
           </span>
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • TRACEABILITY
           </span>
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • TRADITION
           </span>
           {/* repeat once for loop */}
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • HONESTY
           </span>
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • INTEGRITY
           </span>
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • TRACEABILITY
           </span>
-          <span className="text-4xl font-heading font-thin mx-8">
+          <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
             • TRADITION
           </span>
         </div>
@@ -218,8 +241,9 @@ const About = () => {
                 </h4>
                 <div className="w-12 h-0.5 bg-accent/30 mb-6 group-hover:w-full transition-all duration-700"></div>
                 <p className="text-text-secondary leading-relaxed font-light">
-                  Uncompromised quality resembling the purest elements of
-                  nature. We strip away the unnecessary to reveal the essential.
+                  Uncompromised purity and authenticity. In the organic food
+                  space, purity is not a claim—it is a commitment backed by
+                  certification, traceability, and verified sourcing.
                 </p>
               </div>
             </div>
@@ -242,7 +266,8 @@ const About = () => {
                 <div className="w-12 h-0.5 bg-accent/30 mb-6 group-hover:w-full transition-all duration-700"></div>
                 <p className="text-text-secondary leading-relaxed font-light">
                   Honest practices, transparent sourcing, and ethical business
-                  standards. We do what is right, even when no one is watching.
+                  conduct. We believe long-term success is built on systems,
+                  discipline, and credibility—not shortcuts.
                 </p>
               </div>
             </div>
@@ -264,8 +289,9 @@ const About = () => {
                 </h4>
                 <div className="w-12 h-0.5 bg-accent/30 mb-6 group-hover:w-full transition-all duration-700"></div>
                 <p className="text-text-secondary leading-relaxed font-light">
-                  The robustness of our global supply chain and the potency of
-                  our products. Reliability you can build upon.
+                  The strength of devotion and righteousness in how we operate.
+                  Siraba is built to be a trust infrastructure for organic
+                  food—reliable, accountable, and disciplined batch after batch.
                 </p>
               </div>
             </div>
@@ -278,19 +304,20 @@ const About = () => {
         <div className="max-w-5xl mx-auto text-center space-y-12">
           <Quote className="mx-auto text-accent w-12 h-12 md:w-16 md:h-16 mb-8 opacity-80" />
           <h2 className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold text-primary leading-tight">
-            "Our mission is simple: deliver food that is{" "}
+            "Organic is not a marketing word. Purity is not a claim.
+            Trust is not built overnight — it is built through{" "}
             <span className="text-accent underline decoration-1 underline-offset-8">
-              honest
+              certification
             </span>
             ,{" "}
             <span className="text-accent underline decoration-1 underline-offset-8">
-              tested
+              verification
             </span>
-            , and globally{" "}
+            , and{" "}
             <span className="text-accent underline decoration-1 underline-offset-8">
-              trusted
+              consistency
             </span>
-            ."
+            — batch after batch, order after order."
           </h2>
           <div className="pt-8">
             <Link

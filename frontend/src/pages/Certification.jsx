@@ -32,14 +32,6 @@ const Certification = () => {
     { id: "us", name: "United States", certs: ["USDA Organic"] },
     { id: "eu", name: "European Union", certs: ["EU Organic Regulation"] },
     { id: "in", name: "India", certs: ["NPOP (India Organic)"] },
-    { id: "jp", name: "Japan", certs: ["JAS (Japan Agricultural Standards)"] },
-    { id: "cn", name: "China", certs: ["China Organic Certification"] },
-    {
-      id: "au",
-      name: "Australia",
-      certs: ["Australian Certified Organic (ACO)"],
-    },
-    { id: "ca", name: "Canada", certs: ["Canada Organic Regime (COR)"] },
   ];
 
   return (

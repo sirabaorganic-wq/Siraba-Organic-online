@@ -16,6 +16,12 @@ import B2B from "./pages/B2B";
 import Account from "./pages/Account";
 import Shop from "./pages/Shop";
 import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import ShippingPolicy from "./pages/ShippingPolicy";
+import RefundPolicy from "./pages/RefundPolicy";
+import FAQ from "./pages/FAQ";
+import QualityPromise from "./pages/QualityPromise";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import { CartProvider } from "./context/CartContext";
@@ -109,6 +115,24 @@ function App() {
                               />
                               <Route path="/contact" element={<Contact />} />
                               <Route path="/contact-us" element={<Contact />} />
+                              <Route
+                                path="/privacy-policy"
+                                element={<PrivacyPolicy />}
+                              />
+                              <Route path="/terms" element={<Terms />} />
+                              <Route
+                                path="/shipping-policy"
+                                element={<ShippingPolicy />}
+                              />
+                              <Route
+                                path="/refund-policy"
+                                element={<RefundPolicy />}
+                              />
+                              <Route path="/faq" element={<FAQ />} />
+                              <Route
+                                path="/quality-promise"
+                                element={<QualityPromise />}
+                              />
                               <Route path="/account" element={<Account />} />
                               <Route path="/login" element={<Login />} />
                               <Route

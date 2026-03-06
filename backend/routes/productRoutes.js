@@ -69,12 +69,23 @@ router.get(
           priceFilter.price.$lte = Number(req.query.maxPrice);
       }
 
+      // Certification filter
+      let certFilter = {};
+      if (req.query.certified === "true") {
+        // Show only products that have at least one certification
+        certFilter.certifications = { $exists: true, $ne: [] };
+      } else if (req.query.certification) {
+        // Filter by specific certification (e.g., "USDA Organic")
+        certFilter.certifications = req.query.certification;
+      }
+
       // Simplified query using computed isPublic field (fast with index)
       const query = {
         isPublic: true,
         ...keyword,
         ...category,
         ...priceFilter,
+        ...certFilter,
       };
 
       let sort = {};
