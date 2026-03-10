@@ -136,8 +136,7 @@ const Footer = () => {
           <div className="text-xs text-white/60 font-light space-y-1 text-center md:text-left">
             <p>© 2026 Siraba Organic. All rights reserved.</p>
             <p>Business Name: Siraba Organic</p>
-            <p>GSTIN: 06ACMPT6127H1ZA</p>
-            <p>URN: UDYAM-HR-05-0179395</p>
+            <p>GSTIN: 06ACMPT6127H1ZA | URN: UDYAM-HR-05-0179395</p>
           </div>
         </div>
       </div>

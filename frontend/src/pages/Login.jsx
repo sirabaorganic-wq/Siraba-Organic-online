@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock } from 'lucide-react';
+import client from '../api/client';
+import OTPModal from '../components/OTPModal';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -14,29 +16,46 @@ const Login = () => {
     // Toggle between Login and Register
     const [isRegistering, setIsRegistering] = useState(false);
     const [name, setName] = useState('');
+    const [emailOtpModalOpen, setEmailOtpModalOpen] = useState(false);
+    const [pendingRegistration, setPendingRegistration] = useState(null);
 
+    const [loading, setLoading] = useState(false);
     const from = location.state?.from?.pathname || '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        let result;
-        if (isRegistering) {
-            result = await register(name, email, password);
-        } else {
-            result = await login(email, password);
-        }
+        setLoading(true);
 
-        if (result.success) {
-            // Check if admin to decide redirect
-            const user = JSON.parse(localStorage.getItem('userInfo'));
-            if (user?.isAdmin) {
-                navigate('/admin/dashboard');
-            } else {
-                navigate(from);
+        if (isRegistering) {
+            try {
+                setPendingRegistration({ name, email, password });
+                await client.post('/otp/send-email', {
+                    email,
+                    context: 'User registration',
+                });
+                setEmailOtpModalOpen(true);
+            } catch (err) {
+                setError(
+                    err.response?.data?.message ||
+                    'Failed to send verification code. Please try again.'
+                );
+            } finally {
+                setLoading(false);
             }
         } else {
-            setError(result.message);
+            const result = await login(email, password);
+            setLoading(false);
+            if (result.success) {
+                const user = JSON.parse(localStorage.getItem('userInfo'));
+                if (user?.isAdmin) {
+                    navigate('/admin/dashboard');
+                } else {
+                    navigate(from);
+                }
+            } else {
+                setError(result.message);
+            }
         }
     };
 
@@ -91,8 +110,10 @@ const Login = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-primary text-surface py-3 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg mt-4"
+                        disabled={loading}
+                        className="w-full bg-primary text-surface py-3 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
+                        {loading && <span className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin"></span>}
                         {isRegistering ? 'Register' : 'Login'}
                     </button>
 
@@ -107,6 +128,41 @@ const Login = () => {
                     </div>
                 </form>
             </div>
+            <OTPModal
+                isOpen={emailOtpModalOpen}
+                title="Verify your email"
+                description={
+                    pendingRegistration
+                        ? `We have sent a 6-digit verification code to ${pendingRegistration.email}. Enter it below to complete your registration.`
+                        : ''
+                }
+                onClose={() => setEmailOtpModalOpen(false)}
+                onVerify={async (otp) => {
+                    if (!pendingRegistration) return;
+                    const { name: regName, email: regEmail, password: regPassword } = pendingRegistration;
+                    const result = await register(regName, regEmail, regPassword, {
+                        emailOtp: otp,
+                    });
+                    if (!result.success) {
+                        throw new Error(result.message);
+                    }
+                    setEmailOtpModalOpen(false);
+                    setPendingRegistration(null);
+                    const user = JSON.parse(localStorage.getItem('userInfo'));
+                    if (user?.isAdmin) {
+                        navigate('/admin/dashboard');
+                    } else {
+                        navigate(from);
+                    }
+                }}
+                onResend={async () => {
+                    if (!pendingRegistration) return;
+                    await client.post('/otp/send-email', {
+                        email: pendingRegistration.email,
+                        context: 'User registration',
+                    });
+                }}
+            />
         </div>
     );
 };

@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const { protect, admin } = require('../middleware/authMiddleware');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const OTP = require('../models/OTP');
 
 // Security middleware
 const { loginLimiter, registerLimiter } = require('../middleware/securityMiddleware');
@@ -55,11 +56,42 @@ router.get('/users', protect, admin, async (req, res) => {
     }
 });
 
+// Helper to verify an OTP for a given identifier and type
+const verifyOtpForIdentifier = async (identifier, type, plainOtp) => {
+    const normalized =
+        type === 'email' ? identifier.toLowerCase().trim() : identifier.trim();
+
+    const otpDoc = await OTP.findOne({ identifier: normalized, type });
+    if (!otpDoc || otpDoc.expiresAt < new Date()) {
+        if (otpDoc) {
+            await otpDoc.deleteOne();
+        }
+        throw new Error('OTP is invalid or has expired');
+    }
+
+    const MAX_VERIFICATION_ATTEMPTS = 3;
+    if (otpDoc.attempts >= MAX_VERIFICATION_ATTEMPTS) {
+        await otpDoc.deleteOne();
+        throw new Error(
+            'Maximum verification attempts exceeded. Please request a new OTP.'
+        );
+    }
+
+    const isMatch = await bcrypt.compare(plainOtp, otpDoc.otp);
+    if (!isMatch) {
+        otpDoc.attempts += 1;
+        await otpDoc.save();
+        throw new Error('Invalid OTP');
+    }
+
+    await otpDoc.deleteOne();
+};
+
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
 router.post('/register', registerLimiter, validateRegistration, async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone, emailOtp, phoneOtp } = req.body;
     const ip = req.ip || req.connection.remoteAddress;
 
     try {
@@ -74,6 +106,26 @@ router.post('/register', registerLimiter, validateRegistration, async (req, res)
             return res.status(400).json({ message: 'User already exists' });
         }
 
+        if (!emailOtp) {
+            return res.status(400).json({ message: 'Email OTP is required' });
+        }
+
+        try {
+            await verifyOtpForIdentifier(email, 'email', emailOtp);
+        } catch (otpError) {
+            return res.status(400).json({ message: otpError.message });
+        }
+
+        let isPhoneVerified = false;
+        if (phone && phoneOtp) {
+            try {
+                await verifyOtpForIdentifier(phone, 'phone', phoneOtp);
+                isPhoneVerified = true;
+            } catch (otpError) {
+                return res.status(400).json({ message: otpError.message });
+            }
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -81,6 +133,9 @@ router.post('/register', registerLimiter, validateRegistration, async (req, res)
             name,
             email: email.toLowerCase(),
             password: hashedPassword,
+            phone: phone || undefined,
+            isEmailVerified: true,
+            isPhoneVerified,
             lastPasswordChange: new Date()
         });
 
@@ -203,18 +258,47 @@ router.put('/profile', protect, async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            user.name = req.body.name || user.name;
-            user.email = req.body.email || user.email;
-            user.phone = req.body.phone || user.phone;
+            const { name, email, phone, emailOtp, phoneOtp, addresses, notificationPreferences } = req.body;
+
+            user.name = name || user.name;
+
+            // Handle email change with OTP verification
+            if (email && email !== user.email) {
+                if (!emailOtp) {
+                    return res.status(400).json({ message: 'Email OTP is required to change email address' });
+                }
+                try {
+                    await verifyOtpForIdentifier(email, 'email', emailOtp);
+                } catch (otpError) {
+                    return res.status(400).json({ message: otpError.message });
+                }
+                user.email = email.toLowerCase();
+                user.isEmailVerified = true;
+            }
+
+            // Handle phone change with OTP verification
+            if (phone && phone !== user.phone) {
+                if (!phoneOtp) {
+                    return res.status(400).json({ message: 'Phone OTP is required to change phone number' });
+                }
+                try {
+                    await verifyOtpForIdentifier(phone, 'phone', phoneOtp);
+                } catch (otpError) {
+                    return res.status(400).json({ message: otpError.message });
+                }
+                user.phone = phone;
+                user.isPhoneVerified = true;
+            }
+
             if (req.body.password) {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(req.body.password, salt);
             }
-            if (req.body.addresses) {
-                user.addresses = req.body.addresses;
+            if (addresses) {
+                user.addresses = addresses;
             }
-            if (req.body.notificationPreferences) {
-                user.notificationPreferences = req.body.notificationPreferences;
+            if (notificationPreferences) {
+                user.notificationPreferences = notificationPreferences;
             }
 
             const updatedUser = await user.save();

@@ -33,7 +33,6 @@ const validateRegistration = [
         .trim()
         .isEmail()
         .withMessage('Please provide a valid email address')
-        .normalizeEmail()
         .isLength({ max: 100 })
         .withMessage('Email must not exceed 100 characters'),
 
@@ -51,8 +50,7 @@ const validateLogin = [
     body('email')
         .trim()
         .isEmail()
-        .withMessage('Please provide a valid email address')
-        .normalizeEmail(),
+        .withMessage('Please provide a valid email address'),
 
     body('password')
         .notEmpty()
@@ -163,8 +161,7 @@ const validateInquiry = [
     body('email')
         .trim()
         .isEmail()
-        .withMessage('Please provide a valid email address')
-        .normalizeEmail(),
+        .withMessage('Please provide a valid email address'),
 
     body('subject')
         .optional()
@@ -238,8 +235,7 @@ const validateEmail = [
     body('email')
         .trim()
         .isEmail()
-        .withMessage('Please provide a valid email address')
-        .normalizeEmail(),
+        .withMessage('Please provide a valid email address'),
 
     handleValidationErrors
 ];

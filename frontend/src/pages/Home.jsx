@@ -121,7 +121,7 @@ const Home = () => {
       </section>
 
       {/* Flagship Products (Coming Soon) */}
-      <section className="py-20 md:py-28 bg-gradient-to-b from-background via-surface to-background">
+      {/* <section className="py-20 md:py-28 bg-gradient-to-b from-background via-surface to-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-4">
             <span className="inline-flex items-center gap-2 text-accent text-sm tracking-[0.2em] uppercase font-bold">
@@ -137,7 +137,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
-            {/* Kashmiri Saffron */}
+            {/* Kashmiri Saffron *
             <div className="group relative bg-surface border border-secondary/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="absolute top-4 right-4 z-10">
                 <span className="bg-accent/90 text-primary text-xs font-bold uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
@@ -176,7 +176,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Premium Asafoetida */}
+            {/* Premium Asafoetida *
             <div className="group relative bg-surface border border-secondary/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="absolute top-4 right-4 z-10">
                 <span className="bg-accent/90 text-primary text-xs font-bold uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
@@ -218,7 +218,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer micro-line */}
+      {/* Footer micro-line *
       <div className="w-full bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-text-secondary py-6 border-t border-secondary/10">
           Prices displayed in your local currency. Taxes calculated at checkout.

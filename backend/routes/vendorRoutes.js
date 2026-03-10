@@ -6,7 +6,9 @@ const VendorOrder = require("../models/VendorOrder");
 const Product = require("../models/Product");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const OTP = require("../models/OTP");
 const crypto = require("crypto");
+const { body, validationResult } = require("express-validator");
 const {
   protectVendor,
   approvedVendor,
@@ -20,6 +22,134 @@ const {
 } = require("../config/cache");
 const { cacheByIdMiddleware } = require("../middleware/cacheMiddleware");
 
+// Shared helper to verify OTP for email/phone
+const verifyOtpForIdentifier = async (identifier, type, plainOtp) => {
+  const normalized =
+    type === "email" ? identifier.toLowerCase().trim() : identifier.trim();
+
+  const otpDoc = await OTP.findOne({ identifier: normalized, type });
+  if (!otpDoc || otpDoc.expiresAt < new Date()) {
+    if (otpDoc) {
+      await otpDoc.deleteOne();
+    }
+    throw new Error("OTP is invalid or has expired");
+  }
+
+  const MAX_VERIFICATION_ATTEMPTS = 3;
+  if (otpDoc.attempts >= MAX_VERIFICATION_ATTEMPTS) {
+    await otpDoc.deleteOne();
+    throw new Error(
+      "Maximum verification attempts exceeded. Please request a new OTP.",
+    );
+  }
+
+  const isMatch = await bcrypt.compare(plainOtp, otpDoc.otp);
+  if (!isMatch) {
+    otpDoc.attempts += 1;
+    await otpDoc.save();
+    throw new Error("Invalid OTP");
+  }
+
+  await otpDoc.deleteOne();
+};
+
+// ================== VALIDATION HELPERS ==================
+
+// Reusable middleware to send back express-validator errors
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      message: errors.array()[0].msg,
+      errors: errors.array(),
+    });
+  }
+  next();
+};
+
+// ---- Format Regex Patterns ----
+const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+const FSSAI_REGEX = /^\d{14}$/;
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+const PHONE_REGEX = /^[6-9]\d{9}$/;
+const POSTAL_REGEX = /^\d{6}$/;
+
+// ---- Validators ----
+const registerValidators = [
+  body("email").isEmail().withMessage("Please provide a valid email address").normalizeEmail(),
+  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  body("businessName").trim().notEmpty().withMessage("Business name is required"),
+  body("businessType")
+    .isIn(["manufacturer", "distributor", "farmer", "processor", "wholesaler"])
+    .withMessage("Business type must be one of: manufacturer, distributor, farmer, processor, wholesaler"),
+  body("contactPerson").trim().notEmpty().withMessage("Contact person name is required"),
+  body("phone")
+    .trim()
+    .matches(PHONE_REGEX)
+    .withMessage("Phone must be a valid 10-digit Indian mobile number (starting with 6-9)"),
+  body("city").trim().notEmpty().withMessage("City is required"),
+  body("state").trim().notEmpty().withMessage("State is required"),
+  body("postalCode")
+    .trim()
+    .matches(POSTAL_REGEX)
+    .withMessage("Postal code must be a 6-digit number"),
+];
+
+const complianceValidators = [
+  body("name").trim().notEmpty().withMessage("Document name is required"),
+  body("type")
+    .isIn(["business_license", "gst_certificate", "fssai_license", "organic_certification", "pan_card", "bank_details", "other"])
+    .withMessage("Document type is invalid. Must be one of: business_license, gst_certificate, fssai_license, organic_certification, pan_card, bank_details, other"),
+  body("fileUrl").trim().notEmpty().withMessage("File URL is required"),
+];
+
+// Inline validator for onboarding step 1 & 3 (used inside the route handler)
+const validateOnboardingStep1 = (data) => {
+  const errors = [];
+  if (data.panNumber && data.panNumber.trim() !== "") {
+    if (!PAN_REGEX.test(data.panNumber.trim().toUpperCase())) {
+      errors.push({ field: "panNumber", message: "PAN number format is invalid. Expected format: ABCDE1234F (5 uppercase letters, 4 digits, 1 uppercase letter)" });
+    }
+  }
+  if (data.gstNumber && data.gstNumber.trim() !== "") {
+    if (!GST_REGEX.test(data.gstNumber.trim().toUpperCase())) {
+      errors.push({ field: "gstNumber", message: "GST number format is invalid. Expected format: 22AAAAA0000A1Z5 (15 characters)" });
+    }
+  }
+  if (data.fssaiNumber && data.fssaiNumber.trim() !== "") {
+    if (!FSSAI_REGEX.test(data.fssaiNumber.trim())) {
+      errors.push({ field: "fssaiNumber", message: "FSSAI license number must be exactly 14 digits" });
+    }
+  }
+  return errors;
+};
+
+const validateOnboardingStep3 = (bankDetails) => {
+  const errors = [];
+  if (!bankDetails) {
+    errors.push({ field: "bankDetails", message: "Bank details are required" });
+    return errors;
+  }
+  if (!bankDetails.accountHolderName || bankDetails.accountHolderName.trim() === "") {
+    errors.push({ field: "accountHolderName", message: "Account holder name is required" });
+  }
+  if (!bankDetails.accountNumber || bankDetails.accountNumber.trim() === "") {
+    errors.push({ field: "accountNumber", message: "Account number is required" });
+  } else if (!/^\d{9,18}$/.test(bankDetails.accountNumber.trim())) {
+    errors.push({ field: "accountNumber", message: "Account number must be 9 to 18 digits" });
+  }
+  if (!bankDetails.bankName || bankDetails.bankName.trim() === "") {
+    errors.push({ field: "bankName", message: "Bank name is required" });
+  }
+  if (!bankDetails.ifscCode || bankDetails.ifscCode.trim() === "") {
+    errors.push({ field: "ifscCode", message: "IFSC code is required" });
+  } else if (!IFSC_REGEX.test(bankDetails.ifscCode.trim().toUpperCase())) {
+    errors.push({ field: "ifscCode", message: "IFSC code format is invalid. Expected format: ABCD0123456 (4 letters, 0, 6 alphanumeric)" });
+  }
+  return errors;
+};
+
 // Generate Vendor JWT
 const generateVendorToken = (vendorId) => {
   return jwt.sign({ vendorId }, process.env.JWT_SECRET || "secret123", {
@@ -29,10 +159,10 @@ const generateVendorToken = (vendorId) => {
 
 // ================== AUTH ROUTES ==================
 
-// @desc    Register new vendor
+// @desc    Register new vendor (requires verified email OTP)
 // @route   POST /api/vendors/register
 // @access  Public
-router.post("/register", async (req, res) => {
+router.post("/register", registerValidators, handleValidationErrors, async (req, res) => {
   try {
     const {
       email,
@@ -44,6 +174,7 @@ router.post("/register", async (req, res) => {
       city,
       state,
       postalCode,
+      emailOtp,
     } = req.body;
 
     // Check if vendor exists
@@ -52,6 +183,18 @@ router.post("/register", async (req, res) => {
       return res
         .status(400)
         .json({ message: "Vendor with this email already exists" });
+    }
+
+    if (!emailOtp) {
+      return res
+        .status(400)
+        .json({ message: "Email OTP is required for vendor registration" });
+    }
+
+    try {
+      await verifyOtpForIdentifier(email, "email", emailOtp);
+    } catch (otpError) {
+      return res.status(400).json({ message: otpError.message });
     }
 
     // Hash password
@@ -67,6 +210,7 @@ router.post("/register", async (req, res) => {
       contactPerson,
       phone,
       address: { city, state, postalCode },
+      isEmailVerified: true,
       onboardingStep: 2, // Move to step 2 after registration
     });
 
@@ -140,27 +284,60 @@ router.put("/profile", protectVendor, async (req, res) => {
     const vendor = await Vendor.findById(req.vendor._id);
 
     if (vendor) {
-      vendor.businessName = req.body.businessName || vendor.businessName;
-      vendor.businessDescription =
-        req.body.businessDescription || vendor.businessDescription;
-      vendor.contactPerson = req.body.contactPerson || vendor.contactPerson;
-      vendor.phone = req.body.phone || vendor.phone;
-      vendor.alternatePhone = req.body.alternatePhone || vendor.alternatePhone;
-      vendor.website = req.body.website || vendor.website;
-      vendor.logo = req.body.logo || vendor.logo;
+      const {
+        businessName,
+        businessDescription,
+        contactPerson,
+        phone,
+        alternatePhone,
+        website,
+        logo,
+        address,
+        gstNumber,
+        panNumber,
+        fssaiNumber,
+        password,
+        email,
+        emailOtp,
+      } = req.body;
 
-      if (req.body.address) {
-        vendor.address = { ...vendor.address, ...req.body.address };
+      vendor.businessName = businessName || vendor.businessName;
+      vendor.businessDescription =
+        businessDescription || vendor.businessDescription;
+      vendor.contactPerson = contactPerson || vendor.contactPerson;
+      vendor.phone = phone || vendor.phone;
+      vendor.alternatePhone = alternatePhone || vendor.alternatePhone;
+      vendor.website = website || vendor.website;
+      vendor.logo = logo || vendor.logo;
+
+      // Email change requires OTP verification
+      if (email && email !== vendor.email) {
+        if (!emailOtp) {
+          return res
+            .status(400)
+            .json({ message: "Email OTP is required to change email address" });
+        }
+        try {
+          await verifyOtpForIdentifier(email, "email", emailOtp);
+        } catch (otpError) {
+          return res.status(400).json({ message: otpError.message });
+        }
+        vendor.email = email.toLowerCase();
+        vendor.isEmailVerified = true;
+      }
+
+      if (address) {
+        vendor.address = { ...vendor.address, ...address };
       }
 
       // Update Legal Info
-      vendor.gstNumber = req.body.gstNumber || vendor.gstNumber;
-      vendor.panNumber = req.body.panNumber || vendor.panNumber;
-      vendor.fssaiNumber = req.body.fssaiNumber || vendor.fssaiNumber;
+      vendor.gstNumber = gstNumber || vendor.gstNumber;
+      vendor.panNumber = panNumber || vendor.panNumber;
+      vendor.fssaiNumber = fssaiNumber || vendor.fssaiNumber;
 
-      if (req.body.password) {
+      if (password) {
         const salt = await bcrypt.genSalt(10);
-        vendor.password = await bcrypt.hash(req.body.password, salt);
+        vendor.password = await bcrypt.hash(password, salt);
       }
 
       const updatedVendor = await vendor.save();
@@ -192,26 +369,54 @@ router.put("/onboarding", protectVendor, async (req, res) => {
     const { step, data } = req.body;
 
     switch (step) {
-      case 1: // Business Details
+      case 1: { // Business Details
+        // Validate PAN, GST, FSSAI formats if provided
+        const step1Errors = validateOnboardingStep1(data || {});
+        if (step1Errors.length > 0) {
+          return res.status(400).json({
+            message: step1Errors[0].message,
+            errors: step1Errors,
+          });
+        }
         vendor.businessDescription = data.businessDescription;
         vendor.website = data.website;
-        vendor.gstNumber = data.gstNumber;
-        vendor.panNumber = data.panNumber;
-        vendor.fssaiNumber = data.fssaiNumber;
+        // Normalise to uppercase before saving
+        vendor.gstNumber = data.gstNumber ? data.gstNumber.trim().toUpperCase() : vendor.gstNumber;
+        vendor.panNumber = data.panNumber ? data.panNumber.trim().toUpperCase() : vendor.panNumber;
+        vendor.fssaiNumber = data.fssaiNumber ? data.fssaiNumber.trim() : vendor.fssaiNumber;
         vendor.onboardingStep = 2;
         break;
+      }
 
       case 2: // Address
         if (data.address) {
+          if (!data.address.city || !data.address.state) {
+            return res.status(400).json({ message: "City and State are required" });
+          }
+          if (data.address.postalCode && !POSTAL_REGEX.test(data.address.postalCode.trim())) {
+            return res.status(400).json({ message: "Postal code must be a 6-digit number" });
+          }
           vendor.address = { ...vendor.address, ...data.address };
         }
         vendor.onboardingStep = 3;
         break;
 
-      case 3: // Bank Details
+      case 3: { // Bank Details
+        const step3Errors = validateOnboardingStep3(data.bankDetails);
+        if (step3Errors.length > 0) {
+          return res.status(400).json({
+            message: step3Errors[0].message,
+            errors: step3Errors,
+          });
+        }
+        // Normalise IFSC to uppercase
+        if (data.bankDetails.ifscCode) {
+          data.bankDetails.ifscCode = data.bankDetails.ifscCode.trim().toUpperCase();
+        }
         vendor.bankDetails = data.bankDetails;
         vendor.onboardingStep = 4;
         break;
+      }
 
       case 4: // Plan Selection (handled by /subscription route but mark step complete)
         vendor.onboardingStep = 5;
@@ -245,7 +450,7 @@ router.put("/onboarding", protectVendor, async (req, res) => {
 // @desc    Upload compliance document
 // @route   POST /api/vendors/compliance
 // @access  Private/Vendor
-router.post("/compliance", protectVendor, async (req, res) => {
+router.post("/compliance", protectVendor, complianceValidators, handleValidationErrors, async (req, res) => {
   try {
     const { name, type, fileUrl, expiryDate } = req.body;
     const vendor = await Vendor.findById(req.vendor._id);
