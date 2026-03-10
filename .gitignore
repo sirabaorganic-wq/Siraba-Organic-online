@@ -65,3 +65,6 @@ npm-debug.log*
 # Generated / temporary
 tmp/
 temp/
+
+.env
+backend/.env

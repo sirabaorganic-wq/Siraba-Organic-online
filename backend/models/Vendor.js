@@ -161,6 +161,8 @@ const vendorSchema = mongoose.Schema(
     // Contact Info
     contactPerson: { type: String, required: true },
     phone: { type: String, required: true },
+    isEmailVerified: { type: Boolean, default: false },
+    isPhoneVerified: { type: Boolean, default: false },
     alternatePhone: { type: String },
     website: { type: String },
 

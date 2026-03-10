@@ -46,6 +46,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VendorShopPage from "./pages/VendorShopPage";
 import VendorIntro from "./pages/vendor/VendorIntro";
+import SirabaAssistant from "./components/SirabaAssistant";
 import { SocketProvider } from "./context/SocketContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { ToastProvider } from "./components/Toast";
@@ -236,6 +237,7 @@ function App() {
                               />
                             </Routes>
                           </main>
+                          <SirabaAssistant />
                           <FooterWrapper />
                         </div>
                       </Router>

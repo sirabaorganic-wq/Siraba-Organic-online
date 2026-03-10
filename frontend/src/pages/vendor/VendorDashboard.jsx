@@ -104,9 +104,8 @@ const VendorSidebar = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-surface border-r border-secondary/10 z-50 transform transition-transform duration-300 lg:translate-x-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 h-full w-72 bg-surface border-r border-secondary/10 z-50 transform transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Logo */}
         <div className="p-8 border-b border-secondary/10">
@@ -135,13 +134,12 @@ const VendorSidebar = ({
                 {vendor?.businessName}
               </p>
               <span
-                className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-sm ${
-                  vendor?.status === "approved"
-                    ? "bg-secondary/20 text-secondary"
-                    : vendor?.status === "pending"
-                      ? "bg-accent/10 text-accent"
-                      : "bg-red-100 text-red-700"
-                }`}
+                className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-sm ${vendor?.status === "approved"
+                  ? "bg-secondary/20 text-secondary"
+                  : vendor?.status === "pending"
+                    ? "bg-accent/10 text-accent"
+                    : "bg-red-100 text-red-700"
+                  }`}
               >
                 {vendor?.status?.replace("_", " ")}
               </span>
@@ -158,11 +156,10 @@ const VendorSidebar = ({
                 setActiveTab(item.id);
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-sm transition-all duration-300 group ${
-                activeTab === item.id
-                  ? "bg-primary text-surface shadow-md"
-                  : "text-text-secondary hover:bg-secondary/5 hover:text-primary"
-              }`}
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-sm transition-all duration-300 group ${activeTab === item.id
+                ? "bg-primary text-surface shadow-md"
+                : "text-text-secondary hover:bg-secondary/5 hover:text-primary"
+                }`}
             >
               <item.icon
                 className={`w-5 h-5 transition-colors ${activeTab === item.id ? "text-accent" : "text-secondary group-hover:text-accent"}`}
@@ -336,9 +333,8 @@ const StatCard = ({
         )}
         {trend && (
           <div
-            className={`flex items-center gap-1 mt-2 text-sm font-medium ${
-              trend === "up" ? "text-secondary" : "text-red-500"
-            }`}
+            className={`flex items-center gap-1 mt-2 text-sm font-medium ${trend === "up" ? "text-secondary" : "text-red-500"
+              }`}
           >
             {trend === "up" ? (
               <TrendingUp className="w-4 h-4" />
@@ -350,15 +346,14 @@ const StatCard = ({
         )}
       </div>
       <div
-        className={`w-12 h-12 rounded-sm flex items-center justify-center transition-all group-hover:scale-110 ${
-          color === "primary"
-            ? "bg-primary/10 text-primary"
-            : color === "green"
-              ? "bg-secondary/10 text-secondary"
-              : color === "orange"
-                ? "bg-accent/10 text-accent"
-                : "bg-primary/5 text-primary"
-        }`}
+        className={`w-12 h-12 rounded-sm flex items-center justify-center transition-all group-hover:scale-110 ${color === "primary"
+          ? "bg-primary/10 text-primary"
+          : color === "green"
+            ? "bg-secondary/10 text-secondary"
+            : color === "orange"
+              ? "bg-accent/10 text-accent"
+              : "bg-primary/5 text-primary"
+          }`}
       >
         <Icon className="w-6 h-6" />
       </div>
@@ -718,15 +713,14 @@ const DashboardContent = ({ dashboardData, vendor }) => {
                       ₹{order.subtotal}
                     </p>
                     <span
-                      className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm mt-1 inline-block tracking-wider ${
-                        order.status === "delivered"
-                          ? "bg-secondary/20 text-secondary"
-                          : order.status === "shipped"
-                            ? "bg-primary/10 text-primary"
-                            : order.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-accent/10 text-accent"
-                      }`}
+                      className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm mt-1 inline-block tracking-wider ${order.status === "delivered"
+                        ? "bg-secondary/20 text-secondary"
+                        : order.status === "shipped"
+                          ? "bg-primary/10 text-primary"
+                          : order.status === "cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-accent/10 text-accent"
+                        }`}
                     >
                       {order.status}
                     </span>
@@ -871,15 +865,14 @@ const OrdersContent = ({ orders, fetchOrders, updateOrderStatus }) => {
                   </td>
                   <td className="px-6 py-5">
                     <span
-                      className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-sm tracking-wider ${
-                        order.status === "delivered"
-                          ? "bg-secondary/20 text-secondary"
-                          : order.status === "shipped"
-                            ? "bg-primary/10 text-primary"
-                            : order.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-accent/10 text-accent"
-                      }`}
+                      className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-sm tracking-wider ${order.status === "delivered"
+                        ? "bg-secondary/20 text-secondary"
+                        : order.status === "shipped"
+                          ? "bg-primary/10 text-primary"
+                          : order.status === "cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-accent/10 text-accent"
+                        }`}
                     >
                       {order.status}
                     </span>
@@ -1097,9 +1090,8 @@ const ReturnsContent = ({ vendor }) => {
     };
     return (
       <span
-        className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider ${
-          styles[status] || "bg-gray-100 text-gray-700"
-        }`}
+        className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider ${styles[status] || "bg-gray-100 text-gray-700"
+          }`}
       >
         {status}
       </span>
@@ -1425,9 +1417,8 @@ const ProductsContent = ({
     };
     return (
       <span
-        className={`text-xs px-2 py-1 rounded-full ${
-          styles[status] || "bg-gray-100 text-gray-700"
-        }`}
+        className={`text-xs px-2 py-1 rounded-full ${styles[status] || "bg-gray-100 text-gray-700"
+          }`}
       >
         {status}
       </span>
@@ -1491,11 +1482,10 @@ const ProductsContent = ({
             setShowAddModal(true);
           }}
           disabled={!isApproved}
-          className={`px-6 py-2.5 rounded-sm flex items-center gap-2 font-bold text-sm uppercase tracking-wider transition-all duration-300 ${
-            isApproved
-              ? "bg-accent text-primary hover:bg-primary hover:text-surface shadow-md hover:shadow-lg"
-              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-          }`}
+          className={`px-6 py-2.5 rounded-sm flex items-center gap-2 font-bold text-sm uppercase tracking-wider transition-all duration-300 ${isApproved
+            ? "bg-accent text-primary hover:bg-primary hover:text-surface shadow-md hover:shadow-lg"
+            : "bg-gray-200 text-gray-500 cursor-not-allowed"
+            }`}
         >
           <Plus className="w-4 h-4" />
           Add Product
@@ -1567,22 +1557,20 @@ const ProductsContent = ({
                 <button
                   onClick={() => handleEdit(product)}
                   disabled={!isApproved}
-                  className={`flex-1 py-2.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
-                    isApproved
-                      ? "bg-secondary/10 hover:bg-secondary/20 text-primary"
-                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`flex-1 py-2.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${isApproved
+                    ? "bg-secondary/10 hover:bg-secondary/20 text-primary"
+                    : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
                 <button
                   onClick={() => handleDelete(product._id)}
                   disabled={!isApproved}
-                  className={`p-2.5 rounded-sm transition-colors ${
-                    isApproved
-                      ? "bg-red-50 hover:bg-red-100 text-red-600 border border-red-100"
-                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`p-2.5 rounded-sm transition-colors ${isApproved
+                    ? "bg-red-50 hover:bg-red-100 text-red-600 border border-red-100"
+                    : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -2032,13 +2020,12 @@ const ComplianceContent = ({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-12 h-12 rounded-sm flex items-center justify-center transition-colors ${
-                    doc.status === "approved"
-                      ? "bg-secondary/10 text-secondary"
-                      : doc.status === "rejected"
-                        ? "bg-red-100 text-red-600"
-                        : "bg-accent/10 text-accent"
-                  }`}
+                  className={`w-12 h-12 rounded-sm flex items-center justify-center transition-colors ${doc.status === "approved"
+                    ? "bg-secondary/10 text-secondary"
+                    : doc.status === "rejected"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-accent/10 text-accent"
+                    }`}
                 >
                   <FileCheck className="w-6 h-6" />
                 </div>
@@ -2052,15 +2039,14 @@ const ComplianceContent = ({
                 </div>
               </div>
               <span
-                className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider ${
-                  doc.status === "approved"
-                    ? "bg-secondary/20 text-secondary"
-                    : doc.status === "rejected"
-                      ? "bg-red-100 text-red-700"
-                      : doc.status === "expired"
-                        ? "bg-gray-100 text-gray-700"
-                        : "bg-accent/10 text-accent"
-                }`}
+                className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider ${doc.status === "approved"
+                  ? "bg-secondary/20 text-secondary"
+                  : doc.status === "rejected"
+                    ? "bg-red-100 text-red-700"
+                    : doc.status === "expired"
+                      ? "bg-gray-100 text-gray-700"
+                      : "bg-accent/10 text-accent"
+                  }`}
               >
                 {doc.status}
               </span>
@@ -2672,11 +2658,10 @@ const WalletContent = ({
           <button
             onClick={() => setShowPayoutModal(true)}
             disabled={(walletData?.balance || 0) < 500}
-            className={`px-8 py-3 rounded-sm flex items-center gap-2 font-bold uppercase tracking-wider transition-all duration-300 shadow-md transform hover:-translate-y-0.5 ${
-              (walletData?.balance || 0) >= 500
-                ? "bg-accent text-primary hover:bg-primary hover:text-surface"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none transform-none"
-            }`}
+            className={`px-8 py-3 rounded-sm flex items-center gap-2 font-bold uppercase tracking-wider transition-all duration-300 shadow-md transform hover:-translate-y-0.5 ${(walletData?.balance || 0) >= 500
+              ? "bg-accent text-primary hover:bg-primary hover:text-surface"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none transform-none"
+              }`}
           >
             <ArrowUpRight className="w-4 h-4" />
             Request Payout
@@ -2700,13 +2685,12 @@ const WalletContent = ({
               >
                 <div className="flex items-center gap-5">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center border border-current/10 ${
-                      txn.type === "order_earning"
-                        ? "bg-green-50 text-green-600"
-                        : txn.type === "commission"
-                          ? "bg-orange-50 text-orange-600"
-                          : "bg-blue-50 text-blue-600"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center border border-current/10 ${txn.type === "order_earning"
+                      ? "bg-green-50 text-green-600"
+                      : txn.type === "commission"
+                        ? "bg-orange-50 text-orange-600"
+                        : "bg-blue-50 text-blue-600"
+                      }`}
                   >
                     {getTransactionIcon(txn.type)}
                   </div>
@@ -3426,11 +3410,10 @@ const SubscriptionContent = ({
                     </p>
                     <p className="text-sm text-text-secondary">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                          isSubscriptionActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isSubscriptionActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                          }`}
                       >
                         {isSubscriptionActive ? "Active" : "Inactive"}
                       </span>
@@ -3441,7 +3424,7 @@ const SubscriptionContent = ({
                             • Renews{" "}
                             {new Date(
                               subscription?.endDate ||
-                                subscription?.subscription?.endDate,
+                              subscription?.subscription?.endDate,
                             ).toLocaleDateString()}
                           </span>
                         )}
@@ -3486,23 +3469,20 @@ const SubscriptionContent = ({
       <div className="flex items-center justify-center gap-4 bg-white rounded-lg p-2 shadow-sm border">
         <button
           onClick={() => setBillingCycle("monthly")}
-          className={`px-6 py-2 rounded-lg transition ${
-            billingCycle === "monthly" ? "bg-primary text-white" : ""
-          }`}
+          className={`px-6 py-2 rounded-lg transition ${billingCycle === "monthly" ? "bg-primary text-white" : ""
+            }`}
         >
           Monthly
         </button>
         <button
           onClick={() => setBillingCycle("yearly")}
-          className={`px-6 py-2 rounded-lg transition ${
-            billingCycle === "yearly" ? "bg-primary text-white" : ""
-          }`}
+          className={`px-6 py-2 rounded-lg transition ${billingCycle === "yearly" ? "bg-primary text-white" : ""
+            }`}
         >
           Yearly{" "}
           <span
-            className={`text-sm ${
-              billingCycle === "yearly" ? "text-white/80" : "text-green-600"
-            }`}
+            className={`text-sm ${billingCycle === "yearly" ? "text-white/80" : "text-green-600"
+              }`}
           >
             (Save 17%)
           </span>
@@ -3521,11 +3501,10 @@ const SubscriptionContent = ({
             return (
               <div
                 key={key}
-                className={`relative bg-surface rounded-sm p-8 shadow-lg border transition-all duration-300 hover:scale-105 ${
-                  isCurrentPlan
-                    ? "border-accent shadow-xl ring-1 ring-accent/20"
-                    : "border-secondary/10 hover:border-accent/50"
-                }`}
+                className={`relative bg-surface rounded-sm p-8 shadow-lg border transition-all duration-300 hover:scale-105 ${isCurrentPlan
+                  ? "border-accent shadow-xl ring-1 ring-accent/20"
+                  : "border-secondary/10 hover:border-accent/50"
+                  }`}
               >
                 {plan.badge && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-accent text-primary text-xs font-bold uppercase tracking-wider rounded-sm shadow-sm">
@@ -3584,15 +3563,14 @@ const SubscriptionContent = ({
                 <button
                   onClick={() => handleUpgrade(key)}
                   disabled={isCurrentPlan}
-                  className={`w-full py-3.5 rounded-sm font-bold uppercase tracking-widest text-sm transition-all duration-300 ${
-                    isCurrentPlan
-                      ? "bg-secondary/10 text-text-secondary cursor-not-allowed"
-                      : key === "professional"
-                        ? "bg-primary text-surface hover:bg-primary/90 shadow-md transform hover:-translate-y-0.5"
-                        : key === "enterprise"
-                          ? "bg-gradient-to-r from-purple-900 to-indigo-900 text-surface hover:shadow-lg shadow-md transform hover:-translate-y-0.5"
-                          : "border border-secondary/20 hover:bg-secondary/5 text-primary"
-                  }`}
+                  className={`w-full py-3.5 rounded-sm font-bold uppercase tracking-widest text-sm transition-all duration-300 ${isCurrentPlan
+                    ? "bg-secondary/10 text-text-secondary cursor-not-allowed"
+                    : key === "professional"
+                      ? "bg-primary text-surface hover:bg-primary/90 shadow-md transform hover:-translate-y-0.5"
+                      : key === "enterprise"
+                        ? "bg-gradient-to-r from-purple-900 to-indigo-900 text-surface hover:shadow-lg shadow-md transform hover:-translate-y-0.5"
+                        : "border border-secondary/20 hover:bg-secondary/5 text-primary"
+                    }`}
                 >
                   {isCurrentPlan
                     ? "Current Plan"
@@ -3914,7 +3892,7 @@ const ReviewsContent = ({ vendorProducts }) => {
       setReviews((prev) =>
         prev.map((review) =>
           review._id === replyModal.reviewId &&
-          review.productId === replyModal.productId
+            review.productId === replyModal.productId
             ? { ...review, vendorReply: replyText, vendorReplyDate: new Date() }
             : review,
         ),
@@ -4160,16 +4138,14 @@ const MessagesContent = ({ vendor }) => {
             messages.map((msg) => (
               <div
                 key={msg._id}
-                className={`flex ${
-                  msg.sender === "vendor" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${msg.sender === "vendor" ? "justify-end" : "justify-start"
+                  }`}
               >
                 <div
-                  className={`max-w-[75%] p-4 rounded-lg shadow-sm ${
-                    msg.sender === "vendor"
-                      ? "bg-primary text-surface rounded-br-none"
-                      : "bg-surface border border-secondary/10 text-primary rounded-bl-none"
-                  }`}
+                  className={`max-w-[75%] p-4 rounded-lg shadow-sm ${msg.sender === "vendor"
+                    ? "bg-primary text-surface rounded-br-none"
+                    : "bg-surface border border-secondary/10 text-primary rounded-bl-none"
+                    }`}
                 >
                   <p
                     className={`text-sm leading-relaxed ${msg.sender === "vendor" ? "font-light" : "font-normal"}`}
@@ -4177,11 +4153,10 @@ const MessagesContent = ({ vendor }) => {
                     {msg.message}
                   </p>
                   <p
-                    className={`text-[10px] mt-2 text-right uppercase tracking-wider font-bold ${
-                      msg.sender === "vendor"
-                        ? "text-surface/70"
-                        : "text-text-secondary/70"
-                    }`}
+                    className={`text-[10px] mt-2 text-right uppercase tracking-wider font-bold ${msg.sender === "vendor"
+                      ? "text-surface/70"
+                      : "text-text-secondary/70"
+                      }`}
                   >
                     {new Date(msg.createdAt).toLocaleString([], {
                       hour: "2-digit",

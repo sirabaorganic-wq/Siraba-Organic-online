@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
 import { useCurrency } from '../context/CurrencyContext';
 import PhoneInput from '../components/PhoneInput';
+import OTPModal from '../components/OTPModal';
 
 // Subcode for Wishlist Grid to handle fetching
 const WishlistGrid = () => {
@@ -82,7 +83,7 @@ const Account = () => {
         }
     }, [user, isAdmin, navigate]);
 
-    // Auth Form State
+    // Auth Form State (for inline login/register card)
     const [isRegistering, setIsRegistering] = useState(false);
     const [authData, setAuthData] = useState({
         name: '',
@@ -91,6 +92,8 @@ const Account = () => {
     });
     const [authError, setAuthError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [authEmailOtpModalOpen, setAuthEmailOtpModalOpen] = useState(false);
+    const [pendingAuthRegistration, setPendingAuthRegistration] = useState(null);
 
     // Use actual user data
     const userProfile = {
@@ -171,6 +174,9 @@ const Account = () => {
         dob: '',
         gender: 'Male'
     });
+    const [otpModalOpen, setOtpModalOpen] = useState(false);
+    const [otpContext, setOtpContext] = useState(null);
+    const [pendingProfileUpdate, setPendingProfileUpdate] = useState(null);
 
 
 
@@ -341,6 +347,20 @@ const Account = () => {
     };
 
     const handleProfileUpdate = async () => {
+        // If email or phone is changing, require OTP verification first
+        const emailChanged = profileForm.email && profileForm.email !== user?.email;
+        const phoneChanged = profileForm.phone && profileForm.phone !== user?.phone;
+
+        if (emailChanged || phoneChanged) {
+            setPendingProfileUpdate(profileForm);
+            setOtpContext({
+                emailChanged,
+                phoneChanged,
+            });
+            setOtpModalOpen(true);
+            return;
+        }
+
         setIsUpdatingProfile(true);
         try {
             const res = await updateProfile(profileForm);
@@ -355,6 +375,101 @@ const Account = () => {
         } finally {
             setIsUpdatingProfile(false);
         }
+    };
+
+    const renderOtpModal = () => {
+        if (!otpModalOpen || !otpContext || !pendingProfileUpdate) return null;
+
+        const { emailChanged, phoneChanged } = otpContext;
+        const needEmail = emailChanged;
+        const needPhone = phoneChanged;
+
+        return (
+            <OTPModal
+                isOpen={otpModalOpen}
+                title={needEmail ? 'Verify your new email' : 'Verify your new phone'}
+                description={
+                    needEmail
+                        ? `Enter the 6-digit code sent to ${pendingProfileUpdate.email}.`
+                        : `Enter the 6-digit code sent to ${pendingProfileUpdate.phone}.`
+                }
+                onClose={() => {
+                    setOtpModalOpen(false);
+                    setOtpContext(null);
+                    setPendingProfileUpdate(null);
+                }}
+                onVerify={async (otp) => {
+                    const payload = { ...pendingProfileUpdate };
+                    if (needEmail) {
+                        payload.emailOtp = otp;
+                    }
+                    if (!needEmail && needPhone) {
+                        payload.phoneOtp = otp;
+                    }
+
+                    setIsUpdatingProfile(true);
+                    try {
+                        const res = await updateProfile(payload);
+                        if (res.success) {
+                            alert('Profile updated successfully!');
+                            setOtpModalOpen(false);
+                            setOtpContext(null);
+                            setPendingProfileUpdate(null);
+                        } else {
+                            throw new Error(res.message || 'Failed to update profile');
+                        }
+                    } finally {
+                        setIsUpdatingProfile(false);
+                    }
+                }}
+                onResend={async () => {
+                    if (needEmail) {
+                        await client.post('/otp/send-email', {
+                            email: pendingProfileUpdate.email,
+                            context: 'Email update',
+                        });
+                    } else if (needPhone) {
+                        await client.post('/otp/send-phone', {
+                            phone: pendingProfileUpdate.phone,
+                            context: 'Phone update',
+                        });
+                    }
+                }}
+            />
+        );
+    };
+
+    const renderAuthOtpModal = () => {
+        if (!authEmailOtpModalOpen || !pendingAuthRegistration) return null;
+
+        return (
+            <OTPModal
+                isOpen={authEmailOtpModalOpen}
+                title="Verify your email"
+                description={`We have sent a 6-digit verification code to ${pendingAuthRegistration.email}. Enter it below to complete your registration.`}
+                onClose={() => {
+                    setAuthEmailOtpModalOpen(false);
+                    setPendingAuthRegistration(null);
+                }}
+                onVerify={async (otp) => {
+                    const { name, email, password } = pendingAuthRegistration;
+                    const result = await register(name, email, password, {
+                        emailOtp: otp,
+                    });
+                    if (!result.success) {
+                        throw new Error(result.message || 'Registration failed');
+                    }
+                    setAuthEmailOtpModalOpen(false);
+                    setPendingAuthRegistration(null);
+                }}
+                onResend={async () => {
+                    await client.post('/otp/send-email', {
+                        email: pendingAuthRegistration.email,
+                        context: 'User registration',
+                    });
+                }}
+            />
+        );
     };
 
     const handleOpenReviewModal = (productId) => {
@@ -400,18 +515,29 @@ const Account = () => {
         setIsSubmitting(true);
 
         try {
-            let result;
             if (isRegistering) {
-                result = await register(authData.name, authData.email, authData.password);
+                // Start OTP flow for registration: send email OTP first
+                setPendingAuthRegistration({
+                    name: authData.name,
+                    email: authData.email,
+                    password: authData.password,
+                });
+                await client.post('/otp/send-email', {
+                    email: authData.email,
+                    context: 'User registration',
+                });
+                setAuthEmailOtpModalOpen(true);
             } else {
-                result = await login(authData.email, authData.password);
-            }
-
-            if (!result.success) {
-                setAuthError(result.message);
+                const result = await login(authData.email, authData.password);
+                if (!result.success) {
+                    setAuthError(result.message);
+                }
             }
         } catch (err) {
-            setAuthError('An unexpected error occurred.');
+            setAuthError(
+                err.response?.data?.message ||
+                'An unexpected error occurred.'
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -500,6 +626,7 @@ const Account = () => {
                                     required
                                 />
                             </div>
+                            <p className="text-xs text-text-secondary">Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character</p>
                             {!isRegistering && (
                                 <div className="text-right mt-1">
                                     <Link to="/forgot-password" className="text-xs text-text-secondary hover:text-accent transition-colors">
@@ -532,6 +659,7 @@ const Account = () => {
                         </button>
                     </div>
                 </div>
+                {renderAuthOtpModal()}
             </div>
         );
     }
@@ -552,6 +680,8 @@ const Account = () => {
                                     <h3 className="font-heading text-lg font-bold text-primary">{userProfile.name}</h3>
                                     <p className="text-xs text-text-secondary">Loyalty Member</p>
                                 </div>
+                                {renderOtpModal()}
+                                {renderAuthOtpModal()}
                             </div>
 
                             <div className="space-y-1">

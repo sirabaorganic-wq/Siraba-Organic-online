@@ -22,24 +22,40 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', data.token); // Separate token for axios interceptor
             return { success: true };
         } catch (error) {
+            const data = error.response?.data;
+            let message = data?.message || data?.error || 'Login failed';
+
+            if (data?.errors && Array.isArray(data.errors)) {
+                message = data.errors.map(err => `${err.field}: ${err.message}`).join(', ');
+            }
+
             return {
                 success: false,
-                message: error.response?.data?.message || 'Login failed'
+                message: message
             };
         }
     };
 
-    const register = async (name, email, password) => {
+    const register = async (name, email, password, extra = {}) => {
         try {
-            const { data } = await client.post('/auth/register', { name, email, password });
+            const payload = { name, email, password, ...extra };
+            const { data } = await client.post('/auth/register', payload);
             setUser(data);
             localStorage.setItem('userInfo', JSON.stringify(data));
             localStorage.setItem('token', data.token);
             return { success: true };
         } catch (error) {
+            const data = error.response?.data;
+            let message = data?.message || data?.error || 'Registration failed';
+
+            // If it's a validation error with details
+            if (data?.errors && Array.isArray(data.errors)) {
+                message = data.errors.map(err => `${err.field}: ${err.message}`).join(', ');
+            }
+
             return {
                 success: false,
-                message: error.response?.data?.message || 'Registration failed'
+                message: message
             };
         }
     };

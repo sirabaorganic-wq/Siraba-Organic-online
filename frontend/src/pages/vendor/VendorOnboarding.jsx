@@ -54,6 +54,61 @@ const VendorOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // ---- Regex patterns (mirror backend) ----
+  const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+  const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  const FSSAI_REGEX = /^\d{14}$/;
+  const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+  // Live field-level validators (called on onChange)
+  const validateField = (field, value) => {
+    let msg = "";
+    const v = (value || "").trim().toUpperCase();
+    if (field === "panNumber" && v !== "") {
+      if (!PAN_REGEX.test(v)) msg = "Format: ABCDE1234F (5 letters, 4 digits, 1 letter)";
+    }
+    if (field === "gstNumber" && v !== "") {
+      if (!GST_REGEX.test(v)) msg = "Format: 22AAAAA0000A1Z5 (15 characters)";
+    }
+    if (field === "fssaiNumber" && (value || "").trim() !== "") {
+      if (!FSSAI_REGEX.test((value || "").trim())) msg = "Must be exactly 14 digits";
+    }
+    if (field === "ifscCode" && v !== "") {
+      if (!IFSC_REGEX.test(v)) msg = "Format: ABCD0123456 (4 letters, 0, 6 alphanumeric)";
+    }
+    if (field === "accountNumber" && (value || "").trim() !== "") {
+      if (!/^\d{9,18}$/.test((value || "").trim())) msg = "Must be 9–18 digits";
+    }
+    setValidationErrors(prev => ({ ...prev, [field]: msg }));
+    return msg === "";
+  };
+
+  // Pre-submit validation for each step
+  const validateStep1 = () => {
+    let isValid = true;
+    const fields = ["panNumber", "gstNumber", "fssaiNumber"];
+    fields.forEach(f => {
+      const ok = validateField(f, businessDetails[f]);
+      if (!ok) isValid = false;
+    });
+    return isValid;
+  };
+
+  const validateStep3 = () => {
+    let isValid = true;
+    const fields = ["ifscCode", "accountNumber"];
+    fields.forEach(f => {
+      const ok = validateField(f, bankDetails[f]);
+      if (!ok) isValid = false;
+    });
+    return isValid;
+  };
+
+  const hasActiveErrors = (...fields) =>
+    fields.some(f => validationErrors[f]);
+
 
   // Form data for each step
   const [businessDetails, setBusinessDetails] = useState({
@@ -342,15 +397,18 @@ const VendorOnboarding = () => {
                   <input
                     type="text"
                     value={businessDetails.gstNumber}
-                    onChange={(e) =>
-                      setBusinessDetails({
-                        ...businessDetails,
-                        gstNumber: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-2 border rounded-lg"
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setBusinessDetails({ ...businessDetails, gstNumber: val });
+                      validateField("gstNumber", val);
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.gstNumber ? "border-red-500" : ""
+                      }`}
                     placeholder="22AAAAA0000A1Z5"
                   />
+                  {validationErrors.gstNumber && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.gstNumber}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -359,15 +417,19 @@ const VendorOnboarding = () => {
                   <input
                     type="text"
                     value={businessDetails.panNumber}
-                    onChange={(e) =>
-                      setBusinessDetails({
-                        ...businessDetails,
-                        panNumber: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="AAAAA0000A"
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setBusinessDetails({ ...businessDetails, panNumber: val });
+                      validateField("panNumber", val);
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.panNumber ? "border-red-500" : ""
+                      }`}
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
                   />
+                  {validationErrors.panNumber && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.panNumber}</p>
+                  )}
                 </div>
               </div>
 
@@ -378,22 +440,32 @@ const VendorOnboarding = () => {
                 <input
                   type="text"
                   value={businessDetails.fssaiNumber}
-                  onChange={(e) =>
-                    setBusinessDetails({
-                      ...businessDetails,
-                      fssaiNumber: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Enter FSSAI license number"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").slice(0, 14);
+                    setBusinessDetails({ ...businessDetails, fssaiNumber: val });
+                    validateField("fssaiNumber", val);
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg ${validationErrors.fssaiNumber ? "border-red-500" : ""
+                    }`}
+                  placeholder="14-digit FSSAI license number"
+                  maxLength={14}
                 />
+                {validationErrors.fssaiNumber && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.fssaiNumber}</p>
+                )}
               </div>
             </div>
 
             <button
-              onClick={() => handleStepSubmit(businessDetails)}
-              disabled={loading}
-              className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+              onClick={() => {
+                if (!validateStep1()) {
+                  setError("Please fix the highlighted errors before continuing.");
+                  return;
+                }
+                handleStepSubmit(businessDetails);
+              }}
+              disabled={loading || hasActiveErrors("panNumber", "gstNumber", "fssaiNumber")}
+              className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Saving..." : "Continue"}
               <ChevronRight className="w-5 h-5" />
@@ -555,15 +627,18 @@ const VendorOnboarding = () => {
                   <input
                     type="text"
                     value={bankDetails.accountNumber}
-                    onChange={(e) =>
-                      setBankDetails({
-                        ...bankDetails,
-                        accountNumber: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setBankDetails({ ...bankDetails, accountNumber: val });
+                      validateField("accountNumber", val);
+                    }}
                     required
-                    className="w-full px-4 py-2 border rounded-lg"
+                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.accountNumber ? "border-red-500" : ""
+                      }`}
                   />
+                  {validationErrors.accountNumber && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.accountNumber}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -572,15 +647,20 @@ const VendorOnboarding = () => {
                   <input
                     type="text"
                     value={bankDetails.ifscCode}
-                    onChange={(e) =>
-                      setBankDetails({
-                        ...bankDetails,
-                        ifscCode: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setBankDetails({ ...bankDetails, ifscCode: val });
+                      validateField("ifscCode", val);
+                    }}
                     required
-                    className="w-full px-4 py-2 border rounded-lg"
+                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.ifscCode ? "border-red-500" : ""
+                      }`}
+                    placeholder="ABCD0123456"
+                    maxLength={11}
                   />
+                  {validationErrors.ifscCode && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.ifscCode}</p>
+                  )}
                 </div>
               </div>
 
@@ -644,11 +724,20 @@ const VendorOnboarding = () => {
                 <ChevronLeft className="w-5 h-5" /> Back
               </button>
               <button
-                onClick={() => handleStepSubmit({ bankDetails })}
+                onClick={() => {
+                  if (!validateStep3()) {
+                    setError("Please fix the highlighted errors before continuing.");
+                    return;
+                  }
+                  handleStepSubmit({ bankDetails });
+                }}
                 disabled={
-                  loading || !bankDetails.accountNumber || !bankDetails.ifscCode
+                  loading ||
+                  !bankDetails.accountNumber ||
+                  !bankDetails.ifscCode ||
+                  hasActiveErrors("ifscCode", "accountNumber")
                 }
-                className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Saving..." : "Continue"}
                 <ChevronRight className="w-5 h-5" />
@@ -671,17 +760,15 @@ const VendorOnboarding = () => {
             <div className="flex items-center justify-center gap-4 bg-gray-100 rounded-lg p-2">
               <button
                 onClick={() => setBillingCycle("monthly")}
-                className={`px-4 py-2 rounded-lg transition ${
-                  billingCycle === "monthly" ? "bg-white shadow" : ""
-                }`}
+                className={`px-4 py-2 rounded-lg transition ${billingCycle === "monthly" ? "bg-white shadow" : ""
+                  }`}
               >
                 Monthly
               </button>
               <button
                 onClick={() => setBillingCycle("yearly")}
-                className={`px-4 py-2 rounded-lg transition ${
-                  billingCycle === "yearly" ? "bg-white shadow" : ""
-                }`}
+                className={`px-4 py-2 rounded-lg transition ${billingCycle === "yearly" ? "bg-white shadow" : ""
+                  }`}
               >
                 Yearly{" "}
                 <span className="text-green-600 text-sm">(Save 17%)</span>
@@ -703,11 +790,10 @@ const VendorOnboarding = () => {
                     <div
                       key={key}
                       onClick={() => setSelectedPlan(key)}
-                      className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/5"
-                          : "border-gray-200 hover:border-primary/50"
-                      }`}
+                      className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all ${isSelected
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-200 hover:border-primary/50"
+                        }`}
                     >
                       {plan.badge && (
                         <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-white text-xs rounded-full">
@@ -842,11 +928,10 @@ const VendorOnboarding = () => {
                               ?.click()
                           }
                           disabled={state?.uploading}
-                          className={`px-4 py-2 border rounded-lg flex items-center gap-2 ${
-                            state?.uploading
-                              ? "opacity-60 cursor-not-allowed"
-                              : "hover:bg-gray-50"
-                          }`}
+                          className={`px-4 py-2 border rounded-lg flex items-center gap-2 ${state?.uploading
+                            ? "opacity-60 cursor-not-allowed"
+                            : "hover:bg-gray-50"
+                            }`}
                         >
                           <Upload className="w-4 h-4" />
                           {state?.uploading
@@ -947,13 +1032,12 @@ const VendorOnboarding = () => {
               <React.Fragment key={step.id}>
                 <div className="flex flex-col items-center">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                      currentStep > step.id
-                        ? "bg-secondary text-surface"
-                        : currentStep === step.id
-                          ? "bg-accent text-primary"
-                          : "bg-secondary/10 text-text-secondary"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${currentStep > step.id
+                      ? "bg-secondary text-surface"
+                      : currentStep === step.id
+                        ? "bg-accent text-primary"
+                        : "bg-secondary/10 text-text-secondary"
+                      }`}
                   >
                     {currentStep > step.id ? (
                       <Check className="w-5 h-5" />
@@ -962,20 +1046,18 @@ const VendorOnboarding = () => {
                     )}
                   </div>
                   <span
-                    className={`text-xs mt-2 text-center hidden sm:block font-medium ${
-                      currentStep === step.id
-                        ? "text-accent"
-                        : "text-text-secondary"
-                    }`}
+                    className={`text-xs mt-2 text-center hidden sm:block font-medium ${currentStep === step.id
+                      ? "text-accent"
+                      : "text-text-secondary"
+                      }`}
                   >
                     {step.title}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-0.5 mx-3 rounded ${
-                      currentStep > step.id ? "bg-secondary" : "bg-secondary/10"
-                    }`}
+                    className={`flex-1 h-0.5 mx-3 rounded ${currentStep > step.id ? "bg-secondary" : "bg-secondary/10"
+                      }`}
                   />
                 )}
               </React.Fragment>

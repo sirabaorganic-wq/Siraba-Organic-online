@@ -7,6 +7,8 @@ const userSchema = mongoose.Schema(
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
     phone: { type: String },
+    isEmailVerified: { type: Boolean, default: false },
+    isPhoneVerified: { type: Boolean, default: false },
     altPhone: { type: String }, // Alternate phone number
     dob: { type: Date }, // Date of birth
     gender: { type: String, enum: ['Male', 'Female', 'Other'], default: 'Male' }, // Gender

@@ -16,6 +16,7 @@ const inquiryRoutes = require("./routes/inquiryRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const otpRoutes = require("./routes/otpRoutes");
 
 // Security middleware imports
 const {
@@ -157,6 +158,7 @@ app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/otp", otpRoutes);
 app.use("/api/b2b", require("./routes/b2bRoutes"));
 app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
