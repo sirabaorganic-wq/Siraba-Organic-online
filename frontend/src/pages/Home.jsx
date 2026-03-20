@@ -57,6 +57,7 @@ const Home = () => {
             organic ingredients from vendors who meet globally recognized
             organic standards.
           </p>
+          <p className="font-body text-white/90 text-base md:text-lg max-w-3xl mx-auto font-light leading-relaxed">The Marketplace for Globally Certified Organic Products</p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-6">
             <Link
               to="/shop"

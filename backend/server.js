@@ -42,6 +42,8 @@ const allowedOrigins = [
   "http://localhost:5000",
   "http://localhost:5001",
   "https://rad-kringle-188297.netlify.app",
+  "https://siraba-organic-online-n1efpiafw-sirabaorganic-wqs-projects.vercel.app",
+  "https://www.sirabaorganic.com",
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
