@@ -387,10 +387,10 @@ const OrganicCertificationGuide = () => {
               info@sirabaorganic.com
             </a>
             <a
-              href="tel:+918685836660"
+              href="tel:+918586836660"
               className="inline-flex items-center gap-2 border-2 border-white/60 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-white/10 transition-colors"
             >
-              +91-8685836660
+              +91-8586836660
             </a>
           </div>
           <p className="text-emerald-200 text-xs mt-5">

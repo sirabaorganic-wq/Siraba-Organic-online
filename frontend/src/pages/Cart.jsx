@@ -125,7 +125,7 @@ const Cart = () => {
                     {/* Cart Items List */}
                     <div className="lg:col-span-2 space-y-6">
                         {cartItems.map((item) => (
-                            <div key={item._id || item.id} className="bg-surface p-6 rounded-sm shadow-sm border border-secondary/10 flex gap-6 items-center">
+                            <div key={item.cartKey || item._id || item.id} className="bg-surface p-6 rounded-sm shadow-sm border border-secondary/10 flex gap-6 items-center">
                                 {/* Product Image */}
                                 <div className="w-24 h-24 bg-background p-2 rounded-sm flex-shrink-0 border border-secondary/5">
                                     <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
@@ -133,25 +133,30 @@ const Cart = () => {
 
                                 {/* Details */}
                                 <div className="flex-grow">
-                                    <div className="flex justify-between items-start mb-2">
+                                    <div className="flex justify-between items-start mb-1">
                                         <Link to={`/product/${item.slug}`} className="font-heading text-xl text-primary font-bold hover:text-accent transition-colors">
                                             {item.name}
                                         </Link>
                                         <button
-                                            onClick={() => removeFromCart(item._id || item.id)}
+                                            onClick={() => removeFromCart(item.cartKey || item._id || item.id)}
                                             className="text-text-secondary hover:text-red-500 transition-colors p-1"
                                             title="Remove Item"
                                         >
                                             <Trash2 size={18} />
                                         </button>
                                     </div>
+                                    {item.selectedOption?.label && (
+                                        <span className="inline-block text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full mb-1">
+                                            {item.selectedOption.label}
+                                        </span>
+                                    )}
                                     <p className="text-sm text-text-secondary mb-4">{item.category}</p>
 
                                     <div className="flex justify-between items-end">
                                         {/* Quantity Controls */}
                                         <div className="flex items-center border border-secondary/20 rounded-sm bg-background">
                                             <button
-                                                onClick={() => updateQuantity(item._id || item.id, -1)}
+                                                onClick={() => updateQuantity(item.cartKey || item._id || item.id, -1)}
                                                 className="p-2 hover:bg-secondary/10 transition-colors text-primary"
                                                 disabled={item.quantity <= 1}
                                             >
@@ -159,7 +164,7 @@ const Cart = () => {
                                             </button>
                                             <span className="w-10 text-center font-medium text-sm text-primary">{item.quantity}</span>
                                             <button
-                                                onClick={() => updateQuantity(item._id || item.id, 1)}
+                                                onClick={() => updateQuantity(item.cartKey || item._id || item.id, 1)}
                                                 className="p-2 hover:bg-secondary/10 transition-colors text-primary"
                                             >
                                                 <Plus size={16} />

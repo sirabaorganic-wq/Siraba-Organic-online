@@ -33,6 +33,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const [selectedOption, setSelectedOption] = useState(null);
 
   // Callback for when reviews are updated
   const handleReviewUpdate = (data) => {
@@ -49,6 +50,12 @@ const ProductDetails = () => {
       if (found) {
         setProduct(found);
         setActiveImage(found.image);
+        // Default to first option if product has options
+        if (found.options && found.options.length > 0) {
+          setSelectedOption(found.options[0]);
+        } else {
+          setSelectedOption(null);
+        }
         window.scrollTo(0, 0);
       }
     }
@@ -229,12 +236,41 @@ const ProductDetails = () => {
               </span>
             </div>
 
-            <div className="text-3xl font-bold text-primary mb-6">
-              {formatPrice(product.price)}
+            <div className="text-3xl font-bold text-primary mb-4">
+              {formatPrice(selectedOption?.price ?? product.price)}
               <span className="text-base font-normal text-text-secondary ml-2 line-through opacity-70">
-                {formatPrice(product.price * 1.2)}
+                {formatPrice((selectedOption?.price ?? product.price) * 1.2)}
               </span>
             </div>
+
+            {/* Weight / Size Option Selector */}
+            {product.options && product.options.length > 0 && (
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-3">
+                  Select Size
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {product.options.map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setSelectedOption(opt)}
+                      className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200 ${
+                        selectedOption?.label === opt.label
+                          ? 'border-primary bg-primary text-white shadow-md scale-105'
+                          : 'border-secondary/30 text-primary hover:border-primary hover:bg-primary/5'
+                      }`}
+                    >
+                      {opt.label}
+                      <span className={`ml-1.5 text-xs font-normal ${
+                        selectedOption?.label === opt.label ? 'text-white/80' : 'text-text-secondary'
+                      }`}>
+                        {formatPrice(opt.price)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className="text-text-secondary leading-relaxed mb-8 text-lg font-light">
               {product.description}
@@ -261,7 +297,7 @@ const ProductDetails = () => {
               </div>
               <button
                 className="flex-grow bg-primary text-surface py-3 px-8 text-sm font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 rounded-sm cursor-pointer"
-                onClick={() => addToCart(product, quantity)}
+                onClick={() => addToCart(product, quantity, selectedOption)}
               >
                 Add to Cart <ShoppingBag size={18} />
               </button>

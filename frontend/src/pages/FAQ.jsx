@@ -55,7 +55,7 @@ const faqs = [
   },
   {
     q: "How can customers contact Siraba Organic?",
-    a: "For customer support or queries, you can reach us at info@sirabaorganic.com or call +91-8685836660. We are always happy to assist.",
+    a: "For customer support or queries, you can reach us at info@sirabaorganic.com or call +91-8586836660. We are always happy to assist.",
   },
   {
     q: "Why are organic products sometimes more expensive?",
@@ -229,10 +229,10 @@ const FAQ = () => {
               info@sirabaorganic.com
             </a>
             <a
-              href="tel:+918685836660"
+              href="tel:+918586836660"
               className="inline-flex items-center gap-2 border-2 border-emerald-200 text-emerald-700 px-6 py-3 rounded-xl text-sm font-bold hover:bg-emerald-50 transition-colors"
             >
-              +91-8685836660
+              +91-8586836660
             </a>
           </div>
         </div>

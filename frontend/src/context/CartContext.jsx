@@ -22,12 +22,9 @@ export const CartProvider = ({ children }) => {
             if (user) {
                 try {
                     const { data } = await client.get('/cart');
-                    // If DB has items, use them. If DB empty but local has items, maybe sync local to DB?
-                    // For simplicity: DB wins if it has items, otherwise keep local (and we'll sync next).
                     if (data && data.length > 0) {
                         setCartItems(data);
                     } else if (cartItems.length > 0) {
-                        // User logged in with items in local cart -> sync to DB
                         syncCartToDB(cartItems);
                     }
                 } catch (error) {
@@ -53,50 +50,53 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    const addToCart = (product, quantity = 1) => {
+    /**
+     * Generate a unique cart key for a product + selected option combination.
+     * This allows the same product in different sizes to coexist as separate cart items.
+     */
+    const getCartKey = (product, selectedOption) => {
+        const id = product._id || product.id;
+        const optionLabel = selectedOption?.label || '__default__';
+        return `${id}::${optionLabel}`;
+    };
+
+    /**
+     * addToCart(product, quantity, selectedOption)
+     *
+     * selectedOption: { label: "250g", price: 449 }  OR undefined
+     * If a product has options, the price used is selectedOption.price (if provided);
+     * otherwise it falls back to product.price.
+     */
+    const addToCart = (product, quantity = 1, selectedOption = null) => {
+        // Resolve the effective price for this cart item
+        const effectivePrice = selectedOption?.price ?? product.price;
+
         setCartItems((prevItems) => {
-            // Get the unique identifier for the product
-            const getProductId = (item) => item._id || item.id;
-            const productId = getProductId(product);
+            const cartKey = getCartKey(product, selectedOption);
 
-            // Debug logging
-            console.log('Adding to cart:', {
-                productName: product.name,
-                productId: productId,
-                quantity: quantity,
-                currentCart: prevItems.map(item => ({
-                    name: item.name,
-                    id: getProductId(item)
-                }))
-            });
-
-            // Check if this exact product already exists in cart
-            const existingItemIndex = prevItems.findIndex((item) => {
-                const itemId = getProductId(item);
-                return itemId === productId;
-            });
+            const existingIndex = prevItems.findIndex((item) => item.cartKey === cartKey);
 
             let newItems;
 
-            if (existingItemIndex !== -1) {
-                // Product exists - update quantity
-                console.log('Product exists in cart, updating quantity');
+            if (existingIndex !== -1) {
+                // Same product + same option → just increase quantity
                 newItems = prevItems.map((item, index) =>
-                    index === existingItemIndex
+                    index === existingIndex
                         ? { ...item, quantity: item.quantity + quantity }
                         : item
                 );
             } else {
-                // New product - add to cart
-                console.log('New product, adding to cart');
+                // New cart entry
                 newItems = [
                     ...prevItems,
                     {
                         ...product,
-                        quantity,
-                        // Ensure we have a valid ID
                         _id: product._id || product.id,
-                        id: product.id || product._id
+                        id: product.id || product._id,
+                        price: effectivePrice,
+                        quantity,
+                        cartKey,
+                        selectedOption: selectedOption || null,
                     }
                 ];
             }
@@ -107,18 +107,22 @@ export const CartProvider = ({ children }) => {
         setIsCartOpen(true);
     };
 
-    const removeFromCart = (productId) => {
+    const removeFromCart = (cartKey) => {
         setCartItems((prevItems) => {
-            const newItems = prevItems.filter((item) => (item._id || item.id) !== productId);
+            // Support both old-style _id keys and new cartKey
+            const newItems = prevItems.filter(
+                (item) => item.cartKey !== cartKey && (item._id || item.id) !== cartKey
+            );
             syncCartToDB(newItems);
             return newItems;
         });
     };
 
-    const updateQuantity = (productId, delta) => {
+    const updateQuantity = (cartKey, delta) => {
         setCartItems((prevItems) => {
             const newItems = prevItems.map((item) => {
-                if ((item._id || item.id) === productId) {
+                const itemKey = item.cartKey || item._id || item.id;
+                if (itemKey === cartKey) {
                     const newQuantity = Math.max(1, item.quantity + delta);
                     return { ...item, quantity: newQuantity };
                 }
@@ -151,7 +155,8 @@ export const CartProvider = ({ children }) => {
         getCartCount,
         clearCart,
         isCartOpen,
-        setIsCartOpen
+        setIsCartOpen,
+        getCartKey,
     };
 
     return (

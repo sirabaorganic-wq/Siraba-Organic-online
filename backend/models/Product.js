@@ -45,6 +45,11 @@ const productSchema = mongoose.Schema(
     reviews: [reviewSchema],
     features: [String],
     ingredients: { type: String },
+    // Weight / size variants
+    options: [{
+      label: { type: String },  // e.g. "100g", "250g", "500g", "1kg"
+      price: { type: Number },  // price for this variant
+    }],
 
     // Vendor fields
     vendor: {

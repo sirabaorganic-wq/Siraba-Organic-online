@@ -512,11 +512,30 @@ const Shop = () => {
                       )}
 
                       <div className="mt-auto pt-4 border-t border-gray-100">
+                        {/* Options badge */}
+                        {product.options && product.options.length > 0 && (
+                          <div className="flex gap-1 flex-wrap mb-2">
+                            {product.options.map((opt) => (
+                              <span
+                                key={opt.label}
+                                className="text-[10px] font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full"
+                              >
+                                {opt.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <span className="text-2xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-4 block">
-                          {formatPrice(product.price)}
+                          {product.options && product.options.length > 0
+                            ? `From ${formatPrice(product.options[0].price)}`
+                            : formatPrice(product.price)}
                         </span>
                         <button
-                          onClick={() => addToCart(product)}
+                          onClick={() => addToCart(
+                            product,
+                            1,
+                            product.options && product.options.length > 0 ? product.options[0] : null
+                          )}
                           className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-3.5 text-sm font-bold uppercase tracking-wider hover:from-emerald-700 hover:to-green-700 transition-all duration-300 flex items-center justify-center gap-2 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105"
                         >
                           Add to Cart <ShoppingBag size={18} />

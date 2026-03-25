@@ -1,5 +1,6 @@
-import SaffronImg from '../assets/Saffron.png';
-import HingImg from '../assets/Hing.png';
+import SaffronImg from '../assets/saffron_box_new.png';
+import HingImg from '../assets/hing_jar_new.png';
+import TurmericImg from '../assets/turmeric_powder_new.png';
 import Bg1 from '../assets/bgimage1.png';
 import Bg2 from '../assets/bgimage2.png';
 
@@ -76,7 +77,7 @@ export const products = [
         fullDescription: "Our Organic Turmeric Powder is made from heritage variety turmeric roots known for their high curcumin content. Grown without synthetic pesticides, the roots are sun-dried and stone-ground to preserve their essential oils and medicinal properties. Adds a brilliant golden hue and warm flavor to your food while boosting immunity.",
         price: 250,
         currency: "₹",
-        image: SaffronImg,
+        image: TurmericImg,
         rating: 4.6,
         reviews: 110,
         tag: "Essential",
