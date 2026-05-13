@@ -158,7 +158,6 @@ const PrivacyPolicy = () => {
               Legal Business Information
             </h2>
             <p><span className="font-medium">Trade Name:</span> Siraba Organic</p>
-            <p><span className="font-medium">Legal Name:</span> Rajesh Kumar Thakur</p>
             <p><span className="font-medium">Business Type:</span> Proprietorship</p>
             <p><span className="font-medium">GSTIN:</span> 06ACMPT6127H1ZA</p>
             <p className="mt-3 font-medium">Registered Office:</p>

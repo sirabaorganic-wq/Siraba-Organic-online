@@ -174,6 +174,15 @@ const vendorSchema = mongoose.Schema(
       postalCode: { type: String, required: true },
       country: { type: String, default: "India" },
     },
+    
+    // Shiprocket Setup
+    shiprocket_pickup_code: { type: String },
+
+    // Razorpay Route — for automatic split payments
+    // Vendors must be onboarded as Razorpay Route Linked Accounts.
+    // Value format: "acc_XXXXXXXXXXXXXXXXXX"
+    // Set this after vendor completes Route onboarding via Razorpay Dashboard.
+    razorpay_linked_account_id: { type: String, sparse: true },
 
     // Legal Info
     gstNumber: { type: String },

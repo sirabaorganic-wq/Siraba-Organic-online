@@ -57,7 +57,7 @@ const Home = () => {
             organic ingredients from vendors who meet globally recognized
             organic standards.
           </p>
-          <p className="font-body text-white/90 text-base md:text-lg max-w-3xl mx-auto font-light leading-relaxed">The Marketplace for Globally Certified Organic Products</p>
+          <p className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto">The Marketplace for Globally Certified Organic Products</p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-6">
             <Link
               to="/shop"
@@ -256,11 +256,16 @@ const Home = () => {
                       alt={product.name}
                       className="w-full h-full object-contain p-4 md:p-6 transform group-hover:scale-103 transition-transform duration-400"
                     />
-                    {product.isPremium && (
-                      <span className="absolute top-4 right-4 bg-accent text-primary text-xs font-bold uppercase px-3 py-1 rounded-full shadow-sm">
-                        Premium
+                    <div className="absolute top-4 left-4 right-4 flex justify-between z-10 pointer-events-none">
+                      <span className="bg-red-500 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-sm pointer-events-auto">
+                        PROTOTYPE
                       </span>
-                    )}
+                      {product.isPremium && (
+                        <span className="bg-accent text-primary text-xs font-bold uppercase px-3 py-1 rounded-full shadow-sm pointer-events-auto">
+                          Premium
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="p-3 md:p-4 text-center">
                     <h3 className="font-heading text-base md:text-xl text-primary font-semibold group-hover:text-accent transition-colors truncate">

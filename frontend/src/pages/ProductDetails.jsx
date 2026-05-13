@@ -164,9 +164,16 @@ const ProductDetails = () => {
           {/* Product Image Gallery */}
           <div className="space-y-4">
             <div className="bg-surface border border-secondary/10 rounded-sm overflow-hidden aspect-square flex items-center justify-center p-8 relative group">
-              <span className="absolute top-4 left-4 bg-accent text-primary text-xs font-bold px-3 py-1 uppercase tracking-widest z-10">
-                {product.tag}
-              </span>
+              <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                {product.tag && (
+                  <span className="bg-accent text-primary text-xs font-bold px-3 py-1 uppercase tracking-widest">
+                    {product.tag}
+                  </span>
+                )}
+                <span className="bg-red-500 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest rounded-sm text-center">
+                  PROTOTYPE
+                </span>
+              </div>
               <img
                 src={activeImage || product.image}
                 alt={product.name}
@@ -424,6 +431,11 @@ const ProductDetails = () => {
                     className="w-full h-full object-contain p-6 transform group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
+
+                  {/* Prototype Badge */}
+                  <span className="absolute top-3 left-3 z-20 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                    PROTOTYPE
+                  </span>
 
                   {/* Wishlist Button */}
                   <button

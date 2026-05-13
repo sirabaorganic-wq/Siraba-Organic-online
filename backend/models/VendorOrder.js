@@ -39,10 +39,13 @@ const vendorOrderSchema = mongoose.Schema(
         "pending",
         "confirmed",
         "processing",
+        "partially_shipped",
         "shipped",
         "delivered",
         "cancelled",
         "returned",
+        "partially_failed",
+        "shipment_failed"
       ],
       default: "pending",
     },
@@ -54,6 +57,12 @@ const vendorOrderSchema = mongoose.Schema(
     deliveredAt: { type: Date },
     shiprocketOrderId: { type: String },
     shipmentId: { type: String },
+    awbCode: { type: String },
+    courierId: { type: String },
+    courierName: { type: String },
+    shiprocketStatus: { type: String },
+    shippingRoutingCode: { type: String },
+    labelUrl: { type: String },
 
     // Customer info (copied for vendor reference)
     shippingAddress: {

@@ -22,7 +22,7 @@ const orderSchema = mongoose.Schema(
       postalCode: { type: String },
       country: { type: String },
     },
-    paymentMethod: { type: String, default: "COD" }, // Default for now
+    paymentMethod: { type: String, default: "COD" }, // COD, Online
     itemsPrice: { type: Number, required: true, default: 0.0 },
     taxPrice: { type: Number, required: true, default: 0.0 },
     shippingPrice: { type: Number, required: true, default: 0.0 },
@@ -32,6 +32,41 @@ const orderSchema = mongoose.Schema(
     isDelivered: { type: Boolean, required: true, default: false },
     deliveredAt: { type: Date },
     status: { type: String, default: "Pending" }, // Pending, Approved, Shipped, Delivered
+
+    // ── Razorpay Payment State Machine ─────────────────────────────────────
+    // Tracks the payment lifecycle independently of order fulfillment status.
+    // 'not_applicable' = COD orders (no online payment required)
+    paymentStatus: {
+      type: String,
+      enum: [
+        'not_applicable',   // COD orders
+        'created',          // Razorpay order created, awaiting payment
+        'authorized',       // Payment authorized but not captured
+        'captured',         // Payment captured & confirmed ✓
+        'failed',           // Payment failed ✗
+        'refunded',         // Fully refunded
+        'partially_refunded', // Partially refunded
+      ],
+      default: 'not_applicable',
+      index: true,
+    },
+    // Cross-reference to Razorpay order (used for quick lookup from webhook)
+    razorpay_order_id: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    // Payment result details stored for audit trail
+    paymentResult: {
+      id: { type: String },          // razorpay_payment_id
+      status: { type: String },
+      update_time: { type: String },
+      email_address: { type: String },
+    },
+    // Auto-expire unpaid online orders after 30 minutes
+    expiresAt: {
+      type: Date,
+    },
     couponCode: { type: String },
     discountAmount: { type: Number, default: 0.0 },
     returnStatus: {
@@ -95,5 +130,14 @@ orderSchema.index({ isDelivered: 1 });
 
 // 8. Refund status
 orderSchema.index({ isRefunded: 1 });
+
+// 9. Payment state machine queries
+orderSchema.index({ paymentStatus: 1, createdAt: -1 });
+
+// 10. Razorpay order ID cross-lookup (for webhooks)
+orderSchema.index({ razorpay_order_id: 1 }, { sparse: true });
+
+// 11. Expiry queries: find unpaid online orders to expire
+orderSchema.index({ expiresAt: 1, paymentStatus: 1 }, { sparse: true });
 
 module.exports = mongoose.model("Order", orderSchema);

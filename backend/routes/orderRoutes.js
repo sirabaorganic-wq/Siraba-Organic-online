@@ -6,6 +6,7 @@ const VendorOrder = require("../models/VendorOrder");
 const Vendor = require("../models/Vendor");
 const { protect, admin } = require("../middleware/authMiddleware");
 const { invalidateCache } = require("../config/cache");
+const { enqueueShipment } = require("../jobs/shiprocketQueue");
 
 // Helper function to get commission rate based on vendor's plan
 const getCommissionRate = (plan) => {
@@ -230,6 +231,15 @@ router.post("/", protect, async (req, res) => {
       // Emit vendor order event
       if (req.io) {
         req.io.emit(`vendor-new-order-${vendorId}`, vendorOrder);
+      }
+
+      // Shiprocket: Enqueue shipment if it's COD (Prepaid orders enqueue after payment verif)
+      if (paymentMethod === 'COD') {
+        try {
+          await enqueueShipment(vendorOrder._id, createdOrder._id, vendorId);
+        } catch (queueErr) {
+          console.error("Failed to enqueue COD Shiprocket Job:", queueErr);
+        }
       }
     }
 

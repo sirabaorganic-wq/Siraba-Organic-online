@@ -1,84 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const Order = require('../models/Order');
-const { protect } = require('../middleware/authMiddleware');
-const paymentService = require('../services/paymentService');
+const { protect, admin, apiLimiter } = require('../middleware/authMiddleware'); // Wait, apiLimiter is in securityMiddleware usually. 
+// We will import it from securityMiddleware to be accurate based on previous check
+const { apiLimiter: apiRateLimit } = require('../middleware/securityMiddleware');
+const paymentController = require('../controllers/paymentController');
+
+// Define a stricter rate limiter specifically for creating payments
+const rateLimit = require('express-rate-limit');
+const paymentLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // 10 payment initiation requests per minute per IP
+    message: { message: "Too many payment attempts, please try again after a minute." }
+});
 
 // @desc    Create Razorpay Order
 // @route   POST /api/payment/create-order
 // @access  Private
-router.post('/create-order', protect, async (req, res) => {
-    try {
-        const { amount, receipt } = req.body;
-        const order = await paymentService.createOrder(amount, receipt);
-        res.json(order);
-    } catch (error) {
-        console.error("Razorpay Error:", error);
-        res.status(500).json({ message: "Payment creation failed", error: error.message });
-    }
-});
+router.post('/create-order', protect, paymentLimiter, paymentController.createOrder);
 
 // @desc    Verify Razorpay Payment Signature
 // @route   POST /api/payment/verify
 // @access  Private
-router.post('/verify', protect, async (req, res) => {
-    try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } = req.body;
+router.post('/verify', protect, paymentController.verifyPayment);
 
-        const isValid = paymentService.verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+// @desc    Get Payment Status by Order ID
+// @route   GET /api/payment/status/:orderId
+// @access  Private
+router.get('/status/:orderId', protect, paymentController.getPaymentStatus);
 
-        if (isValid) {
-            // Payment Verified
-
-            // Update Order Status in Database
-            const order = await Order.findById(order_id);
-            if (order) {
-                order.isPaid = true;
-                order.paidAt = Date.now();
-
-                // Add payment details
-                order.paymentResult = {
-                    id: razorpay_payment_id,
-                    status: 'completed',
-                    update_time: Date.now(),
-                    email_address: req.user.email,
-                };
-
-                // If payment was default COD, change it
-                if (order.paymentMethod === 'COD') {
-                    order.paymentMethod = 'Online';
-                }
-
-                order.status = 'Pending Vendor Approval'; // Set initial status as per workflow
-
-                await order.save();
-
-                // Also update Vendor Orders if they exist (though usually they are created after payment success in some flows, 
-                // but here Order is created first then Paid)
-                const VendorOrder = require('../models/VendorOrder');
-                // We might need to update status of vendor orders too if they were created in 'pending payment' state
-                // Based on previous orderRoutes.js code, the order is created first. 
-                // Assuming VendorOrders are created at checkout time or post-payment. 
-                // If they were created at 'places order' step, we update them here.
-
-                const vendorOrders = await VendorOrder.find({ order: order._id });
-                for (const vo of vendorOrders) {
-                    vo.status = 'pending'; // Ensure they are pending approval
-                    await vo.save();
-                }
-
-                res.json({ message: "Payment successful", orderId: order._id });
-            } else {
-                res.status(404).json({ message: "Order not found" });
-            }
-
-        } else {
-            res.status(400).json({ message: "Invalid signature" });
-        }
-    } catch (error) {
-        console.error("Payment Verification Error:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-});
+// Note: Refund route can stay in refundRoutes.js or be moved here. 
+// For now, keeping the interface clean based on plan.
 
 module.exports = router;

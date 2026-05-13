@@ -10,12 +10,13 @@ const AdminLogin = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (login(username, password)) {
+        const result = await login(username, password);
+        if (result.success) {
             navigate('/admin/dashboard');
         } else {
-            setError('Invalid credentials');
+            setError(result.message || 'Invalid credentials');
         }
     };
 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const refundLogSchema = mongoose.Schema({
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
-    vendorOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'VendorOrder' }, // Optional if full order refund
+    vendorOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'VendorOrder' },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
     initiatedBy: {
@@ -10,16 +10,42 @@ const refundLogSchema = mongoose.Schema({
         enum: ['User', 'Vendor', 'Admin'],
         required: true
     },
-    actorId: { type: mongoose.Schema.Types.ObjectId, required: true }, // ID of User/Vendor/Admin
+    actorId: { type: mongoose.Schema.Types.ObjectId, required: true },
 
-    amount: { type: Number, required: true }, // Product + Tax (Refunded Amount)
-    deliveryCharge: { type: Number, required: true, default: 0 }, // Non-refundable Delivery Charge
-    totalRefundableAmount: { type: Number, required: true }, // Should match amount
+    amount: { type: Number, required: true },        // Refunded amount in INR
+    deliveryCharge: { type: Number, required: true, default: 0 },
+    totalRefundableAmount: { type: Number, required: true },
 
     reason: { type: String },
+
+    // ── Razorpay Refund Fields ─────────────────────────────────────────────
+    // Populated after calling razorpay.payments.refund()
+    razorpay_refund_id: {
+        type: String,
+        unique: true,
+        sparse: true, // null until refund is initiated on Razorpay
+        index: true,
+    },
+    razorpay_payment_id: {
+        type: String,
+        index: true,
+    },
+    // Refund speed: 'normal' (5-7 days) or 'optimum' (instant if eligible)
+    speed: {
+        type: String,
+        enum: ['normal', 'optimum'],
+        default: 'normal',
+    },
+
+    // Status lifecycle:
+    // initiated  → Razorpay refund API called, awaiting processing
+    // Processed  → Webhook refund.processed received
+    // Failed     → Refund failed on Razorpay side
+    // Completed  → Legacy status (wallet refunds)
+    // Pending    → Legacy status
     status: {
         type: String,
-        enum: ['Pending', 'Completed', 'Failed'],
+        enum: ['Pending', 'Completed', 'Failed', 'initiated', 'Processed'],
         default: 'Completed'
     },
 

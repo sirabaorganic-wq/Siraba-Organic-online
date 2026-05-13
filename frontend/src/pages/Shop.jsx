@@ -411,9 +411,16 @@ const Shop = () => {
                       {/* Gradient overlay on hover */}
                       <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                      <span className="absolute top-4 left-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wider z-10 shadow-lg">
-                        {product.tag}
-                      </span>
+                      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                        {product.tag && (
+                          <span className="bg-gradient-to-r from-emerald-600 to-green-600 text-white text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wider shadow-lg">
+                            {product.tag}
+                          </span>
+                        )}
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg border border-red-600 text-center">
+                          PROTOTYPE
+                        </span>
+                      </div>
                       <button
                         onClick={(e) => {
                           e.preventDefault();

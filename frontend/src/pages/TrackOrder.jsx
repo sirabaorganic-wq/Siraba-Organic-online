@@ -218,6 +218,9 @@ const TrackOrder = () => {
                                         </div>
                                         <div className="flex-grow min-w-0">
                                             <p className="font-bold text-primary text-sm truncate">{item.name}</p>
+                                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider w-max mt-1 inline-block">
+                                                PROTOTYPE
+                                            </span>
                                             <p className="text-xs text-text-secondary mt-1">
                                                 Qty: {item.quantity} × <span className="font-medium">₹{(item.price || 0).toFixed(2)}</span>
                                             </p>

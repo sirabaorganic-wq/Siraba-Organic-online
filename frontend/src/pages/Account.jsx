@@ -47,6 +47,9 @@ const WishlistGrid = () => {
                     </div>
                     <div className="p-4">
                         <h4 className="font-bold text-primary truncate">{item.name}</h4>
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider w-max mt-1 inline-block">
+                            PROTOTYPE
+                        </span>
                         <p className="text-accent font-bold mt-1">{formatPrice(item.price)}</p>
                         <Link to={`/product/${item._id}`} className="block text-center mt-3 text-xs font-bold uppercase tracking-wider text-text-secondary border border-secondary/20 py-2 rounded-sm hover:border-primary hover:text-primary transition-colors">
                             View Product
@@ -799,6 +802,9 @@ const Account = () => {
                                                                         {firstItem?.name || 'Order'}
                                                                         {order.orderItems?.length > 1 && <span className="text-text-secondary font-normal text-xs ml-1">+{order.orderItems.length - 1} more</span>}
                                                                     </h4>
+                                                                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider w-max mt-1 inline-block">
+                                                                        PROTOTYPE
+                                                                    </span>
                                                                     <div className="flex items-center gap-2 mt-1">
                                                                         <span className="text-xs font-mono text-text-secondary bg-secondary/5 px-1.5 py-0.5 rounded-sm">#{order._id.slice(-6).toUpperCase()}</span>
                                                                         <span className="text-xs text-text-secondary">• {new Date(order.createdAt).toLocaleDateString()}</span>

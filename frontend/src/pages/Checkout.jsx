@@ -175,7 +175,7 @@ const Checkout = () => {
     const subtotal = getCartTotal();
     const discountedSubtotal = Math.max(0, subtotal - discount.amount);
     const taxPrice = discountedSubtotal * 0.18; // 18% Tax
-    const shippingPrice = 499;
+    const shippingPrice = 0; // TEMPORARILY 0 FOR TESTING
     const totalPrice = discountedSubtotal + taxPrice + shippingPrice;
 
     // Base Order Data
@@ -202,23 +202,20 @@ const Checkout = () => {
       } else {
         // ONLINE PAYMENT (Razorpay)
 
-        // 1. Create Order in DB first (or you can create Razorpay order first, but creating DB order is safer to track)
-        // Here we will create DB order first with status 'Pending' and isPaid 'false'
-        const newOrder = await createOrder(orderData);
-
-        // 2. Create Razorpay Order from Backend
+        // 1. Create Razorpay Order from Backend without a DB order yet
+        const tempReceipt = `temp_${Date.now()}`;
         const { data: razorpayOrder } = await api.post(
           "/payment/create-order",
           {
             amount: totalPrice,
             currency: "INR",
-            receipt: newOrder._id,
+            receipt: tempReceipt,
           },
         );
 
         // 3. Open Razorpay Options
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_1234567890", // Fallback to test key if env not set
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
           amount: razorpayOrder.amount,
           currency: razorpayOrder.currency,
           name: "Siraba Organic",
@@ -227,7 +224,10 @@ const Checkout = () => {
           order_id: razorpayOrder.id,
           handler: async function (response) {
             try {
-              // 4. Verify Payment on Backend
+              // 4. Create DB Order ONLY after payment succeeds
+              const newOrder = await createOrder(orderData);
+
+              // 5. Verify Payment on Backend
               const verifyRes = await api.post("/payment/verify", {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -245,6 +245,8 @@ const Checkout = () => {
               alert(
                 "Payment verification failed. Please contact support if money was deducted.",
               );
+              // Navigate to a dedicated failed/retry page if available
+              navigate("/orders"); 
             }
           },
           prefill: {
@@ -258,11 +260,19 @@ const Checkout = () => {
           theme: {
             color: "#D4AF37", // Gold/Amber color matching theme
           },
+          modal: {
+            ondismiss: function() {
+              // Handle the case where the user closes the payment window
+              console.log("Payment modal dismissed");
+              alert("Payment was not completed. Your order has not been placed.");
+              // Stay on checkout page or go to cart
+            }
+          }
         };
 
         const rzp1 = new window.Razorpay(options);
         rzp1.on("payment.failed", function (response) {
-          alert(`Payment Failed: ${response.error.description}`);
+          alert(`Payment Failed: ${response.error.description || "Unknown error"}`);
           console.error(response.error);
         });
 
@@ -282,7 +292,7 @@ const Checkout = () => {
   const subtotal = getCartTotal();
   const discountedSubtotal = Math.max(0, subtotal - discount.amount);
   const taxPrice = discountedSubtotal * 0.18;
-  const shippingPrice = 499;
+  const shippingPrice = 0; // TEMPORARILY 0 FOR TESTING
   const totalPrice = discountedSubtotal + taxPrice + shippingPrice;
 
   return (

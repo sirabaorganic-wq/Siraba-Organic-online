@@ -17,6 +17,9 @@ const couponRoutes = require("./routes/couponRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const otpRoutes = require("./routes/otpRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const razorpayWebhookRoutes = require("./routes/razorpayWebhookRoutes");
+const shiprocketRoutes = require("./routes/shiprocketRoutes");
 
 // Security middleware imports
 const {
@@ -76,6 +79,12 @@ app.use(hidePoweredBy);
 
 // Enable CORS
 app.use(cors(corsOptions));
+
+// ==================== WEBHOOK ROUTES (Requires Raw Body) ====================
+// CRITICAL: Webhooks must be mounted BEFORE express.json() is called 
+// so that the raw body middleware can preserve the payload for signature validation.
+app.use("/webhooks/razorpay", razorpayWebhookRoutes);
+app.use("/api/shiprocket", shiprocketRoutes);
 
 // Body parser with size limits to prevent DoS
 app.use(express.json({ limit: "10mb" }));
@@ -162,6 +171,7 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/b2b", require("./routes/b2bRoutes"));
 app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
@@ -176,6 +186,7 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/refunds", require("./routes/refundRoutes"));
 app.use("/api/gst", require("./routes/publicGSTRoutes"));
 app.use("/api/cache", require("./routes/cacheRoutes"));
+app.use("/api/shiprocket", require("./routes/shiprocketRoutes"));
 
 app.get("/", (req, res) => {
   res.send("API is running...");

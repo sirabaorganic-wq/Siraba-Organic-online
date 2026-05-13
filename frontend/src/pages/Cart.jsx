@@ -111,7 +111,7 @@ const Cart = () => {
     }
 
     const currentTotal = getCartTotal();
-    const shippingPrice = 499;
+    const shippingPrice = 0; // TEMPORARILY 0 FOR TESTING
     const finalTotal = Math.max(0, currentTotal - discount.amount) + shippingPrice;
 
     return (
@@ -134,9 +134,14 @@ const Cart = () => {
                                 {/* Details */}
                                 <div className="flex-grow">
                                     <div className="flex justify-between items-start mb-1">
-                                        <Link to={`/product/${item.slug}`} className="font-heading text-xl text-primary font-bold hover:text-accent transition-colors">
-                                            {item.name}
-                                        </Link>
+                                        <div className="flex flex-col">
+                                            <Link to={`/product/${item.slug}`} className="font-heading text-xl text-primary font-bold hover:text-accent transition-colors">
+                                                {item.name}
+                                            </Link>
+                                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider w-max mt-1">
+                                                PROTOTYPE
+                                            </span>
+                                        </div>
                                         <button
                                             onClick={() => removeFromCart(item.cartKey || item._id || item.id)}
                                             className="text-text-secondary hover:text-red-500 transition-colors p-1"
@@ -209,7 +214,7 @@ const Cart = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Shipping</span>
-                                    <span className="text-primary">{formatPrice(499)}</span>
+                                    <span className="text-primary">{formatPrice(shippingPrice)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Tax (Included)</span>
