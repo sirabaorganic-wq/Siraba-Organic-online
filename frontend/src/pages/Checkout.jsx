@@ -14,6 +14,10 @@ import {
   Truck,
   AlertCircle,
   ChevronLeft,
+  Loader2,
+  Package,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 const Checkout = () => {
@@ -42,6 +46,12 @@ const Checkout = () => {
     country: "India",
     phone: "",
   });
+
+  // Shipping Estimation State
+  const [shippingEstimate, setShippingEstimate] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState("");
+  const [showShippingBreakdown, setShowShippingBreakdown] = useState(false);
 
   // GST State
   const [gstClaimed, setGstClaimed] = useState(false);
@@ -85,6 +95,39 @@ const Checkout = () => {
       setIsAddingNewAddress(true); // Force add address if none exist
     }
   }, [user]);
+
+  // Fetch shipping estimate when address or payment method changes
+  useEffect(() => {
+    const fetchShippingEstimate = async () => {
+      if (!user?.addresses || user.addresses.length === 0) return;
+      const selectedAddress = user.addresses[selectedAddressIndex];
+      if (!selectedAddress?.postalCode) return;
+      if (cartItems.length === 0) return;
+
+      setShippingLoading(true);
+      setShippingError("");
+      try {
+        const { data } = await api.post("/shipping/estimate", {
+          cartItems: cartItems.map((item) => ({
+            product: item._id || item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          deliveryPincode: selectedAddress.postalCode,
+          paymentMethod,
+        });
+        setShippingEstimate(data);
+      } catch (err) {
+        console.error("Shipping estimate failed:", err);
+        setShippingError("Could not estimate shipping. A flat rate will apply.");
+        setShippingEstimate(null);
+      } finally {
+        setShippingLoading(false);
+      }
+    };
+
+    fetchShippingEstimate();
+  }, [selectedAddressIndex, paymentMethod, user?.addresses, cartItems]);
 
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
@@ -175,7 +218,7 @@ const Checkout = () => {
     const subtotal = getCartTotal();
     const discountedSubtotal = Math.max(0, subtotal - discount.amount);
     const taxPrice = discountedSubtotal * 0.18; // 18% Tax
-    const shippingPrice = 0; // TEMPORARILY 0 FOR TESTING
+    const shippingPrice = shippingEstimate?.totalShipping || 0;
     const totalPrice = discountedSubtotal + taxPrice + shippingPrice;
 
     // Base Order Data
@@ -292,7 +335,7 @@ const Checkout = () => {
   const subtotal = getCartTotal();
   const discountedSubtotal = Math.max(0, subtotal - discount.amount);
   const taxPrice = discountedSubtotal * 0.18;
-  const shippingPrice = 0; // TEMPORARILY 0 FOR TESTING
+  const shippingPrice = shippingEstimate?.totalShipping || 0;
   const totalPrice = discountedSubtotal + taxPrice + shippingPrice;
 
   return (
@@ -716,11 +759,78 @@ const Checkout = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-text-secondary">
-                  <span>Shipping</span>
+                  <span className="flex items-center gap-1">
+                    <Truck size={14} /> Shipping
+                  </span>
                   <span>
-                    {shippingPrice === 0 ? "Free" : formatPrice(shippingPrice)}
+                    {shippingLoading ? (
+                      <span className="flex items-center gap-1 text-xs text-secondary">
+                        <Loader2 size={12} className="animate-spin" /> Calculating...
+                      </span>
+                    ) : shippingEstimate?.isFreeShipping ? (
+                      <span className="text-green-600 font-semibold">FREE</span>
+                    ) : shippingPrice > 0 ? (
+                      formatPrice(shippingPrice)
+                    ) : (
+                      "Free"
+                    )}
                   </span>
                 </div>
+                {/* Vendor shipping breakdown */}
+                {shippingEstimate && !shippingEstimate.isFreeShipping && shippingEstimate.vendorBreakdown?.length > 0 && (
+                  <div className="ml-2">
+                    <button
+                      onClick={() => setShowShippingBreakdown(!showShippingBreakdown)}
+                      className="text-[10px] text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+                    >
+                      {showShippingBreakdown ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                      {showShippingBreakdown ? 'Hide' : 'View'} breakdown
+                    </button>
+                    {showShippingBreakdown && (
+                      <div className="mt-1 space-y-1 animate-fade-in">
+                        {shippingEstimate.vendorBreakdown.map((v, i) => (
+                          <div key={i} className="flex justify-between text-[11px] text-text-secondary pl-2 border-l-2 border-secondary/10">
+                            <span className="flex items-center gap-1">
+                              <Package size={10} />
+                              {v.vendorName}
+                              <span className="text-[9px] text-secondary">({v.courierName}, {v.estimatedDays})</span>
+                            </span>
+                            <span>{formatPrice(v.subtotal)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* COD Surcharge */}
+                {shippingEstimate?.codSurcharge > 0 && (
+                  <div className="flex justify-between text-text-secondary text-xs">
+                    <span className="text-amber-600">COD Handling Fee</span>
+                    <span className="text-amber-600">{formatPrice(shippingEstimate.codSurcharge)}</span>
+                  </div>
+                )}
+                {/* Free shipping progress bar */}
+                {shippingEstimate && !shippingEstimate.isFreeShipping && shippingEstimate.amountToFreeShipping > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-sm p-3 -mx-1">
+                    <p className="text-[11px] text-green-800 font-semibold flex items-center gap-1 mb-1.5">
+                      <Truck size={12} /> Add {formatPrice(shippingEstimate.amountToFreeShipping)} more for FREE shipping!
+                    </p>
+                    <div className="w-full bg-green-200 rounded-full h-1.5">
+                      <div
+                        className="bg-green-600 h-1.5 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, ((subtotal / shippingEstimate.freeShippingThreshold) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {/* Shipping error */}
+                {shippingError && (
+                  <div className="flex items-center gap-1 text-[11px] text-amber-600">
+                    <AlertCircle size={11} /> {shippingError}
+                  </div>
+                )}
                 <div className="flex justify-between text-text-secondary">
                   <span className="flex items-center gap-1">
                     Tax (18% GST)

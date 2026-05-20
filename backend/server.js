@@ -186,6 +186,7 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/refunds", require("./routes/refundRoutes"));
 app.use("/api/gst", require("./routes/publicGSTRoutes"));
 app.use("/api/cache", require("./routes/cacheRoutes"));
+app.use("/api/shipping", require("./routes/shippingRoutes"));
 app.use("/api/shiprocket", require("./routes/shiprocketRoutes"));
 
 app.get("/", (req, res) => {

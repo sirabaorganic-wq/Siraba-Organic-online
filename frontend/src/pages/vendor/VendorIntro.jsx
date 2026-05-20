@@ -161,10 +161,10 @@ const VendorIntro = () => {
             {/* Hero Section */}
             <section className="relative overflow-hidden py-32 md:py-40 bg-gradient-to-br from-primary via-primary to-secondary">
                 {/* Animated Background */}
-                <div className="absolute inset-0 opacity-10">
+                {/* <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-10 left-10 w-96 h-96 bg-accent rounded-full blur-3xl animate-pulse"></div>
                     <div className="absolute bottom-10 right-10 w-96 h-96 bg-surface rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-                </div>
+                </div> */}
 
                 {/* Back Button */}
                 <div className="absolute top-6 left-6 z-20">

@@ -27,6 +27,17 @@ const siteSettingsSchema = new mongoose.Schema({
         }]
     },
 
+    // Shipping Configuration — used by /api/shipping/estimate and order creation
+    shippingConfig: {
+        freeShippingThreshold: { type: Number, default: 999 },      // Orders ≥ ₹999 get free shipping
+        platformHandlingFeeFlat: { type: Number, default: 25 },      // ₹25 flat fee on top of courier rate
+        platformHandlingFeePercent: { type: Number, default: 5 },    // 5% of courier rate
+        codSurcharge: { type: Number, default: 40 },                 // Extra charge for COD orders
+        flatRateFallback: { type: Number, default: 70 },             // Used when Shiprocket API fails
+        weightPerItem: { type: Number, default: 0.5 },               // Default kg per item
+        isEnabled: { type: Boolean, default: true },                 // Master toggle
+    },
+
 }, { timestamps: true });
 
 const SiteSettings = mongoose.model('SiteSettings', siteSettingsSchema);

@@ -134,16 +134,23 @@ const Navbar = () => {
                                 {[
                                     { label: 'Shop', path: '/shop' },
                                     {
-                                        label: 'About',
+                                        label: 'Why Siraba',
                                         children: [
                                             { label: 'Our Story', path: '/our-story' },
-                                            { label: 'Why Siraba', path: '/why-siraba' },
-                                            { label: 'Certifications', path: '/certifications' },
+                                            { label: 'Why Our Market Place is diferent', path: '/why-siraba' },
+                                            { label: 'Certifications & Standards', path: '/certifications' },
                                         ]
                                     },
-                                    { label: 'Blog', path: '/blog' },
+                                    { label: 'Standards Journal', path: '/blog' },
                                     { label: 'Contact', path: '/contact' },
-                                    { label: 'Vendor', path: '/vendor' }
+                                    { label: 'Vendor Qualification',
+                                        children: [
+                                            { label: 'Qualification Requirements', path: '/vendor-qualification' },
+                                            { label: 'Apply as Vendor', path: '/vendor' },
+                                            { label: 'Marketplace Benefits', path: '/vendor-benefits' }
+
+                                        ]
+                                     }
                                 ].map((item) => (
                                     item.children ? (
                                         <div key={item.label} className="relative group">

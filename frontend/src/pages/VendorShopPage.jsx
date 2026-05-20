@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ShoppingBag,
   Star,
@@ -27,6 +27,7 @@ import client from "../api/client";
 
 const VendorShopPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, user } = useAuth();
   const { formatPrice } = useCurrency();
@@ -307,6 +308,7 @@ const VendorShopPage = () => {
                     toggleWishlist={toggleWishlist}
                     user={user}
                     shopName={shop.name}
+                    navigate={navigate}
                   />
                 ))}
               </div>
@@ -512,6 +514,7 @@ const ProductCard = ({
   toggleWishlist,
   user,
   shopName,
+  navigate,
 }) => {
   const isInWishlist = user?.wishlist?.includes(product._id);
   const productImage =
@@ -576,13 +579,24 @@ const ProductCard = ({
 
         {/* Quick Add Button */}
         <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform bg-gradient-to-t from-black/60 to-transparent">
-          <button
-            onClick={handleAddToCart}
-            className="w-full py-2 bg-white text-primary font-medium rounded-lg hover:bg-accent transition-colors flex items-center justify-center gap-2"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            Add to Cart
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={(e) => {
+                handleAddToCart(e);
+                navigate("/checkout");
+              }}
+              className="w-full py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
+            >
+              Buy Now
+            </button>
+            <button
+              onClick={handleAddToCart}
+              className="w-full py-2 bg-white text-primary font-medium rounded-lg hover:bg-accent transition-colors flex items-center justify-center gap-2"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
 

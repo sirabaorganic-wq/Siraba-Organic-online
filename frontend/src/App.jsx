@@ -47,6 +47,7 @@ import AdminBlogEdit from "./pages/admin/AdminBlogEdit";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VendorShopPage from "./pages/VendorShopPage";
+import VendorQualification from "./pages/VendorQualification";
 import VendorIntro from "./pages/vendor/VendorIntro";
 import VendorBenefits from "./pages/vendor/VendorBenefits";
 import VendorOnboardingGuide from "./pages/vendor/VendorOnboardingGuide";
@@ -218,6 +219,10 @@ function App() {
                               <Route
                                 path="/vendor-benefits"
                                 element={<VendorBenefits />}
+                              />
+                              <Route
+                                path="/vendor-qualification"
+                                element={<VendorQualification />}
                               />
                               <Route
                                 path="/vendor-onboarding-guide"

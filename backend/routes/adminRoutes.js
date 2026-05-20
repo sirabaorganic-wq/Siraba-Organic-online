@@ -192,6 +192,21 @@ router.put(
       doc.reviewedAt = new Date();
       if (rejectionReason) doc.rejectionReason = rejectionReason;
 
+      if (doc.type === "npop_certificate" && status === "approved") {
+        if (!vendor.certifications.includes("NPOP")) {
+          vendor.certifications.push("NPOP");
+        }
+      } else if (doc.type === "npop_certificate" && status !== "approved") {
+        vendor.certifications = vendor.certifications.filter(c => c !== "NPOP");
+      }
+
+      const allDocsApproved = vendor.complianceDocuments.length > 0 && vendor.complianceDocuments.every(d => d.status === "approved");
+      if (allDocsApproved) {
+        vendor.status = "approved";
+        vendor.approvedBy = req.user._id;
+        vendor.approvedAt = new Date();
+      }
+
       await vendor.save();
       res.json(doc);
     } catch (error) {

@@ -7,6 +7,7 @@ const Vendor = require("../models/Vendor");
 const { protect, admin } = require("../middleware/authMiddleware");
 const { invalidateCache } = require("../config/cache");
 const { enqueueShipment } = require("../jobs/shiprocketQueue");
+const { calculateShipping } = require("./shippingRoutes");
 
 // Helper function to get commission rate based on vendor's plan
 const getCommissionRate = (plan) => {
@@ -103,6 +104,31 @@ router.post("/", protect, async (req, res) => {
       }
     }
 
+    // ===== SERVER-SIDE SHIPPING CALCULATION =====
+    // Never trust the frontend shippingPrice — recalculate server-side
+    let verifiedShippingPrice = 0;
+    try {
+      const deliveryPincode = shippingAddress?.postalCode;
+      if (deliveryPincode) {
+        const shippingResult = await calculateShipping(
+          orderItems.map(item => ({
+            product: item.product,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          deliveryPincode,
+          paymentMethod
+        );
+        verifiedShippingPrice = shippingResult.totalShipping || 0;
+      }
+    } catch (shippingErr) {
+      console.error('Server-side shipping calculation failed, using frontend value as fallback:', shippingErr.message);
+      verifiedShippingPrice = shippingPrice || 0;
+    }
+
+    // Recalculate total with verified shipping
+    const verifiedTotalPrice = (itemsPrice - (discountAmount || 0)) + (taxPrice || 0) + verifiedShippingPrice;
+
     // Create the main order
     const order = new Order({
       user: req.user._id,
@@ -111,8 +137,8 @@ router.post("/", protect, async (req, res) => {
       paymentMethod,
       itemsPrice,
       taxPrice,
-      shippingPrice,
-      totalPrice,
+      shippingPrice: verifiedShippingPrice,
+      totalPrice: verifiedTotalPrice,
       couponCode,
       discountAmount,
       gstClaimed,

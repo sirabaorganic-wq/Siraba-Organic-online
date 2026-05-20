@@ -2,8 +2,8 @@ import { ArrowRight, Star, Leaf, ShieldCheck, Globe, Clock, Sparkles } from "luc
 import { Link } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
 import HeroVideo from "../assets/Siraba_s_Organic_Spices_Video_Ready.mp4";
-import SaffronImg from "../assets/Saffron.png";
-import AsafoetidaImg from "../assets/Hing.png";
+import SaffronImg from "../assets/saffron_box.png";
+import AsafoetidaImg from "../assets/hing_jar.png";
 import BgImage2 from "../assets/bgimage2.png";
 import BgImage1 from "../assets/bgimage1.png"; // Fallback or extra usage
 import TextMarquee from "../components/TextMarquee";
@@ -25,7 +25,8 @@ const Home = () => {
 
   return (
     <div className="w-full pt-20">
-      {/* Hero Section */}
+
+      {/* ── HERO SECTION ── */}
       <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <video
@@ -44,113 +45,222 @@ const Home = () => {
         </div>
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in-up">
-          <span className="font-subheading text-accent text-xs md:text-sm tracking-[0.15em] uppercase font-bold text-shadow-sm border border-accent/30 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm mb-4">
-            EU Organic • USDA Organic • NPOP Certified
+          {/* Cert badge */}
+          <span className="font-subheading text-accent text-xs md:text-sm tracking-[0.15em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm">
+            EU Organic • USDA Organic • NPOP Certified • NABL Accredited Lab Testing Standards
           </span>
+          <br />
+          <br />
+          <span className="inline-flex items-center gap-2 border border-accent/30 text-accent px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest bg-black/20">
+            <Sparkles size={14} />
+            Triple-Verified Organic Marketplace
+          </span>
+
+          {/* Main Headline */}
           <h1 className="font-heading text-4xl md:text-6xl lg:text-7xl text-surface leading-tight text-shadow max-w-6xl mx-auto">
-            Verified Organic.{" "}
+            Verified Organic{" "}
             <br />
             <span className="italic text-accent">Not Organic by Claim.</span>
           </h1>
+
+          {/* Supporting Headline */}
           <p className="font-body text-white/90 text-base md:text-lg max-w-3xl mx-auto font-light leading-relaxed">
-            Siraba Organic is a certification-led platform offering premium
-            organic ingredients from vendors who meet globally recognized
-            organic standards.
+            SIRABA ORGANIC is a certification-led platform offering premium organic ingredients from vendors
+            who meet internationally recognized organic standards and scientific documentation requirements.
           </p>
-          <p className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto">The Marketplace for Globally Certified Organic Products</p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-6">
+
+          <div className="bg-primary text-surface text-sm tracking-widest uppercase px-8 py-4 hover:bg-accent transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-50vw md:w-auto">
+              Not Every Organic Product Qualifies for SIRABA ORGANIC.
+          </div>
+
+          {/* Trust Statement */}
+          {/* <div className="inline-block bg-black/30 backdrop-blur border border-white/20 rounded-xl px-6 py-4 text-left">
+            <p className="text-white/60 text-xs uppercase tracking-widest font-bold mb-3">
+              Every listed product must meet:
+            </p>
+            <ul className="space-y-1.5">
+              {[
+                "NPOP Certification",
+                "USDA Organic OR EU Organic Certification",
+                "NABL-Accredited Lab Testing Standards",
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-2 text-surface text-sm font-light">
+                  <span className="text-accent font-bold">•</span> {item}
+                </li>
+              ))}
+            </ul>
+          </div> */}
+
+          {/* CTAs */}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-2">
             <Link
               to="/shop"
               className="bg-accent text-primary font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto"
             >
               Explore Certified Products
             </Link>
-
             <Link
               to="/vendor/intro"
               className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto"
             >
-              For Certified Vendors
+              Vendor Qualification Program
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Trust Indicators */}
-      <section className="bg-background py-16 border-b border-secondary/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="flex flex-col items-center space-y-4 p-6 hover:bg-white/50 rounded-xl transition-colors duration-300">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center text-primary mb-2">
-                <Leaf size={32} strokeWidth={1} />
-              </div>
-              <h3 className="font-heading text-xl text-primary font-bold">
-                Certified Organic
-              </h3>
-              <p className="text-text-secondary text-sm leading-relaxed max-w-xs font-light">
-                EU Organic / USDA / NPOP certified. Sourced from certified farms and tested
-                for contaminants — no pesticides, additives, or artificial
-                colors.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-4 p-6 hover:bg-white/50 rounded-xl transition-colors duration-300">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center text-primary mb-2">
-                <ShieldCheck size={32} strokeWidth={1} />
-              </div>
-              <h3 className="font-heading text-xl text-primary font-bold">
-                Lab Tested Quality
-              </h3>
-              <p className="text-text-secondary text-sm leading-relaxed max-w-xs font-light">
-                Independently tested for quality, delivering verified potency
-                and purity in every strand.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-4 p-6 hover:bg-white/50 rounded-xl transition-colors duration-300">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center text-primary mb-2">
-                <Globe size={32} strokeWidth={1} />
-              </div>
-              <h3 className="font-heading text-xl text-primary font-bold">
-                Direct Farm to Home
-              </h3>
-              <p className="text-text-secondary text-sm leading-relaxed max-w-xs font-light">
-                Fresh from Kashmir's heritage farms delivered securely to your
-                doorstep.
-              </p>
-            </div>
+
+      {/* ── TRUST STRIP ── */}
+      <section className="bg-primary py-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-center">
+            {[
+              "✔ Triple-Verified Organic Standards",
+              "✔ Internationally Certified Vendors",
+              "✔ NABL Lab Documentation",
+              "✔ Batch-Wise Traceability",
+              "✔ Export-Grade Compliance",
+            ].map((item, i) => (
+              <span key={i} className="text-accent text-xs md:text-sm font-bold tracking-widest uppercase whitespace-nowrap">
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Flagship Products (Coming Soon) */}
-      {/* <section className="py-20 md:py-28 bg-gradient-to-b from-background via-surface to-background">
+      {/* ── MOVING TEXT BANNER ── */}
+      {/* <TextMarquee /> */}
+
+      {/* ── SECTION 2 — THE SIRABA STANDARD™ ── */}
+      <section className="py-20 md:py-28 bg-background border-b border-secondary/10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+          <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full">
+            The SIRABA Standard™
+          </span>
+          <h2 className="font-heading text-4xl md:text-5xl text-primary leading-tight">
+            Organic Claims Require Proof.
+          </h2>
+          <div className="space-y-5 text-text-secondary text-base md:text-lg leading-relaxed font-light max-w-3xl mx-auto text-left">
+            <p>
+              In today's market, many products are labeled "organic" without meaningful verification, traceability, or internationally recognized compliance standards.
+            </p>
+            <p>
+              SIRABA ORGANIC was created to build a different kind of platform — one where certification, documentation, and scientific validation form the foundation of trust.
+            </p>
+            <p className="font-semibold text-primary">
+              We do not operate as an open marketplace.
+            </p>
+            <p>
+              Every vendor must qualify through SIRABA's Triple Verification Framework™ before their products can be listed on the platform.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 3 — TRIPLE VERIFICATION FRAMEWORK™ ── */}
+      <section className="py-20 md:py-28 bg-surface border-b border-secondary/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 space-y-4">
+            <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full">
+              Our Framework
+            </span>
+            <h2 className="font-heading text-4xl md:text-5xl text-primary">
+              The SIRABA Triple Verification Framework™
+            </h2>
+            <p className="text-text-secondary text-lg max-w-2xl mx-auto font-light">
+              Every approved product on SIRABA ORGANIC must satisfy three critical layers of verification.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                layer: "Layer 1",
+                title: "Indian Organic Compliance",
+                badge: "NPOP Certification",
+                desc: "Products must comply with India's National Programme for Organic Production (NPOP), governed by APEDA.",
+                ensures: [
+                  "Recognized organic cultivation standards",
+                  "Regulated compliance systems",
+                  "Traceable organic production practices",
+                ],
+              },
+              {
+                layer: "Layer 2",
+                title: "International Organic Validation",
+                badge: "USDA Organic OR EU Organic Certification",
+                desc: "Vendors must additionally hold globally recognized organic certification standards accepted in international markets.",
+                ensures: [
+                  "International organic compliance",
+                  "Export-oriented credibility",
+                  "Globally accepted organic practices",
+                ],
+              },
+              {
+                layer: "Layer 3",
+                title: "Scientific Documentation",
+                badge: "NABL-Accredited Lab Testing",
+                desc: "Products must be supported by laboratory documentation aligned with NABL-accredited testing standards.",
+                ensures: [
+                  "Scientific quality validation",
+                  "Documentation-backed compliance",
+                  "Greater consumer confidence",
+                ],
+              },
+            ].map((item, i) => (
+              <div key={i} className="bg-background border border-secondary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow duration-300">
+                <span className="text-accent text-xs font-bold uppercase tracking-widest">{item.layer}</span>
+                <h3 className="font-heading text-xl text-primary font-bold">{item.title}</h3>
+                <span className="inline-block bg-accent/10 text-primary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/20">
+                  {item.badge}
+                </span>
+                <p className="text-text-secondary text-sm leading-relaxed font-light">{item.desc}</p>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">Ensures:</p>
+                  <ul className="space-y-1.5">
+                    {item.ensures.map((e, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-text-secondary">
+                        <ShieldCheck size={14} className="text-accent flex-shrink-0 mt-0.5" />
+                        {e}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 4 — FLAGSHIP FOCUS ── */}
+      <section className="py-20 md:py-28 bg-background border-b border-secondary/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-4">
             <span className="inline-flex items-center gap-2 text-accent text-sm tracking-[0.2em] uppercase font-bold">
               <Clock size={16} />
-              Coming Soon
+              Launching Soon
             </span>
             <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-primary">
-              Our Flagship Organic Ingredients
+              Flagship Ingredients Built Around Trust.
             </h2>
             <p className="text-text-secondary text-lg max-w-2xl mx-auto font-light">
-              Premium saffron and asafoetida, sourced with care and certified for global standards.
+              SIRABA ORGANIC is strategically launching with two globally recognized ingredients that demand the highest levels of authenticity, sourcing discipline, and quality assurance.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
-            {/* Kashmiri Saffron *
+            {/* Kashmiri Saffron */}
             <div className="group relative bg-surface border border-secondary/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="absolute top-4 right-4 z-10">
                 <span className="bg-accent/90 text-primary text-xs font-bold uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
-                  <Clock size={12} />
-                  Coming Soon
+                  <Clock size={12} /> Launching Soon
                 </span>
               </div>
               <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex items-center justify-center">
                 <img
                   src={SaffronImg}
                   alt="Kashmiri Saffron"
-                  className="max-h-[220px] w-auto object-contain opacity-95 group-hover:scale-105 transition-transform duration-500"
+                // className="max-h-[220px] w-auto object-contain opacity-95 group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
               <div className="p-6 md:p-8 space-y-5">
@@ -158,59 +268,74 @@ const Home = () => {
                   Kashmiri Saffron
                 </h3>
                 <p className="text-text-secondary leading-relaxed">
-                  Hand-harvested from the high-altitude valleys of Kashmir, known globally for its deep color, aroma, and potency.
+                  Premium saffron sourced from high-altitude regions known for their heritage cultivation practices, deep color, aroma, and potency.
                 </p>
-                <ul className="space-y-2">
-                  {["Premium grade stigmas", "Naturally high crocin content", "Certified organic supply chains", "Globally compliant processing"].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-primary">
-                      <Sparkles size={14} className="text-accent flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent">Used in:</span>
-                  <p className="text-text-secondary text-sm mt-1">
-                    Gourmet cooking • Wellness formulations • Nutraceuticals and cosmetics
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent mb-2">Focus Areas</p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "Premium-grade stigmas",
+                      "Globally compliant sourcing",
+                      "Certification-backed supply chain",
+                      "Export-oriented standards",
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-primary">
+                        <Sparkles size={13} className="text-accent flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent mb-1">Applications</p>
+                  <p className="text-text-secondary text-sm">
+                    Gourmet culinary use • Wellness formulations • Nutraceutical applications • Luxury food &amp; beverage products
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Premium Asafoetida *
+            {/* Premium Asafoetida */}
             <div className="group relative bg-surface border border-secondary/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="absolute top-4 right-4 z-10">
                 <span className="bg-accent/90 text-primary text-xs font-bold uppercase px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
-                  <Clock size={12} />
-                  Coming Soon
+                  <Clock size={12} /> Launching Soon
                 </span>
               </div>
               <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex items-center justify-center">
                 <img
                   src={AsafoetidaImg}
                   alt="Premium Asafoetida (Hing)"
-                  className="max-h-[220px] w-auto object-contain opacity-95 group-hover:scale-105 transition-transform duration-500"
+                // className="max-h-[220px] w-auto object-contain opacity-95 group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
               <div className="p-6 md:p-8 space-y-5">
                 <h3 className="font-heading text-2xl md:text-3xl text-primary font-bold">
-                  Premium Asafoetida (Hing)
+                  Premium Asafoetida – Hing
                 </h3>
                 <p className="text-text-secondary leading-relaxed">
-                  Sourced from high-altitude regions, this prized resin delivers a potent, aromatic profile essential for authentic Indian cuisine and traditional wellness.
+                  Certified organic asafoetida developed for modern kitchens, wellness-conscious consumers, and premium food applications.
                 </p>
-                <ul className="space-y-2">
-                  {["Premium-grade resin", "Traditionally compounded", "Certified organic sourcing", "Lab-tested purity & potency"].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-primary">
-                      <Sparkles size={14} className="text-accent flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent">Used in:</span>
-                  <p className="text-text-secondary text-sm mt-1">
-                    Indian & regional cuisine • Digestive supplements • Traditional medicine & ayurveda
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent mb-2">Focus Areas</p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "Export-grade processing standards",
+                      "Certification-led sourcing",
+                      "Documentation-backed quality systems",
+                      "Traceable handling practices",
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-primary">
+                        <Sparkles size={13} className="text-accent flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent mb-1">Applications</p>
+                  <p className="text-text-secondary text-sm">
+                    Culinary preparation • Ayurvedic traditions • Functional food usage • Digestive wellness applications
                   </p>
                 </div>
               </div>
@@ -219,18 +344,103 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer micro-line *
-      <div className="w-full bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-text-secondary py-6 border-t border-secondary/10">
-          Prices displayed in your local currency. Taxes calculated at checkout.
+      {/* ── SECTION 5 — WHY SIRABA ORGANIC ── */}
+      <section className="py-20 md:py-28 bg-surface border-b border-secondary/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 space-y-4">
+            <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full">
+              Our Difference
+            </span>
+            <h2 className="font-heading text-4xl md:text-5xl text-primary">
+              Why SIRABA ORGANIC Is Different
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { num: "01", title: "Curated Vendor Qualification", desc: "We partner only with vendors who meet internationally recognized organic certification standards." },
+              { num: "02", title: "Triple-Verified Trust Architecture", desc: "Every product must satisfy certification, international compliance, and scientific documentation requirements." },
+              { num: "03", title: "Compliance-First Marketplace Model", desc: "SIRABA prioritizes documented credibility over mass product onboarding." },
+              { num: "04", title: "Premium Organic Positioning", desc: "Our ecosystem is built for consumers who value purity, traceability, and globally recognized standards." },
+              { num: "05", title: "Export-Grade Standards", desc: "Focus on internationally aligned packaging, documentation, and compliance systems." },
+              { num: "06", title: "Long-Term Trust Philosophy", desc: "We believe organic credibility should be earned through systems — not marketing claims." },
+            ].map((item, i) => (
+              <div key={i} className="bg-background border border-secondary/10 rounded-2xl p-7 space-y-3 hover:shadow-md transition-shadow duration-300">
+                <span className="font-heading text-4xl text-accent/50 font-bold">{item.num}</span>
+                <h3 className="font-heading text-lg text-primary font-bold">{item.title}</h3>
+                <p className="text-text-secondary text-sm leading-relaxed font-light">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Moving Text Banner */}
-      <TextMarquee />
+      {/* ── SECTION 6 — SELECTIVE MARKETPLACE POSITIONING ── */}
+      <section className="py-20 md:py-28 bg-primary text-surface relative overflow-hidden border-b border-accent/10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10">
+          <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full">
+            Our Standards
+          </span>
+          <h2 className="font-heading text-4xl md:text-5xl leading-tight">
+            Not Every Organic Product Qualifies for SIRABA ORGANIC.
+          </h2>
+          <div className="space-y-5 text-white/80 text-base md:text-lg leading-relaxed font-light max-w-3xl mx-auto text-left">
+            <p className="font-semibold text-surface">
+              Our onboarding standards are intentionally selective.
+            </p>
+            <p>
+              Unlike open marketplaces that prioritize quantity, SIRABA ORGANIC is built around disciplined vendor qualification, internationally recognized certifications, and compliance-backed sourcing systems.
+            </p>
+            <p className="text-white/70">This selective approach allows us to maintain:</p>
+            <ul className="space-y-2 pl-2">
+              {[
+                "Stronger marketplace credibility",
+                "Higher compliance standards",
+                "Premium positioning",
+                "Long-term consumer trust",
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-2 text-surface text-sm">
+                  <span className="text-accent font-bold">•</span> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-      {/* Featured Products */}
-      <section className="py-12 bg-surface">
+      {/* ── SECTION 7 — ABOUT SIRABA (SHORT) ── */}
+      <section className="py-20 md:py-28 bg-background border-b border-secondary/10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+          <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full">
+            About SIRABA ORGANIC
+          </span>
+          <h2 className="font-heading text-4xl md:text-5xl text-primary leading-tight">
+            Built on Certification, Integrity, and Trust.
+          </h2>
+          <div className="space-y-5 text-text-secondary text-base md:text-lg leading-relaxed font-light max-w-3xl mx-auto text-left">
+            <p>
+              SIRABA ORGANIC was founded with a simple belief:{" "}
+              <span className="font-semibold text-primary italic">
+                organic should be verified — not merely claimed.
+              </span>
+            </p>
+            <p>
+              The platform was created to address growing concerns around inconsistent quality, misleading organic labeling, and lack of transparency in premium food categories.
+            </p>
+            <p>
+              Our vision is to build a globally trusted ecosystem where certified vendors grow with credibility and consumers purchase with confidence.
+            </p>
+          </div>
+          <Link
+            to="/about"
+            className="inline-flex items-center gap-2 text-accent font-bold text-sm tracking-widest uppercase hover:underline transition-all duration-200"
+          >
+            Read Our Story <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      {/* ── SIGNATURE COLLECTION ── */}
+      {/* <section className="py-12 bg-surface border-b border-secondary/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-4">
             <span className="text-accent text-sm tracking-[0.2em] uppercase font-bold">
@@ -240,7 +450,6 @@ const Home = () => {
               Signature Collection
             </h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {getSignatureProducts().map((product) => (
               <Link
@@ -278,7 +487,6 @@ const Home = () => {
                         {product.price}
                       </span>
                     </p>
-
                     <div className="mt-3">
                       <button className="inline-flex items-center justify-center gap-2 bg-accent text-primary py-2 px-4 rounded-full text-sm font-bold hover:brightness-105 transition-all">
                         View Details <ArrowRight size={14} />
@@ -290,58 +498,45 @@ const Home = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* Customer Trust & CTA Section */}
+      {/* ── SECTION 8 — FINAL TRUST CTA ── */}
       <section className="py-20 md:py-32 bg-primary text-surface relative overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-20">
-          <img
-            src={BgImage2}
-            alt="Background"
-            className="w-full h-full object-cover"
-          />
+          <img src={BgImage2} alt="Background" className="w-full h-full object-cover" />
         </div>
         <div className="absolute inset-0 bg-primary/40 md:bg-primary/30 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-transparent to-transparent" />
-        <div className="absolute inset-0 z-0 "></div>
 
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10 space-y-8">
           <span className="text-accent text-sm tracking-[0.2em] uppercase font-bold">
-            Customer Trust & CTA
+            Global Standards. Certified Trust.
           </span>
           <h2 className="font-heading text-4xl md:text-6xl leading-tight font-bold">
-            Bring Real Organic Into Your Kitchen
+            Experience Organic Products Backed by Global Standards.
           </h2>
           <p className="text-lg md:text-xl font-light text-white/80 leading-relaxed max-w-3xl mx-auto">
-            Across the world, families, chefs, and wellness-conscious consumers
-            choose Siraba Organic for one simple reason —{" "}
-            <span className="text-accent italic">
-              they trust what they eat.
-            </span>
+            Discover a curated ecosystem of internationally certified organic
+            products supported by compliance, documentation, and disciplined
+            sourcing standards.
           </p>
-          <p className="text-base md:text-lg font-light text-white/70 leading-relaxed max-w-3xl mx-auto">
-            Our Kashmiri Saffron and Premium Asafoetida are sourced, tested, and
-            packaged with a level of care that mass-market brands cannot match.
-            Every batch reflects our promise of purity, authenticity, and
-            global-grade quality.
-          </p>
-
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link
-              to="/contact"
+              to="/shop"
               className="w-full sm:w-auto bg-accent text-primary px-10 py-4 font-bold uppercase tracking-widest hover:bg-surface transition-all duration-300 shadow-lg transform hover:-translate-y-1"
             >
-              Get Notified — Saffron
+              Explore Certified Products
             </Link>
             <Link
-              to="/contact"
+              to="/vendor/intro"
               className="w-full sm:w-auto bg-transparent border border-accent text-surface px-10 py-4 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg transform hover:-translate-y-1"
             >
-              Get Notified — Asafoetida
+              Vendor Qualification Program
             </Link>
           </div>
         </div>
       </section>
+
     </div>
   );
 };

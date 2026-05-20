@@ -21,6 +21,7 @@ const {
   invalidateCache,
 } = require("../config/cache");
 const { cacheByIdMiddleware } = require("../middleware/cacheMiddleware");
+const { sendVendorWelcomeEmail, sendAdminNewVendorEmail } = require("../utils/emailService");
 
 // Shared helper to verify OTP for email/phone
 const verifyOtpForIdentifier = async (identifier, type, plainOtp) => {
@@ -99,8 +100,8 @@ const registerValidators = [
 const complianceValidators = [
   body("name").trim().notEmpty().withMessage("Document name is required"),
   body("type")
-    .isIn(["business_license", "gst_certificate", "fssai_license", "organic_certification", "pan_card", "bank_details", "other"])
-    .withMessage("Document type is invalid. Must be one of: business_license, gst_certificate, fssai_license, organic_certification, pan_card, bank_details, other"),
+    .isIn(["business_license", "gst_certificate", "fssai_license", "organic_certification", "pan_card", "bank_details", "other", "npop_certificate"])
+    .withMessage("Document type is invalid. Must be one of: business_license, gst_certificate, fssai_license, organic_certification, pan_card, bank_details, other, npop_certificate"),
   body("fileUrl").trim().notEmpty().withMessage("File URL is required"),
 ];
 
@@ -213,6 +214,10 @@ router.post("/register", registerValidators, handleValidationErrors, async (req,
       isEmailVerified: true,
       onboardingStep: 2, // Move to step 2 after registration
     });
+
+    // Send emails asynchronously (don't await so it doesn't block the response)
+    sendVendorWelcomeEmail(vendor.email, vendor.contactPerson).catch(err => console.error("Failed to send welcome email:", err));
+    sendAdminNewVendorEmail(vendor).catch(err => console.error("Failed to send admin notification:", err));
 
     res.status(201).json({
       _id: vendor._id,
@@ -551,16 +556,21 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
       certifications,
     } = req.body;
 
+    let prodCertifications = certifications;
+    if (!prodCertifications || prodCertifications.length === 0) {
+      prodCertifications = req.vendor.certifications || [];
+    }
+
     // Validate certifications
     const validCerts = ["USDA Organic", "EU Organic", "NPOP"];
-    if (!certifications || certifications.length === 0) {
+    if (!prodCertifications || prodCertifications.length === 0) {
       return res.status(400).json({
         message: "At least one certification is required to list a product",
       });
     }
 
     // Check all requested certifications are valid
-    const invalidCerts = certifications.filter((c) => !validCerts.includes(c));
+    const invalidCerts = prodCertifications.filter((c) => !validCerts.includes(c));
     if (invalidCerts.length > 0) {
       return res.status(400).json({
         message: `Invalid certifications: ${invalidCerts.join(", ")}. Allowed: ${validCerts.join(", ")}`,
@@ -569,7 +579,7 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
 
     // Ensure vendor possesses all requested certifications
     const vendorCerts = req.vendor.certifications || [];
-    const unauthorizedCerts = certifications.filter(
+    const unauthorizedCerts = prodCertifications.filter(
       (c) => !vendorCerts.includes(c)
     );
     if (unauthorizedCerts.length > 0) {
@@ -604,7 +614,7 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
       stockQuantity: stockQuantity || 0,
       sku: sku || `VND-${req.vendor._id.toString().slice(-6)}-${Date.now()}`,
       hsn: hsn || "0909",
-      certifications,
+      certifications: prodCertifications,
       vendor: req.vendor._id,
       isVendorProduct: true,
       vendorStatus: "pending", // Requires admin approval

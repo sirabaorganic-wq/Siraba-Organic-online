@@ -31,6 +31,11 @@ const DOCUMENT_TYPES = [
   { type: "fssai_license", label: "FSSAI License" },
   { type: "organic_certification", label: "Organic Certification" },
   { type: "pan_card", label: "PAN Card" },
+  {
+    type: "npop_certificate",
+    label: "Your NPOP Certificate",
+    required: true,
+  },
 ];
 const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
@@ -316,6 +321,11 @@ const VendorOnboarding = () => {
   const handleDocumentsSubmit = async () => {
     if (!docUploads.business_license?.url) {
       setError("Please upload your business license or registration document.");
+      return;
+    }
+
+    if (!docUploads.npop_certificate?.url) {
+      setError("Please upload Your NPOP Certificate.");
       return;
     }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductContext";
 import { useAuth } from "../context/AuthContext";
@@ -25,6 +25,7 @@ import ProductReviews from "../components/ProductReviews";
 
 const ProductDetails = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { products } = useProducts();
   const { toggleWishlist, user } = useAuth();
@@ -302,12 +303,23 @@ const ProductDetails = () => {
                   <Plus size={20} className="text-primary" />
                 </button>
               </div>
-              <button
-                className="flex-grow bg-primary text-surface py-3 px-8 text-sm font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 rounded-sm cursor-pointer"
-                onClick={() => addToCart(product, quantity, selectedOption)}
-              >
-                Add to Cart <ShoppingBag size={18} />
-              </button>
+              <div className="flex-grow flex flex-col sm:flex-row gap-2">
+                <button
+                  className="flex-grow bg-amber-500 text-white py-3 px-8 text-sm font-bold uppercase tracking-widest hover:bg-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 rounded-sm cursor-pointer"
+                  onClick={() => {
+                    addToCart(product, quantity, selectedOption);
+                    navigate("/checkout");
+                  }}
+                >
+                  Buy Now
+                </button>
+                <button
+                  className="flex-grow bg-primary text-surface py-3 px-8 text-sm font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 rounded-sm cursor-pointer"
+                  onClick={() => addToCart(product, quantity, selectedOption)}
+                >
+                  Add to Cart <ShoppingBag size={18} />
+                </button>
+              </div>
               <button
                 onClick={handleWishlistClick}
                 className={`p-3 border rounded-sm transition-colors group ${isWishlisted

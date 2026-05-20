@@ -111,9 +111,89 @@ const sendOTPEmail = async (to, otp, contextLabel) => {
   });
 };
 
+const sendVendorWelcomeEmail = async (vendorEmail, vendorName) => {
+  const normalizedEmail = (vendorEmail || "").toLowerCase().trim();
+  if (!normalizedEmail) return;
+
+  if (!isEmailConfigured()) {
+    console.log(`[DEV ONLY] Welcome email not sent. Email: ${normalizedEmail}, Name: ${vendorName}`);
+    return;
+  }
+
+  const transporter = createTransporter();
+  const html = `
+    <div style="font-family: system-ui, -apple-system, sans-serif; background-color: #f5f5f7; padding: 24px;">
+      <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);">
+        <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #14532d, #16a34a);">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #f9fafb;">Welcome to Siraba Organic!</h1>
+        </div>
+        <div style="padding: 24px 24px 8px;">
+          <p style="font-size: 14px; color: #0f172a; margin: 0 0 12px;">Hi ${vendorName},</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 16px; line-height: 1.6;">
+            We are thrilled to welcome you to the Siraba Organic vendor community! Your registration was successful.
+            Please log in to your dashboard to complete your onboarding process and upload the required compliance documents.
+          </p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 16px; line-height: 1.6;">
+            If you have any questions, feel free to reach out to our support team.
+          </p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 16px; line-height: 1.6;">
+            Warm regards,<br/>The Siraba Organic Team
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || `Siraba Organic <${process.env.EMAIL_USER}>`,
+    to: normalizedEmail,
+    subject: "Welcome to Siraba Organic!",
+    html,
+  });
+};
+
+const sendAdminNewVendorEmail = async (vendorDetails) => {
+  if (!isEmailConfigured()) {
+    console.log(`[DEV ONLY] Admin notification not sent. Vendor: ${vendorDetails.businessName}`);
+    return;
+  }
+
+  const transporter = createTransporter();
+  const html = `
+    <div style="font-family: system-ui, -apple-system, sans-serif; background-color: #f5f5f7; padding: 24px;">
+      <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);">
+        <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #1e40af, #3b82f6);">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #f9fafb;">New Vendor Registration</h1>
+        </div>
+        <div style="padding: 24px 24px 8px;">
+          <p style="font-size: 14px; color: #0f172a; margin: 0 0 12px;">A new vendor has just registered on the portal.</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 8px;"><strong>Business Name:</strong> ${vendorDetails.businessName}</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 8px;"><strong>Contact Person:</strong> ${vendorDetails.contactPerson}</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 8px;"><strong>Email:</strong> ${vendorDetails.email}</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 8px;"><strong>Phone:</strong> ${vendorDetails.phone}</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 8px;"><strong>Business Type:</strong> ${vendorDetails.businessType}</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 16px;"><strong>City/State:</strong> ${vendorDetails.address?.city}, ${vendorDetails.address?.state}</p>
+          <p style="font-size: 14px; color: #1f2937; margin: 0 0 16px; line-height: 1.6;">
+            Please review their details in the admin dashboard.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || `Siraba Organic <${process.env.EMAIL_USER}>`,
+    to: "sirabaorganic@gmail.com",
+    subject: "New Vendor Registration - Siraba Organic",
+    html,
+  });
+};
+
 module.exports = {
   sendOTPEmail,
   buildOtpEmailHtml,
   isEmailConfigured,
+  sendVendorWelcomeEmail,
+  sendAdminNewVendorEmail,
 };
 

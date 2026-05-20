@@ -13,6 +13,7 @@ const complianceDocSchema = mongoose.Schema({
       "pan_card",
       "bank_details",
       "other",
+      "npop_certificate",
     ],
     required: true,
   },
