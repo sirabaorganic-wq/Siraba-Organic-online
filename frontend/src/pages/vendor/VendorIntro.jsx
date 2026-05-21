@@ -157,7 +157,7 @@ const VendorIntro = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-background pt-20">
+        <div className="min-h-screen bg-background">
             {/* Hero Section */}
             <section className="relative overflow-hidden py-32 md:py-40 bg-gradient-to-br from-primary via-primary to-secondary">
                 {/* Animated Background */}
@@ -650,12 +650,14 @@ const VendorIntro = () => {
                         >
                             Register Now →
                         </Link>
-                        <Link
-                            to="/contact"
+                        <a
+                            href="https://wa.me/918586836660"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="px-10 py-5 bg-surface/10 backdrop-blur-sm border-2 border-surface/30 text-surface rounded-xl font-bold text-xl hover:bg-surface/20 transition-all"
                         >
                             Talk to Sales
-                        </Link>
+                        </a>
                     </div>
 
                     <div className="text-surface/70 text-sm">

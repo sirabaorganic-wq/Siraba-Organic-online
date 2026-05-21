@@ -11,6 +11,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import BgImage1 from "../assets/bgimage1.png";
+import JaivikBharatLogo from "../assets/jaivik_bharat.png";
+import UsdaOrganicLogo from "../assets/usda_organic.png";
+import NablLogo from "../assets/nabl_logo.png";
 
 const Certification = () => {
   const [certData, setCertData] = useState(null);
@@ -42,6 +45,8 @@ const Certification = () => {
         "India-recognized organic credibility",
       ],
       why: "NPOP forms the foundational organic compliance layer for products approved on SIRABA ORGANIC.",
+      logo: JaivikBharatLogo,
+      logoAlt: "India Organic Jaivik Bharat Logo",
     },
     {
       title: "International Organic Validation",
@@ -54,6 +59,8 @@ const Certification = () => {
         "Stronger marketplace trust",
       ],
       why: "This qualification layer helps position SIRABA ORGANIC around internationally compliant organic standards.",
+      logo: UsdaOrganicLogo,
+      logoAlt: "USDA Organic Logo",
     },
     {
       title: "Scientific Documentation & Quality Validation",
@@ -66,6 +73,8 @@ const Certification = () => {
         "Compliance-focused accountability",
       ],
       why: "Scientific documentation helps strengthen marketplace discipline and consumer confidence.",
+      logo: NablLogo,
+      logoAlt: "NABL Logo",
     },
   ];
 
@@ -108,25 +117,24 @@ const Certification = () => {
           </p>
 
           <div className="inline-block bg-black/20 border border-white/10 backdrop-blur-sm rounded-xl px-6 py-5 mb-10">
-            <p className="text-white/60 uppercase tracking-widest text-xs font-bold mb-3">
+            <p className="text-white/60 uppercase tracking-widest text-xs font-bold mb-4">
               Every approved product must satisfy:
             </p>
 
-            <ul className="space-y-2 text-left">
-              {[
-                "NPOP Certification",
-                "USDA Organic OR EU Organic Certification",
-                "NABL-Accredited Documentation",
-              ].map((item, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-2 text-surface text-sm"
-                >
-                  <span className="text-accent font-bold">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+            <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
+              <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
+                <img src={JaivikBharatLogo} alt="Jaivik Bharat Logo" className="h-8 object-contain bg-white rounded p-0.5" />
+                <span className="text-surface text-sm font-semibold">NPOP Certification</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
+                <img src={UsdaOrganicLogo} alt="USDA Organic Logo" className="h-8 object-contain bg-white rounded p-0.5" />
+                <span className="text-surface text-sm font-semibold">USDA Organic</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
+                <img src={NablLogo} alt="NABL Logo" className="h-8 object-contain bg-white rounded p-0.5" />
+                <span className="text-surface text-sm font-semibold">NABL Accredited</span>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
@@ -229,42 +237,55 @@ const Certification = () => {
             {frameworkLayers.map((item, i) => (
               <div
                 key={i}
-                className="bg-background border border-secondary/10 rounded-2xl p-8 space-y-5 hover:shadow-lg transition-all duration-300"
+                className="bg-background border border-secondary/10 rounded-2xl p-8 space-y-5 hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
               >
-                <span className="text-accent text-xs uppercase tracking-widest font-bold">
-                  {item.badge}
-                </span>
-
-                <h3 className="font-heading text-2xl text-primary font-bold">
-                  {item.title}
-                </h3>
-
-                <p className="text-text-secondary text-sm leading-relaxed font-light">
-                  {item.desc}
-                </p>
-
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
-                    Purpose
+                  <div className="flex items-center justify-between border-b border-secondary/10 pb-4 mb-4">
+                    <span className="text-accent text-xs uppercase tracking-widest font-bold">
+                      {item.badge}
+                    </span>
+                    {item.logo && (
+                      <div className="h-12 w-20 flex items-center justify-end bg-white rounded p-1 shadow-sm border border-secondary/10 flex-shrink-0">
+                        <img
+                          src={item.logo}
+                          alt={item.logoAlt}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <h3 className="font-heading text-2xl text-primary font-bold mb-3">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-text-secondary text-sm leading-relaxed font-light mb-4">
+                    {item.desc}
                   </p>
 
-                  <ul className="space-y-2">
-                    {item.purpose.map((p, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 text-sm text-text-secondary"
-                      >
-                        <ShieldCheck
-                          size={14}
-                          className="text-accent flex-shrink-0 mt-0.5"
-                        />
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="mb-6">
+                    <p className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
+                      Purpose
+                    </p>
+
+                    <ul className="space-y-2">
+                      {item.purpose.map((p, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-start gap-2 text-sm text-text-secondary"
+                        >
+                          <ShieldCheck
+                            size={14}
+                            className="text-accent flex-shrink-0 mt-0.5"
+                          />
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-secondary/10">
+                <div className="pt-3 border-t border-secondary/10 mt-auto">
                   <p className="text-xs uppercase tracking-wider font-bold text-primary mb-2">
                     Why It Matters
                   </p>
@@ -347,19 +368,26 @@ const Certification = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              "Valid NPOP certification",
-              "USDA Organic OR EU Organic certification",
-              "NABL-accredited lab documentation",
-              "Traceable sourcing records",
-              "Food-grade packaging compliance",
-              "Documentation verification support",
+              { text: "Valid NPOP certification", logo: JaivikBharatLogo, logoAlt: "NPOP Logo" },
+              { text: "USDA Organic OR EU Organic certification", logo: UsdaOrganicLogo, logoAlt: "USDA Logo" },
+              { text: "NABL-accredited lab documentation", logo: NablLogo, logoAlt: "NABL Logo" },
+              { text: "Traceable sourcing records", logo: null },
+              { text: "Food-grade packaging compliance", logo: null },
+              { text: "Documentation verification support", logo: null },
             ].map((item, i) => (
               <div
                 key={i}
-                className="bg-background border border-secondary/10 rounded-xl p-5 flex items-center gap-4"
+                className="bg-background border border-secondary/10 rounded-xl p-5 flex items-center justify-between gap-4 hover:border-accent/30 transition-colors"
               >
-                <CheckCircle className="text-accent flex-shrink-0" size={22} />
-                <span className="text-primary font-medium">{item}</span>
+                <div className="flex items-center gap-4">
+                  <CheckCircle className="text-accent flex-shrink-0" size={22} />
+                  <span className="text-primary font-medium">{item.text}</span>
+                </div>
+                {item.logo && (
+                  <div className="h-10 w-16 flex items-center justify-end bg-white rounded p-1 shadow-sm border border-secondary/10 flex-shrink-0">
+                    <img src={item.logo} alt={item.logoAlt} className="max-h-full max-w-full object-contain" />
+                  </div>
+                )}
               </div>
             ))}
           </div>

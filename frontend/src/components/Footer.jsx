@@ -23,9 +23,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-white/60 text-sm leading-relaxed font-light">
-              Bringing the world's finest certified organic saffron and
-              superfoods directly from the pristine farms of India to your
-              home.
+              India’s Triple-Verified Organic Marketplace built around internationally certified products, scientific documentation, and selective vendor qualification.
             </p>
           </div>
 

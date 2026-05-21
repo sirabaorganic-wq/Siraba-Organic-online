@@ -183,7 +183,7 @@ const Contact = () => {
           </div>
 
           {/* Contact Form */}
-          <div className="bg-surface p-8 md:p-12 shadow-xl rounded-sm border border-secondary/10">
+          <div className="bg-surface p-8 md:p-12 shadow-xl rounded-sm border border-secondary/10 h-1/2">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -197,7 +197,7 @@ const Contact = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     className="w-full bg-secondary/5 border border-transparent focus:border-accent p-3 rounded-sm focus:outline-none transition-colors"
-                    placeholder="Prasad"
+                    placeholder="First Name"
                   />
                 </div>
                 <div className="space-y-2">
@@ -211,7 +211,7 @@ const Contact = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     className="w-full bg-secondary/5 border border-transparent focus:border-accent p-3 rounded-sm focus:outline-none transition-colors"
-                    placeholder="Shaswat"
+                    placeholder="Last Name"
                   />
                 </div>
               </div>
@@ -227,7 +227,7 @@ const Contact = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full bg-secondary/5 border border-transparent focus:border-accent p-3 rounded-sm focus:outline-none transition-colors"
-                  placeholder="prasad@example.com"
+                  placeholder="Email Address"
                 />
               </div>
 
