@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import BgImage1 from "../assets/bgimage1.png";
 import BgImage2 from "../assets/profileimage.png";
-import SaffronImage from "../assets/saffron_box_new.png";
-import HingImage from "../assets/hing_jar_new.png";
+import SaffronImage from "../assets/saffron_jar.png";
+import HingImage from "../assets/hing_jar_s.png";
 
 const About = () => {
   useEffect(() => {

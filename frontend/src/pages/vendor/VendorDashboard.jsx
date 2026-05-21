@@ -1986,6 +1986,8 @@ const ComplianceContent = ({
     { value: "organic_certification", label: "Organic Certification" },
     { value: "pan_card", label: "PAN Card" },
     { value: "bank_details", label: "Bank Details" },
+    { value: "npop_certificate", label: "NPOP Certificate" },
+    { value: "nabl_certificate", label: "NABL Certificate" },
     { value: "other", label: "Other" },
   ];
 

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Globe, Shield, Star, Users, TrendingUp, Package, CheckCircle, ArrowRight, Mail } from "lucide-react";
+import { Globe, Shield, Star, Users, TrendingUp, Package, CheckCircle, ArrowRight, Mail, Sparkles } from "lucide-react";
 
 const benefits = [
   {
@@ -110,6 +110,33 @@ const VendorBenefits = () => {
           <p className="text-text-secondary text-sm uppercase tracking-[0.2em] mb-2">
             Siraba Organic Marketplace
           </p>
+        </div>
+
+        {/* ── ELITE MARKETPLACE HIGHLIGHT ── */}
+        <div className="relative overflow-hidden rounded-2xl mb-10 py-6 md:py-8" style={{ background: 'linear-gradient(135deg, #1a3c2a 0%, #0d2818 40%, #1a3c2a 100%)' }}>
+          <div className="absolute inset-0 opacity-10" style={{
+            backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(212,175,55,0.3) 50%, transparent 60%, transparent 100%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer-vb 3s linear infinite',
+          }} />
+          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+          <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+          <div className="text-center relative z-10 px-4">
+            <div className="flex flex-col items-center justify-center gap-3">
+              <span className="flex items-center gap-2 text-amber-400 text-xs md:text-sm font-bold uppercase tracking-[0.25em] bg-amber-400/10 border border-amber-400/30 px-4 py-1.5 rounded-full">
+                <Sparkles size={14} className="animate-pulse" />
+                Elite Organic Platform
+              </span>
+              <h2 className="font-heading text-xl md:text-2xl lg:text-3xl text-white font-bold tracking-wide leading-snug">
+                An{" "}
+                <span className="text-amber-400" style={{ textShadow: '0 0 20px rgba(212,175,55,0.4)' }}>
+                  Elite Organic Marketplace
+                </span>{" "}
+                for Globally Certified Products.
+              </h2>
+            </div>
+          </div>
+          <style>{`@keyframes shimmer-vb { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
         </div>
 
         {/* Intro */}

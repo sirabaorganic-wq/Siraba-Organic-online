@@ -36,6 +36,11 @@ const DOCUMENT_TYPES = [
     label: "Your NPOP Certificate",
     required: true,
   },
+  {
+    type: "nabl_certificate",
+    label: "NABL Certificate",
+    required: true,
+  },
 ];
 const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
@@ -326,6 +331,11 @@ const VendorOnboarding = () => {
 
     if (!docUploads.npop_certificate?.url) {
       setError("Please upload Your NPOP Certificate.");
+      return;
+    }
+
+    if (!docUploads.nabl_certificate?.url) {
+      setError("Please upload your NABL Certificate.");
       return;
     }
 
@@ -896,9 +906,10 @@ const VendorOnboarding = () => {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Required Documents:</strong> Upload at least your
-                business license or registration document. Additional documents
-                like FSSAI, organic certifications will help faster approval.
+                <strong>Required Documents:</strong> You must upload your
+                Business License / Registration, NPOP Certificate, and NABL
+                Certificate. Additional documents like FSSAI and organic
+                certifications will help with faster approval.
               </p>
             </div>
 

@@ -19,13 +19,13 @@ async function updateProducts() {
 
         const update1 = await Product.updateOne(
             { name: "Kashmiri Mongra Saffron" },
-            { $set: { image: "/images/saffron_box.png", images: ["/images/saffron_box.png"] } }
+            { $set: { image: "/images/saffron_jar.png", images: ["/images/saffron_jar.png"] } }
         );
         console.log(`Updated Saffron: ${update1.modifiedCount} modified.`);
 
         const update2 = await Product.updateOne(
             { name: "Premium Asafoetida (Hing)" },
-            { $set: { image: "/images/hing_jar.png", images: ["/images/hing_jar.png"] } }
+            { $set: { image: "/images/hing_jar_s.png", images: ["/images/hing_jar_s.png"] } }
         );
         console.log(`Updated Hing: ${update2.modifiedCount} modified.`);
 

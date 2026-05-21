@@ -170,7 +170,7 @@ const Contact = () => {
                 </h3>
                 <div className="space-y-1 text-text-secondary text-sm font-light">
                   <p><span className="font-semibold">Trade Name:</span> Siraba Organic</p>
-                  <p><span className="font-semibold">Business Type:</span> Proprietorship</p>
+                  {/* <p><span className="font-semibold">Business Type:</span> Proprietorship</p> */}
                   <p><span className="font-semibold">GSTIN:</span> 06ACMPT6127H1ZA</p>
                   <p className="pt-2 font-semibold">Registered Office:</p>
                   <p>1C, Shani Enclave, Nayagaon Bhondsi,<br />Gurugram, Haryana – 122102, India</p>

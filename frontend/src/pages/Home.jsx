@@ -2,8 +2,8 @@ import { ArrowRight, Star, Leaf, ShieldCheck, Globe, Clock, Sparkles } from "luc
 import { Link } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
 import HeroVideo from "../assets/Siraba_s_Organic_Spices_Video_Ready.mp4";
-import SaffronImg from "../assets/saffron_box.png";
-import AsafoetidaImg from "../assets/hing_jar.png";
+import SaffronImg from "../assets/saffron_jar.png";
+import AsafoetidaImg from "../assets/hing_jar_s.png";
 import BgImage2 from "../assets/bgimage2.png";
 import BgImage1 from "../assets/bgimage1.png"; // Fallback or extra usage
 import TextMarquee from "../components/TextMarquee";
@@ -109,6 +109,37 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ── USP HIGHLIGHT BANNER ── */}
+      <section className="relative overflow-hidden py-6 md:py-8" style={{ background: 'linear-gradient(135deg, #1a3c2a 0%, #0d2818 40%, #1a3c2a 100%)' }}>
+        {/* Animated shimmer overlay */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(212,175,55,0.3) 50%, transparent 60%, transparent 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 3s linear infinite',
+        }} />
+        {/* Top & bottom gold accent lines */}
+        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-5">
+            <span className="flex items-center gap-2 text-accent text-xs md:text-sm font-bold uppercase tracking-[0.25em] bg-accent/10 border border-accent/30 px-4 py-1.5 rounded-full">
+              <Sparkles size={14} className="animate-pulse" />
+              USP
+            </span>
+            <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl text-surface font-bold tracking-wide">
+              India's{" "}
+              <span className="text-accent" style={{ textShadow: '0 0 20px rgba(212,175,55,0.4)' }}>
+                Triple-Verified
+              </span>{" "}
+              Organic Marketplace
+            </h2>
+          </div>
+          <p className="text-white/50 text-xs md:text-sm mt-3 tracking-widest uppercase font-light">
+            EU Organic · USDA Organic · NPOP Certified · NABL Lab Standards
+          </p>
+        </div>
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+      </section>
 
       {/* ── TRUST STRIP ── */}
       <section className="bg-primary py-4 overflow-hidden">

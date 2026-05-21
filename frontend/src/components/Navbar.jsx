@@ -11,7 +11,7 @@ const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
     const [isMobileCurrencyOpen, setIsMobileCurrencyOpen] = useState(false);
-    const [isMobileAboutOpen, setIsMobileAboutOpen] = useState(false);
+    const [mobileDropdownOpen, setMobileDropdownOpen] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const searchInputRef = useRef(null);
     const currencyRef = useRef(null);
@@ -95,6 +95,27 @@ const Navbar = () => {
         }
     };
 
+    const navItems = [
+        { label: 'Shop', path: '/shop' },
+        {
+            label: 'Why Siraba',
+            children: [
+                { label: 'Our Story', path: '/our-story' },
+                { label: 'Why Our Market Place is diferent', path: '/why-siraba' },
+                { label: 'Certifications & Standards', path: '/certifications' },
+            ]
+        },
+        { label: 'Standards Journal', path: '/blog' },
+        { label: 'Contact', path: '/contact' },
+        { label: 'Vendor Qualification',
+            children: [
+                { label: 'Qualification Requirements', path: '/vendor-qualification' },
+                { label: 'Apply as Vendor', path: '/vendor' },
+                { label: 'Marketplace Benefits', path: '/vendor-benefits' }
+            ]
+         }
+    ];
+
     return (
         <nav className="fixed w-full z-50 bg-background/80 backdrop-blur-md border-b border-secondary/20 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -122,6 +143,9 @@ const Navbar = () => {
                                 <span className="text-[0.55rem] md:text-[0.65rem] uppercase tracking-[0.2em] text-secondary font-medium group-hover:text-primary transition-colors duration-300 leading-tight">
                                     Organic
                                 </span>
+                                <p className="text-secondary text-[0.55rem] leading-relaxed font-light">
+                                Certified • Verified • Qualified
+                                </p>
                             </div>
                         </Link>
                     </div>
@@ -131,27 +155,7 @@ const Navbar = () => {
                         {!isSearchOpen ? (
                             /* Standard Nav Links */
                             <div className="hidden md:flex items-center space-x-6 lg:space-x-8 animate-fade-in">
-                                {[
-                                    { label: 'Shop', path: '/shop' },
-                                    {
-                                        label: 'Why Siraba',
-                                        children: [
-                                            { label: 'Our Story', path: '/our-story' },
-                                            { label: 'Why Our Market Place is diferent', path: '/why-siraba' },
-                                            { label: 'Certifications & Standards', path: '/certifications' },
-                                        ]
-                                    },
-                                    { label: 'Standards Journal', path: '/blog' },
-                                    { label: 'Contact', path: '/contact' },
-                                    { label: 'Vendor Qualification',
-                                        children: [
-                                            { label: 'Qualification Requirements', path: '/vendor-qualification' },
-                                            { label: 'Apply as Vendor', path: '/vendor' },
-                                            { label: 'Marketplace Benefits', path: '/vendor-benefits' }
-
-                                        ]
-                                     }
-                                ].map((item) => (
+                                {navItems.map((item) => (
                                     item.children ? (
                                         <div key={item.label} className="relative group">
                                             <button className="flex items-center gap-1 text-text-primary hover:text-accent font-body text-xs lg:text-sm uppercase tracking-widest transition-all duration-300 py-2">
@@ -354,58 +358,41 @@ const Navbar = () => {
                     </div>
                 </div>
                 <div className="px-4 pt-2 pb-6 space-y-2">
-                    {/* Shop */}
-                    <Link
-                        to="/shop"
-                        className="block px-3 py-3 text-base font-medium text-primary hover:bg-secondary/10 hover:text-accent rounded-md transition-colors"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        Shop
-                    </Link>
-
-                    {/* About Dropdown */}
-                    <div>
-                        <button
-                            onClick={() => setIsMobileAboutOpen(!isMobileAboutOpen)}
-                            className="flex items-center justify-between w-full px-3 py-3 text-base font-medium text-primary hover:bg-secondary/10 hover:text-accent rounded-md transition-colors"
-                        >
-                            <span>About</span>
-                            <ChevronDown size={16} className={`transition-transform duration-300 ${isMobileAboutOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        <div className={`overflow-hidden transition-all duration-300 ${isMobileAboutOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
-                            <div className="pl-6 space-y-1 py-1">
-                                {[
-                                    { label: 'Our Story', path: '/our-story' },
-                                    { label: 'Why Siraba', path: '/why-siraba' },
-                                    { label: 'Certifications', path: '/certifications' }
-                                ].map(child => (
-                                    <Link
-                                        key={child.label}
-                                        to={child.path}
-                                        onClick={() => setIsOpen(false)}
-                                        className="block px-3 py-2 text-sm text-text-secondary hover:text-accent transition-colors"
-                                    >
-                                        {child.label}
-                                    </Link>
-                                ))}
+                    {navItems.map((item) => (
+                        item.children ? (
+                            <div key={item.label}>
+                                <button
+                                    onClick={() => setMobileDropdownOpen(mobileDropdownOpen === item.label ? '' : item.label)}
+                                    className="flex items-center justify-between w-full px-3 py-3 text-base font-medium text-primary hover:bg-secondary/10 hover:text-accent rounded-md transition-colors"
+                                >
+                                    <span>{item.label}</span>
+                                    <ChevronDown size={16} className={`transition-transform duration-300 ${mobileDropdownOpen === item.label ? 'rotate-180' : ''}`} />
+                                </button>
+                                <div className={`overflow-hidden transition-all duration-300 ${mobileDropdownOpen === item.label ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                    <div className="pl-6 space-y-1 py-1">
+                                        {item.children.map(child => (
+                                            <Link
+                                                key={child.label}
+                                                to={child.path}
+                                                onClick={() => setIsOpen(false)}
+                                                className="block px-3 py-2 text-sm text-text-secondary hover:text-accent transition-colors"
+                                            >
+                                                {child.label}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {[
-                        { label: 'B2B', path: '/b2b' },
-                        { label: 'Blog', path: '/blog' },
-                        { label: 'Contact', path: '/contact' },
-                        { label: 'Track Order', path: '/track-order' }
-                    ].map((item) => (
-                        <Link
-                            key={item.label}
-                            to={item.path}
-                            className="block px-3 py-3 text-base font-medium text-primary hover:bg-secondary/10 hover:text-accent rounded-md transition-colors"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            {item.label}
-                        </Link>
+                        ) : (
+                            <Link
+                                key={item.label}
+                                to={item.path}
+                                className="block px-3 py-3 text-base font-medium text-primary hover:bg-secondary/10 hover:text-accent rounded-md transition-colors"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                {item.label}
+                            </Link>
+                        )
                     ))}
                     <Link
                         to="/account"

@@ -100,8 +100,8 @@ const registerValidators = [
 const complianceValidators = [
   body("name").trim().notEmpty().withMessage("Document name is required"),
   body("type")
-    .isIn(["business_license", "gst_certificate", "fssai_license", "organic_certification", "pan_card", "bank_details", "other", "npop_certificate"])
-    .withMessage("Document type is invalid. Must be one of: business_license, gst_certificate, fssai_license, organic_certification, pan_card, bank_details, other, npop_certificate"),
+    .isIn(["business_license", "gst_certificate", "fssai_license", "organic_certification", "pan_card", "bank_details", "other", "npop_certificate", "nabl_certificate"])
+    .withMessage("Document type is invalid. Must be one of: business_license, gst_certificate, fssai_license, organic_certification, pan_card, bank_details, other, npop_certificate, nabl_certificate"),
   body("fileUrl").trim().notEmpty().withMessage("File URL is required"),
 ];
 

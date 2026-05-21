@@ -20,6 +20,9 @@ const Footer = () => {
                 <span className="text-[0.65rem] uppercase tracking-[0.3em] text-secondary leading-tight">
                   Organic
                 </span>
+                <p className="text-secondary text-[0.55rem] leading-relaxed font-light">
+                Certified • Verified • Qualified
+                </p> 
               </div>
             </div>
             <p className="text-white/60 text-sm leading-relaxed font-light">

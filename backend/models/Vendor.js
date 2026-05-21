@@ -14,6 +14,7 @@ const complianceDocSchema = mongoose.Schema({
       "bank_details",
       "other",
       "npop_certificate",
+      "nabl_certificate",
     ],
     required: true,
   },
