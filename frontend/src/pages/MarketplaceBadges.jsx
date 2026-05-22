@@ -572,7 +572,7 @@ const MarketplaceBadges = () => {
                   info@sirabaorganic.com
                 </a>
                 <Link
-                  to="/vendor/qualification"
+                  to="/vendor-qualification"
                   className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:bg-white/20 transition-colors"
                 >
                   View Qualification Program
