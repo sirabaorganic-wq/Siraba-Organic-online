@@ -30,7 +30,7 @@ const About = () => {
         <div className="absolute inset-0 bg-primary/40 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
 
-        <div className="relative z-10 text-center max-w-4xl px-4 animate-fade-in-up space-y-7">
+        <div className="relative z-10 text-center max-w-4xl px-4 animate-fade-in-up space-y-1">
           <span className="inline-block py-1 px-4 border border-accent/30 rounded-full text-accent text-xs tracking-[0.2em] uppercase font-bold backdrop-blur-sm bg-black/20">
             Curated Global-Standard Organic Marketplace
           </span>
