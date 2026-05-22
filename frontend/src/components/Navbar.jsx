@@ -111,7 +111,8 @@ const Navbar = () => {
             children: [
                 { label: 'Qualification Requirements', path: '/vendor-qualification' },
                 { label: 'Apply as Vendor', path: '/vendor' },
-                { label: 'Marketplace Benefits', path: '/vendor-benefits' }
+                { label: 'Marketplace Benefits', path: '/vendor-benefits' },
+                { label: 'Qualification Badges', path: '/vendor/badges' }
             ]
          }
     ];
@@ -143,7 +144,7 @@ const Navbar = () => {
                                 <span className="text-[0.55rem] md:text-[0.65rem] uppercase tracking-[0.2em] text-secondary font-medium group-hover:text-primary transition-colors duration-300 leading-tight">
                                     Organic
                                 </span>
-                                <p className="text-secondary text-[0.55rem] leading-relaxed font-light">
+                                <p className="text-secondary text-[0.65rem] leading-relaxed font-light">
                                 Certified • Verified • Qualified
                                 </p>
                             </div>
@@ -368,7 +369,7 @@ const Navbar = () => {
                                     <span>{item.label}</span>
                                     <ChevronDown size={16} className={`transition-transform duration-300 ${mobileDropdownOpen === item.label ? 'rotate-180' : ''}`} />
                                 </button>
-                                <div className={`overflow-hidden transition-all duration-300 ${mobileDropdownOpen === item.label ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className={`overflow-hidden transition-all duration-300 ${mobileDropdownOpen === item.label ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
                                     <div className="pl-6 space-y-1 py-1">
                                         {item.children.map(child => (
                                             <Link

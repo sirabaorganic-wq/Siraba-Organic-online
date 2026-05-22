@@ -55,6 +55,7 @@ import VendorOnboardingChecklist from "./pages/vendor/VendorOnboardingChecklist"
 import VendorVerificationPolicies from "./pages/vendor/VendorVerificationPolicies";
 import VendorTermsAndConditions from "./pages/vendor/VendorTermsAndConditions";
 import VendorFAQ from "./pages/vendor/VendorFAQ";
+import MarketplaceBadges from "./pages/MarketplaceBadges";
 import SirabaAssistant from "./components/SirabaAssistant";
 import { SocketProvider } from "./context/SocketContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
@@ -244,6 +245,7 @@ function App() {
                                 path="/vendor-faq"
                                 element={<VendorFAQ />}
                               />
+                              <Route path="/vendor/badges" element={<MarketplaceBadges />} />
 
                               {/* Placeholder Routes - To be implemented */}
                               <Route

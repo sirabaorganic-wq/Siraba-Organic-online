@@ -17,10 +17,10 @@ const Footer = () => {
                 <span className="font-heading text-2xl font-bold tracking-wide text-surface leading-none">
                   SIRABA
                 </span>
-                <span className="text-[0.65rem] uppercase tracking-[0.3em] text-secondary leading-tight">
+                <span className="text-[0.65rem] uppercase tracking-[0.3em] text-surface leading-tight">
                   Organic
                 </span>
-                <p className="text-secondary text-[0.55rem] leading-relaxed font-light">
+                <p className="text-surface text-[0.65rem] leading-relaxed font-light">
                 Certified • Verified • Qualified
                 </p> 
               </div>
