@@ -4,103 +4,103 @@ import { Mail, ArrowRight } from "lucide-react";
 const faqs = [
   {
     q: "What is the Siraba Organic Vendor Program?",
-    a: "The Siraba Organic Vendor Program allows certified organic producers, processors, and exporters to list their products on the Siraba Organic platform and reach customers globally. Our goal is to build a trusted organic marketplace where every listed product meets strict certification, quality, and traceability standards.",
+    a: "The SIRABA ORGANIC Vendor Program is a qualification-based onboarding ecosystem designed for vendors who meet internationally aligned organic certification and documentation standards. Unlike open marketplaces, SIRABA ORGANIC follows a selective approval framework built around certification, scientific documentation, traceability, and compliance-focused marketplace governance.",
   },
   {
     q: "Who can become a vendor on Siraba Organic?",
-    a: "Businesses eligible to apply include certified organic farmers, organic food processors, spice producers and exporters, organic product brands, and organic certified manufacturers. All vendors must comply with recognized organic certification standards.",
+    a: "Vendors who hold recognized organic certifications and maintain documentation-backed operational systems may apply for qualification. Eligible applicants may include certified organic brands, export-oriented organic processors, premium spice and saffron suppliers, organic ingredient manufacturers, and traceability-focused agricultural businesses.",
   },
   {
     q: "What certifications are required to sell on Siraba Organic?",
-    a: "Vendors must hold recognized organic certifications such as EU Organic, USDA Organic, or NPOP (India Organic). At least one certification is required for domestic listing, and at least two certifications are recommended for products intended for international sales. Products must also meet Siraba Organic's quality and traceability standards before approval.",
+    a: "Approved vendors are generally expected to provide valid NPOP Certification, USDA Organic OR EU Organic Certification, and NABL-accredited laboratory documentation where applicable.",
   },
   {
     q: "What types of products can vendors list?",
-    a: "Siraba Organic focuses on certified organic products, especially organic spices, herbs, food ingredients, and certified agricultural products. Our flagship categories currently include Kashmiri Saffron (Kesar) and Premium Asafoetida (Hing). Additional certified organic products may be considered for listing.",
+    a: "SIRABA ORGANIC currently focuses on premium organic ingredients and certification-aligned product categories including Kashmiri saffron, premium hing (asafoetida), organic spices, herbal ingredients, export-grade organic food products, and traceability-supported organic products.",
   },
   {
     q: "How does the vendor onboarding process work?",
-    a: "The onboarding process is designed to ensure quality, certification compliance, and transparency. It involves five steps: (1) Vendor Application — submit your inquiry via the Vendor Registration page or email; (2) Certification Verification — our team reviews your organic certification documents, business registration, and product category compliance; (3) Product Documentation — submit product descriptions, certification proof, quality documentation, and images; (4) Quality & Compliance Review — we verify certification validity, traceability, and compliance; (5) Vendor Account Activation — once approved, you can list products on the platform.",
+    a: "The onboarding process generally includes vendor application submission, certification review, documentation verification, qualification assessment, product compliance evaluation, and marketplace approval decision.",
   },
   {
     q: "Who is responsible for product certification and compliance?",
-    a: "Vendors are responsible for maintaining organic certification validity, quality compliance, and export documentation (if applicable). Siraba Organic acts as a technology and marketplace platform that connects verified vendors with customers.",
+    a: "Vendors are fully responsible for maintaining valid certifications, documentation accuracy, traceability records, packaging compliance, and regulatory obligations.",
   },
   {
     q: "Are products tested before listing?",
-    a: "Products may undergo verification and laboratory testing to ensure purity, food safety compliance, and authenticity. Only products that meet Siraba Organic's standards are approved.",
+    a: "SIRABA ORGANIC may require laboratory documentation aligned with NABL-accredited testing standards depending on product category and marketplace requirements.",
   },
   {
     q: "Can vendors sell internationally through Siraba Organic?",
-    a: "Yes. Vendors who hold multiple recognized certifications (such as USDA Organic and EU Organic) may be eligible for international marketplace exposure. International sales may also require export compliance documentation, food safety certifications, and proper packaging standards.",
+    a: "SIRABA ORGANIC is strategically positioned around internationally aligned organic standards and export-oriented marketplace positioning.",
   },
   {
     q: "Are there listing or commission fees?",
-    a: "Vendor terms, commissions, or service charges may vary depending on product category, sales channel (B2C or B2B), and logistics support requirements. Details will be provided during vendor onboarding.",
+    a: "Marketplace fee structures, onboarding models, commissions, and qualification-related policies may vary depending on vendor category and marketplace requirements.",
   },
   {
     q: "How can vendors apply to become a Siraba Organic partner?",
-    a: "Interested vendors may contact us at info@sirabaorganic.com with the subject line 'Vendor Registration'. Please include your company details, product category, and organic certification information. Our team will guide you through the onboarding process.",
+    a: "Interested vendors may apply through the official Vendor Qualification section on the SIRABA ORGANIC website by submitting business information, certification documentation, product details, and qualification-related records.",
   },
   {
     q: "How long does vendor approval take?",
-    a: "Vendor applications are typically reviewed within 2–5 business days after all required documents and certifications are submitted.",
+    a: "Approval timelines may vary depending on documentation completeness, certification verification, product category, and compliance review requirements.",
   },
   {
     q: "Can individual farmers apply as vendors?",
-    a: "Yes. Individual farmers may apply if they hold recognized organic certification such as EU Organic, USDA Organic, or NPOP.",
+    a: "Individual farmers may apply if they satisfy applicable qualification standards, certification requirements, documentation systems, and operational compliance criteria.",
   },
   {
     q: "Do vendors need their own organic certification?",
-    a: "Yes. Vendors must hold valid certification for the products they wish to list. Siraba Organic only lists certified organic products to maintain marketplace trust.",
+    a: "Yes. Vendors are generally expected to maintain valid certification documentation aligned with marketplace qualification standards.",
   },
   {
     q: "What happens if a certification expires?",
-    a: "Vendors must update certification documents before expiry. Products may be temporarily removed from the platform if certification becomes invalid.",
+    a: "Expired certifications may affect marketplace eligibility, product visibility, qualification status, or vendor approval continuity.",
   },
   {
     q: "Can vendors sell multiple products?",
-    a: "Yes. Vendors can list multiple certified products as long as each product meets Siraba Organic's certification and compliance requirements.",
+    a: "Yes. Vendors may apply to list multiple qualified products provided each product satisfies applicable certification, documentation, and marketplace approval requirements.",
   },
   {
     q: "Who manages product packaging?",
-    a: "Vendors are responsible for ensuring packaging complies with certification standards, labeling regulations, and export requirements (if applicable).",
+    a: "Vendors are responsible for packaging systems, product labeling, regulatory compliance, and food-grade packaging standards.",
   },
   {
     q: "Are vendors responsible for order fulfillment?",
-    a: "Depending on the operational model, vendors may ship products directly, work with Siraba's logistics partners, or follow platform fulfillment guidelines. Details are provided during onboarding.",
+    a: "Operational responsibilities may vary depending on marketplace structure, logistics arrangements, and onboarding agreements.",
   },
   {
     q: "Does Siraba Organic support international exports?",
-    a: "Yes. Vendors holding multiple recognized certifications may be eligible to sell to international customers through the platform.",
+    a: "SIRABA ORGANIC is strategically aligned with internationally recognized organic standards and export-oriented ecosystem positioning.",
   },
   {
     q: "What product information must vendors provide?",
-    a: "Vendors must provide product description, certification details, origin information, product images, and packaging information.",
+    a: "Vendors may be required to provide certification records, product specifications, ingredient information, sourcing details, laboratory documentation, packaging information, traceability records, and operational compliance details.",
   },
   {
     q: "Can Siraba Organic reject product listings?",
-    a: "Yes. Siraba Organic may reject or remove listings if products do not meet certification, documentation, or quality standards.",
+    a: "Yes. SIRABA ORGANIC reserves the right to reject, suspend, or remove listings that do not satisfy marketplace qualification standards or compliance expectations.",
   },
   {
     q: "Are vendors allowed to update product details?",
-    a: "Yes. Vendors may update product descriptions, images, and pricing through their vendor dashboard.",
+    a: "Yes. Product updates may be permitted subject to marketplace review policies, documentation accuracy, and qualification compliance standards.",
   },
   {
     q: "Who owns the product listings?",
-    a: "Vendors retain ownership of their product content but grant Siraba Organic permission to display it on the platform.",
+    a: "Vendors retain ownership of their products, trademarks, and associated intellectual property, subject to platform policies and onboarding agreements.",
   },
   {
     q: "What happens if customers report quality issues?",
-    a: "Siraba Organic may review the product and request documentation or clarification from the vendor to ensure compliance with platform standards.",
+    a: "Quality-related concerns may trigger internal review, documentation reassessment, compliance verification, or qualification review procedures.",
   },
   {
     q: "Can vendors sell products outside the spice category?",
-    a: "Yes. Siraba Organic may allow other certified organic categories such as herbs, ingredients, and agricultural products if they meet certification requirements.",
+    a: "Potentially yes, provided products align with marketplace positioning, certification standards, documentation requirements, and qualification policies.",
   },
   {
     q: "How does Siraba Organic protect marketplace quality?",
-    a: "Siraba Organic maintains marketplace integrity through certification verification, vendor compliance checks, documentation review, and periodic monitoring.",
+    a: "SIRABA ORGANIC follows a selective qualification-led ecosystem built around certification validation, scientific documentation, traceability-oriented governance, compliance-focused onboarding, and selective vendor approval systems under the philosophy: Certified. Verified. Qualified.",
   },
 ];
 

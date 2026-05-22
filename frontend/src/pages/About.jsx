@@ -308,29 +308,29 @@ const About = () => {
       <div className="w-full bg-primary text-surface py-4 overflow-hidden whitespace-nowrap">
         <div className="inline-block animate-marquee">
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • HONESTY
+            • CERTIFIED
           </span>
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • INTEGRITY
+            • VERIFIED
           </span>
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • TRACEABILITY
+            • QUALIFIED
           </span>
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • TRADITION
+            • TRACEABLE
           </span>
           {/* repeat once for loop */}
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • HONESTY
+            • INTERNATIONALLY ALIGNED
           </span>
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • INTEGRITY
+            • DOCUMENTATION-BACKED
           </span>
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • TRACEABILITY
+            • MARKETPLACE APPROVED
           </span>
           <span className="text-2xl md:text-3xl font-heading font-thin mx-8">
-            • TRADITION
+            • EXPORT GRADE STANDARDS
           </span>
         </div>
       </div>

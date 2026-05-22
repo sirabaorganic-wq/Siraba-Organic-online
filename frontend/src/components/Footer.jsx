@@ -149,11 +149,11 @@ const Footer = () => {
                   Our Story
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link to="/founder-faqs" className="hover:text-accent transition-colors">
                   Founder & Branding FAQs
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link to="/organic-certification-guide" className="hover:text-accent transition-colors">
                   Organic Certification Guide

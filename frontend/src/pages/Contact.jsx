@@ -177,10 +177,47 @@ const Contact = () => {
                   <p className="pt-2 font-semibold">Corporate Office:</p>
                   <p>Plot No. 77, Basement, Neelkanth Enclave,<br />Near Ekta Hospital, Sohna Road,<br />Badshahpur, Sector 69, Gurugram – 122101, Haryana, India</p>
                 </div>
-              </div>
+                </div>
+                <div className="pt-4 border-t border-secondary/10 mt-4">
+                <h3 className="font-heading text-sm font-bold text-primary mb-3 uppercase tracking-[0.2em]">
+                  Bank Details
+                </h3>
 
+                <div className="space-y-2 text-text-secondary text-sm font-light">
+                <p>
+                <span className="font-semibold">Bank Name:</span> Bank of Baroda
+                </p>
+
+                <p>
+                <span className="font-semibold">Account Type:</span> Current Account
+                </p>
+
+                <p>
+                <span className="font-semibold">Account Number:</span> 7356 0200 0011 84
+                </p>
+
+                <p>
+                <span className="font-semibold">IFSC Code:</span> BARB0DBGURD
+                </p>
+
+                <p>
+                <span className="font-semibold">MICR Code:</span> 1100 1229 0
+                </p>
+
+                <div className="pt-2">
+                <p className="font-semibold mb-1">Bank Address:</p>
+
+                <p>
+                 Unit: 8-12, Ground Floor, Universal Tower,<br />
+                Sector-49, Sohna Road,<br />
+                 Gurugram - 122018, Haryana, India
+                </p>
+             </div>
             </div>
           </div>
+
+        </div>
+      </div>
 
           {/* Contact Form */}
           <div className="bg-surface p-8 md:p-12 shadow-xl rounded-sm border border-secondary/10 h-1/2">

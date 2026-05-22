@@ -3,134 +3,133 @@ import React, { useEffect, useState } from "react";
 const faqs = [
   {
     q: "What is Siraba Organic?",
-    a: "Siraba Organic is a quality-focused organic marketplace and brand dedicated to bringing certified organic products to consumers worldwide. Our flagship products include Kashmiri Saffron (Kesar) and Premium Asafoetida (Hing), sourced and verified through strict quality standards.",
+    a: "SIRABA ORGANIC is India’s Triple-Verified Organic Marketplace built around internationally recognized certification standards, scientific documentation, and selective vendor qualification systems.",
   },
   {
     q: "What makes Siraba Organic different from other spice brands?",
-    a: "Most spice sellers focus on marketing claims. Siraba Organic focuses on verified authenticity and traceability. Every product listed on our platform must meet strict certification and quality requirements, ensuring customers receive genuine, safe, and premium-grade ingredients.",
+    a: "Unlike conventional spice brands or open marketplaces, SIRABA ORGANIC operates through a qualification-led ecosystem focused on internationally aligned certification standards, scientific documentation, traceability-oriented sourcing, selective vendor onboarding, and marketplace governance systems.",
   },
   {
-    q: "What are Siraba Organic's flagship products?",
-    a: "Our primary flagship products are Kashmiri Saffron (Kesar) — known globally for its rich aroma, deep color, and high crocin content — and Premium Asafoetida (Hing) — India's finest compounded hing, widely used in culinary and medicinal traditions. Both products are selected for their purity, potency, and authenticity.",
+    q: "What are Siraba Organic’s flagship products?",
+    a: "SIRABA ORGANIC is strategically launching with Kashmiri Saffron and Premium Asafoetida (Hing), categories selected for their authenticity requirements and premium sourcing standards.",
   },
   {
     q: "Are Siraba Organic products certified organic?",
-    a: "Yes. Siraba Organic prioritizes products that comply with internationally recognized organic standards such as EU Organic, USDA Organic, and NPOP (India Organic). Products must also comply with food safety and traceability standards.",
+    a: "Products listed on SIRABA ORGANIC are expected to align with marketplace qualification standards that may include NPOP Certification, USDA Organic OR EU Organic Certification, and documentation-supported compliance systems.",
   },
   {
     q: "Are Siraba products laboratory tested?",
-    a: "Yes. Products undergo globally accredited laboratory testing to verify purity, safety, absence of harmful contaminants, and quality parameters. This ensures compliance with international food safety standards.",
+    a: "SIRABA ORGANIC promotes documentation-backed marketplace standards and may require laboratory reports aligned with NABL-accredited testing standards where applicable.",
   },
   {
     q: "Can other vendors sell products on Siraba Organic?",
-    a: "Yes. Siraba Organic welcomes vendors who possess recognized organic certifications such as EU Organic, USDA Organic, or NPOP (India Organic). Vendors must hold at least one of these certifications for domestic listing, and a minimum of two for global or international sales. All products must also meet Siraba Organic's internal standards for quality, traceability, and food safety. Only products that successfully pass our verification process are approved for listing.",
+    a: "Yes. However, SIRABA ORGANIC follows a selective vendor qualification framework built around certification, documentation, traceability, and compliance-focused onboarding standards.",
   },
   {
     q: "How does Siraba ensure product authenticity?",
-    a: "We follow a strict quality verification process: certified sourcing from approved suppliers, compliance with organic certification standards, laboratory testing for safety and purity, batch traceability and documentation, and secure packaging and quality control.",
+    a: "SIRABA ORGANIC focuses on marketplace trust through certification-led qualification systems, documentation verification, traceability-oriented sourcing, scientific documentation standards, and selective vendor approval processes.",
   },
   {
     q: "Do you sell internationally?",
-    a: "Yes. Siraba Organic aims to serve both Indian and international customers. Shipping options for international deliveries are gradually being expanded.",
+    a: "SIRABA ORGANIC is strategically positioned around internationally aligned organic standards and export-oriented ecosystem positioning.",
   },
   {
     q: "How should saffron be stored?",
-    a: "To maintain its quality, store saffron in an airtight container, away from moisture, heat, and direct sunlight, in a cool and dark place. Proper storage helps preserve its aroma, flavor, and potency.",
+    a: "Saffron should generally be stored in an airtight container away from sunlight, heat, moisture, and strong odors to preserve aroma, color, and flavor.",
   },
   {
     q: "What are the health benefits of saffron?",
-    a: "Saffron has been traditionally valued for its antioxidant properties, mood support, digestive health, and culinary enhancement. It is widely used in gourmet cooking, wellness formulations, and traditional remedies.",
+    a: "Saffron has traditionally been valued for its culinary richness, antioxidant compounds, aroma, and wellness-oriented applications.",
   },
   {
     q: "What is asafoetida (hing) used for?",
-    a: "Asafoetida is commonly used in Indian and Middle Eastern cooking, digestive support in traditional medicine, and flavor enhancement in vegetarian dishes. A small quantity adds strong aroma and deep flavor to food.",
+    a: "Asafoetida (hing) is traditionally used as a culinary spice, flavor enhancer, and ingredient in various regional cuisines.",
   },
   {
     q: "How can businesses source products from Siraba Organic?",
-    a: "Businesses such as importers, gourmet retailers, HoReCa chains, food manufacturers, and wellness brands may contact us for bulk sourcing and partnership opportunities.",
+    a: "Businesses may contact SIRABA ORGANIC for B2B sourcing, bulk procurement, premium organic ingredient partnerships, and qualification-aligned sourcing discussions.",
   },
   {
     q: "How can I become a vendor on Siraba Organic?",
-    a: "Vendors must hold recognized organic certifications, provide documentation and quality reports, and meet Siraba's product verification standards. Interested vendors can contact us through our vendor onboarding process.",
+    a: "Interested vendors may apply through the Vendor Qualification section on the official SIRABA ORGANIC website by submitting business information, certification records, product details, and qualification-related documentation.",
   },
   {
     q: "How can customers contact Siraba Organic?",
-    a: "For customer support or queries, you can reach us at info@sirabaorganic.com or call +91-8586836660. We are always happy to assist.",
+    a: "Customers may connect through the official Contact page, website inquiry forms, or marketplace communication channels available on the SIRABA ORGANIC platform.",
   },
   {
     q: "Why are organic products sometimes more expensive?",
-    a: "Certified organic products often require stricter farming practices, certification audits, quality testing, and careful processing. These standards ensure purity and authenticity, which can increase production costs.",
+    a: "Certified organic products may involve regulated cultivation standards, certification costs, documentation systems, traceability requirements, premium sourcing processes, and compliance-focused operations.",
   },
   {
     q: "How can I verify that a product is truly organic?",
-    a: "Customers can verify organic authenticity by checking for recognized certifications such as EU Organic, USDA Organic, or NPOP (India Organic). Siraba Organic prioritizes products that meet these certification standards.",
+    a: "Consumers should review certification details, product documentation, labeling standards, traceability information, and marketplace qualification systems.",
   },
   {
     q: "How does Siraba Organic ensure product traceability?",
-    a: "We maintain traceability through certified sourcing, vendor documentation, certification verification, and batch-level records. This ensures transparency from source to customer.",
+    a: "SIRABA ORGANIC promotes traceability-oriented marketplace standards through vendor qualification systems, documentation review, certification validation, and sourcing transparency requirements.",
   },
   {
     q: "Are Siraba Organic products safe for daily consumption?",
-    a: "Products listed on Siraba Organic must comply with recognized certification standards and food safety regulations, making them suitable for regular culinary use when consumed appropriately.",
+    a: "Products listed on SIRABA ORGANIC are sourced through a qualification-led marketplace ecosystem built around internationally aligned certification standards, documentation-focused sourcing systems, and compliance-oriented vendor onboarding.",
   },
   {
     q: "How are products packaged for delivery?",
-    a: "Products are packed in secure, food-safe packaging designed to preserve freshness, aroma, and product quality during transportation.",
+    a: "Packaging systems may vary depending on vendor operations, product category, logistics requirements, and food-grade packaging standards.",
   },
   {
     q: "How long do organic spices stay fresh?",
-    a: "When stored properly in airtight containers away from moisture and sunlight, organic spices can retain their quality for extended periods.",
+    a: "Shelf life may vary depending on storage conditions, packaging quality, spice type, and environmental exposure.",
   },
   {
     q: "Can I return products if there is a quality issue?",
-    a: "If customers experience any product quality concerns, they may contact Siraba Organic support for assistance and review.",
+    a: "Return, replacement, or quality-related support may depend on marketplace policies, vendor terms, and order-specific review processes.",
   },
   {
     q: "Do organic spices taste different from regular spices?",
-    a: "Organic spices are often valued for their natural aroma, purity, and flavor because they are produced without synthetic additives.",
+    a: "Many consumers associate premium organic spices with stronger aroma, richer flavor, and improved ingredient integrity.",
   },
   {
     q: "Does Siraba Organic support sustainable farming practices?",
-    a: "Yes. Organic certification systems promote environmentally responsible farming practices and sustainable agriculture.",
+    a: "SIRABA ORGANIC supports marketplace philosophies aligned with certification-led agriculture, traceability systems, compliance-focused sourcing, and internationally recognized organic standards.",
   },
   {
     q: "Are Siraba Organic products free from artificial additives?",
-    a: "Products listed on the platform must comply with certification standards, which typically restrict the use of artificial additives and harmful substances.",
+    a: "SIRABA ORGANIC focuses on premium organic products sourced from qualified vendors operating under certification-led and documentation-supported marketplace standards.",
   },
   {
     q: "Can I buy products in bulk from Siraba Organic?",
-    a: "Yes. Businesses such as retailers, food manufacturers, and distributors may contact Siraba Organic for bulk sourcing opportunities.",
+    a: "Bulk sourcing and B2B inquiries may be supported depending on product availability, vendor capability, logistics arrangements, and operational requirements.",
   },
   {
     q: "How often are products reviewed for quality?",
-    a: "Siraba Organic periodically reviews vendor documentation and certification records to maintain marketplace standards.",
+    a: "Marketplace quality systems may involve documentation review, qualification reassessment, certification monitoring, and compliance-focused governance procedures where applicable.",
   },
   {
     q: "What should I look for when buying saffron online?",
-    a: "When purchasing saffron, customers should look for deep red stigmas, strong aroma, certification or quality verification, and reliable sourcing.",
+    a: "Consumers should consider certification credibility, sourcing transparency, packaging quality, documentation support, vendor trust, and product authenticity indicators.",
   },
   {
     q: "Can organic products lose certification?",
-    a: "Yes. Certifications must be renewed periodically. Vendors must maintain valid certification to continue listing products on Siraba Organic.",
+    a: "Yes. Certification validity depends on ongoing compliance with applicable standards, inspections, documentation requirements, and certification body policies.",
   },
   {
     q: "How can I stay updated about new products on Siraba Organic?",
-    a: "Customers may follow Siraba Organic updates through the website, newsletters, or announcements regarding new certified organic products.",
+    a: "Customers may stay updated through the official website, marketplace announcements, future newsletter updates, blog content, and official communication channels.",
   },
   {
     q: "What makes Siraba Organic different from other organic marketplaces?",
-    a: "Siraba Organic prioritizes globally recognized organic certifications and a structured verification process before products are listed on the platform.",
+    a: "SIRABA ORGANIC operates through a qualification-led ecosystem built around certification validation, scientific documentation, selective vendor onboarding, traceability-oriented governance, and internationally aligned organic standards.",
   },
   {
     q: "Who founded Siraba Organic?",
-    a: "Siraba Organic was founded by Rajesh Thakur, an entrepreneur and business strategist focused on building platforms that promote transparency, trust, and quality in emerging industries such as certified organic products.",
+    a: "SIRABA ORGANIC was founded by Rajesh Thakur with the vision of building India’s Triple-Verified Organic Marketplace centered around certification credibility, scientific documentation, selective vendor qualification, and internationally aligned organic ecosystem standards.",
   },
   {
     q: "What inspired the founder to start Siraba Organic?",
-    a: "The idea behind Siraba Organic was to create a trusted marketplace dedicated to certified organic products, where consumers can confidently purchase items that meet recognized organic standards such as EU Organic, USDA Organic, and NPOP. The platform aims to bridge the gap between verified organic producers and conscious consumers worldwide.",
+    a: "SIRABA ORGANIC was developed around the vision of creating a more disciplined, trust-oriented, and qualification-focused organic marketplace ecosystem built on certification credibility, documentation standards, marketplace governance, and premium organic positioning.",
   },
 ];
-
 const FAQItem = ({ question, answer, index }) => {
   const [open, setOpen] = useState(false);
 
