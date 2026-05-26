@@ -159,45 +159,29 @@ const Certification = () => {
       <section className="py-20 md:py-28 bg-background border-b border-secondary/10">
         <div className="max-w-5xl mx-auto px-4 text-center">
           <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full mb-6">
-            Why Certification Matters
+            Why Organic Certification Matters
           </span>
 
           <h2 className="font-heading text-4xl md:text-5xl text-primary mb-10">
-            Why Certification Matters in Organic Commerce.
+            Why Organic Certification Matters
           </h2>
 
           <div className="space-y-6 text-text-secondary text-base md:text-lg leading-relaxed font-light text-left max-w-4xl mx-auto">
-            <p>
-              As global demand for organic products continues to rise, the
-              market has also experienced increasing concerns related to:
-            </p>
-
-            <ul className="space-y-2 pl-2">
-              {[
-                "Misleading organic claims",
-                "Inconsistent product standards",
-                "Lack of sourcing transparency",
-                "Weak traceability systems",
-                "Adulteration risks in premium ingredients",
-              ].map((item, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className="text-accent font-bold">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
 
             <p>
-              Certification creates an accountability structure that helps
-              establish:
+              Organic certification is essential for ensuring authenticity,
+              traceability, consumer trust, food safety compliance,
+              export readiness, and marketplace credibility.
             </p>
 
-            <ul className="space-y-2 pl-2">
+            <ul className="space-y-2">
               {[
-                "Documented organic compliance",
-                "Recognized production standards",
-                "Traceable supply chain systems",
-                "Stronger consumer confidence",
+                "Prevents misleading organic claims",
+                "Supports consumer trust and transparency",
+                "Improves export eligibility",
+                "Ensures traceable organic sourcing",
+                "Strengthens food safety and compliance",
+                "Supports premium brand positioning",
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="text-accent font-bold">•</span>
@@ -207,9 +191,10 @@ const Certification = () => {
             </ul>
 
             <p className="font-semibold text-primary">
-              At SIRABA ORGANIC, we believe premium organic credibility must be
-              supported by documented systems rather than unverified claims.
+              Certification serves as the foundation for trusted organic
+              commerce and long-term marketplace credibility.
             </p>
+
           </div>
         </div>
       </section>
@@ -304,30 +289,34 @@ const Certification = () => {
       <section className="py-20 md:py-28 bg-background border-b border-secondary/10">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full mb-6">
-            Marketplace Philosophy
+            Certification Philosophy
           </span>
 
           <h2 className="font-heading text-4xl md:text-5xl text-primary mb-10">
-            Not Every Organic Product Qualifies for SIRABA ORGANIC.
+            SIRABA ORGANIC™ Certification Philosophy
           </h2>
 
           <div className="space-y-6 text-text-secondary text-base md:text-lg leading-relaxed font-light text-left">
+
             <p>
-              SIRABA ORGANIC is intentionally designed as a selective
-              marketplace ecosystem.
+              SIRABA ORGANIC™ follows a certification-first marketplace
+              approach where verification, compliance, and traceability
+              are treated as mandatory standards.
             </p>
 
             <p>
-              Unlike open marketplaces that prioritize unlimited onboarding, we
-              focus on:
+              Only vendors meeting the platform’s certification and
+              compliance framework are eligible for onboarding and
+              marketplace participation.
             </p>
 
             <ul className="space-y-2">
               {[
-                "Disciplined vendor qualification",
-                "Internationally recognized compliance systems",
-                "Documentation-driven accountability",
-                "Premium organic positioning",
+                "Certification-first governance",
+                "Verified compliance standards",
+                "Organic authenticity verification",
+                "Traceable sourcing systems",
+                "Consumer trust protection",
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="text-accent font-bold">•</span>
@@ -336,14 +325,6 @@ const Certification = () => {
               ))}
             </ul>
 
-            <p className="font-semibold text-primary">
-              Our objective is not to build the largest organic marketplace.
-            </p>
-
-            <p>
-              Our objective is to build one of the most disciplined and
-              credibility-focused organic ecosystems in India.
-            </p>
           </div>
         </div>
       </section>
@@ -368,11 +349,11 @@ const Certification = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              { text: "Valid NPOP certification", logo: JaivikBharatLogo, logoAlt: "NPOP Logo" },
-              { text: "USDA Organic OR EU Organic certification", logo: UsdaOrganicLogo, logoAlt: "USDA Logo" },
+              { text: "Valid NPOP certification (Mandatory)", logo: JaivikBharatLogo, logoAlt: "NPOP Logo" },
+              { text: "USDA Organic Certification OR EU Organic Certification", logo: UsdaOrganicLogo, logoAlt: "USDA Logo" },
               { text: "NABL-accredited lab documentation", logo: NablLogo, logoAlt: "NABL Logo" },
-              { text: "Traceable sourcing records", logo: null },
-              { text: "Food-grade packaging compliance", logo: null },
+              { text: "Valid FSSAI License or Registration", logo: null },
+              { text: "Product traceability and sourcing documentation", logo: null },
               { text: "Documentation verification support", logo: null },
             ].map((item, i) => (
               <div
@@ -596,13 +577,11 @@ const Certification = () => {
           </span>
 
           <h2 className="font-heading text-4xl md:text-6xl leading-tight font-bold mt-6 mb-8">
-            Built Around International Organic Standards.
+            Built Around Certification, Verification & Traceability.
           </h2>
 
           <p className="text-lg md:text-xl font-light text-white/80 leading-relaxed max-w-3xl mx-auto mb-12">
-            Explore a curated marketplace ecosystem built around international
-            certification standards, scientific documentation, and
-            compliance-focused sourcing systems.
+            ESIRABA ORGANIC™ is a premium certification-led organic marketplace where trust, traceability, compliance, and verified organic authenticity form the foundation of the ecosystem.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">

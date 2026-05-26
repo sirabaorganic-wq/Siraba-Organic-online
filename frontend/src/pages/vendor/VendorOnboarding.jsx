@@ -27,19 +27,81 @@ const DOCUMENT_TYPES = [
     label: "Business License / Registration",
     required: true,
   },
-  { type: "gst_certificate", label: "GST Certificate" },
-  { type: "fssai_license", label: "FSSAI License" },
-  { type: "organic_certification", label: "Organic Certification" },
-  { type: "pan_card", label: "PAN Card" },
   {
-    type: "npop_certificate",
-    label: "Your NPOP Certificate",
+    type: "gst_certificate",
+    label: "GST Certificate",
     required: true,
   },
   {
-    type: "nabl_certificate",
-    label: "NABL Certificate",
+    type: "fssai_license",
+    label: "FSSAI License",
     required: true,
+  },
+  {
+    type: "pan_card",
+    label: "PAN Card",
+    required: true,
+  },
+  {
+    type: "npop_certificate",
+    label: "NPOP Certificate",
+    required: true,
+  },
+  {
+    type: "usda_organic_certificate",
+    label: "USDA Organic Certification",
+    required: false,
+  },
+  {
+    type: "eu_organic_certificate",
+    label: "EU Organic Certification",
+    required: false,
+  },
+  {
+    type: "nabl_certificate",
+    label: "NABL Accredited Lab Report",
+    required: true,
+  },
+  {
+    type: "product_documentation",
+    label: "Product Documentation Package",
+    required: true,
+  },
+  {
+    type: "traceability_records",
+    label: "Traceable Sourcing Records",
+    required: true,
+  },
+  {
+    type: "food_grade_packaging",
+    label: "Food Grade Packaging Compliance",
+    required: true,
+  },
+
+  // Premium Certifications
+  {
+    type: "iso_22000_certificate",
+    label: "ISO 22000 Certification",
+  },
+  {
+    type: "haccp_certificate",
+    label: "HACCP Certification",
+  },
+  {
+    type: "fair_trade_certificate",
+    label: "Fair Trade Certification",
+  },
+  {
+    type: "regenerative_agriculture",
+    label: "Regenerative Agriculture Compliance",
+  },
+  {
+    type: "export_compliance",
+    label: "Export Compliance Documentation",
+  },
+  {
+    type: "sustainability_program",
+    label: "Sustainability & Ethical Sourcing Program",
   },
 ];
 const ALLOWED_MIME_TYPES = new Set([
@@ -97,14 +159,32 @@ const VendorOnboarding = () => {
 
   // Pre-submit validation for each step
   const validateStep1 = () => {
-    let isValid = true;
-    const fields = ["panNumber", "gstNumber", "fssaiNumber"];
-    fields.forEach(f => {
-      const ok = validateField(f, businessDetails[f]);
-      if (!ok) isValid = false;
-    });
-    return isValid;
-  };
+  let isValid = true;
+
+  const fields = ["panNumber", "gstNumber", "fssaiNumber"];
+
+  fields.forEach((f) => {
+    const ok = validateField(f, businessDetails[f]);
+    if (!ok) isValid = false;
+  });
+
+  if (!businessDetails.gstNumber?.trim()) {
+    setError("GST Number is mandatory.");
+    isValid = false;
+  }
+
+  if (!businessDetails.fssaiNumber?.trim()) {
+    setError("FSSAI License Number is mandatory.");
+    isValid = false;
+  }
+
+  if (!businessDetails.panNumber?.trim()) {
+    setError("PAN Number is mandatory.");
+    isValid = false;
+  }
+
+  return isValid;
+};
 
   const validateStep3 = () => {
     let isValid = true;
@@ -324,23 +404,67 @@ const VendorOnboarding = () => {
   };
 
   const handleDocumentsSubmit = async () => {
-    if (!docUploads.business_license?.url) {
-      setError("Please upload your business license or registration document.");
-      return;
-    }
+  if (!docUploads.business_license?.url) {
+    setError("Business License / Registration is required.");
+    return;
+  }
 
-    if (!docUploads.npop_certificate?.url) {
-      setError("Please upload Your NPOP Certificate.");
-      return;
-    }
+  if (!docUploads.gst_certificate?.url) {
+    setError("GST Certificate is required.");
+    return;
+  }
 
-    if (!docUploads.nabl_certificate?.url) {
-      setError("Please upload your NABL Certificate.");
-      return;
-    }
+  if (!docUploads.fssai_license?.url) {
+    setError("FSSAI License is required.");
+    return;
+  }
 
-    await handleStepSubmit({ documentsUploaded: true });
-  };
+  if (!docUploads.pan_card?.url) {
+    setError("PAN Card is required.");
+    return;
+  }
+
+  if (!docUploads.npop_certificate?.url) {
+    setError("NPOP Certificate is required.");
+    return;
+  }
+
+  if (!docUploads.nabl_certificate?.url) {
+    setError("NABL Accredited Lab Report is required.");
+    return;
+  }
+
+  if (!docUploads.product_documentation?.url) {
+    setError("Product Documentation Package is required.");
+    return;
+  }
+
+  if (!docUploads.traceability_records?.url) {
+    setError("Traceable Sourcing Records are required.");
+    return;
+  }
+
+  if (!docUploads.food_grade_packaging?.url) {
+    setError("Food Grade Packaging Compliance document is required.");
+    return;
+  }
+
+  const hasInternationalOrganic =
+    docUploads.usda_organic_certificate?.url ||
+    docUploads.eu_organic_certificate?.url;
+
+  if (!hasInternationalOrganic) {
+    setError(
+      "Upload either USDA Organic Certification OR EU Organic Certification."
+    );
+    return;
+  }
+
+  await handleStepSubmit({
+    documentsUploaded: true,
+    certificationCompliant: true,
+  });
+};
 
   const getPlanIcon = (planName) => {
     switch (planName) {
@@ -412,7 +536,7 @@ const VendorOnboarding = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    GST Number (Optional)
+                    GST Number *
                   </label>
                   <input
                     type="text"
@@ -432,7 +556,7 @@ const VendorOnboarding = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    PAN Number
+                    PAN Number *
                   </label>
                   <input
                     type="text"
@@ -455,7 +579,7 @@ const VendorOnboarding = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  FSSAI License Number (Optional)
+                  FSSAI License Number *
                 </label>
                 <input
                   type="text"
@@ -904,14 +1028,43 @@ const VendorOnboarding = () => {
               </p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Required Documents:</strong> You must upload your
-                Business License / Registration, NPOP Certificate, and NABL
-                Certificate. Additional documents like FSSAI and organic
-                certifications will help with faster approval.
-              </p>
-            </div>
+            <p className="text-sm text-blue-800">
+              <strong>SIRABA ORGANIC™ Certification Requirements</strong>
+
+              <br /><br />
+
+              Mandatory Documents:
+              <br />
+              • Business License / Registration
+              <br />
+              • GST Certificate
+              <br />
+              • FSSAI License
+              <br />
+              • PAN Card
+              <br />
+              • NPOP Certification
+              <br />
+              • NABL Accredited Lab Report
+              <br />
+              • Product Documentation Package
+              <br />
+              • Traceable Sourcing Records
+              <br />
+              • Food Grade Packaging Compliance
+              <br /><br />
+
+              Vendors must additionally upload:
+              <br />
+              • USDA Organic Certification
+              <b> OR </b>
+              • EU Organic Certification
+              <br /><br />
+
+              Premium certifications such as ISO 22000, HACCP, Fair Trade,
+              Sustainability Programs and Export Compliance may improve
+              marketplace visibility and placement.
+            </p>
 
             <div className="space-y-4">
               {DOCUMENT_TYPES.map((doc) => {

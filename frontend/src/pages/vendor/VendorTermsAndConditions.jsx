@@ -17,148 +17,239 @@ import {
 
 const clauses = [
   {
-    id: "eligibility",
+    id: "positioning",
     icon: <ShieldCheck size={18} className="text-emerald-600" />,
+    title: "Marketplace Positioning",
+    content:
+      "SIRABA ORGANIC™ operates as a certification-led premium organic marketplace focused on authenticity, traceability, verified compliance, and long-term consumer trust.",
+    list: [
+      "Certification-led marketplace ecosystem",
+      "Traceability-focused operations",
+      "Verified compliance standards",
+      "Long-term consumer trust",
+      "Selective vendor onboarding process",
+    ],
+  },
+
+  {
+    id: "eligibility",
+    icon: <BadgeCheck size={18} className="text-emerald-600" />,
     title: "Vendor Eligibility",
     content:
-      "To sell products on Siraba Organic, vendors must be a legally registered business or producer, provide valid contact and business information, comply with applicable food safety and regulatory standards, and hold recognized organic certification where required. Siraba Organic reserves the right to approve or reject vendor applications at its discretion.",
+      "Vendor onboarding is selective and based on qualification, certification, verification, and compliance review.",
     list: [
-      "Be a legally registered business or producer",
-      "Provide valid contact and business information",
-      "Comply with applicable food safety and regulatory standards",
-      "Hold recognized organic certification where required",
+      "Valid NPOP Certification (Mandatory)",
+      "USDA Organic Certification OR EU Organic Certification (At least one required)",
+      "Valid FSSAI License or Registration",
+      "GST Registration",
+      "PAN Verification",
+      "NABL-accredited laboratory reports",
+      "Product traceability and sourcing records",
     ],
   },
+
   {
-    id: "certification",
-    icon: <BadgeCheck size={18} className="text-emerald-600" />,
-    title: "Organic Certification Requirements",
-    content:
-      "To list products on the Siraba Organic platform, vendors must hold recognized organic certifications. Vendors must ensure that their certifications remain valid and up to date.",
-    list: ["EU Organic", "USDA Organic", "NPOP (India Organic)"],
-    notes: [
-      "At least one certification required for domestic product listing.",
-      "At least two certifications recommended for international product sales.",
-    ],
-  },
-  {
-    id: "authenticity",
+    id: "responsibilities",
     icon: <PackageCheck size={18} className="text-emerald-600" />,
-    title: "Product Authenticity and Quality",
+    title: "Vendor Responsibilities",
     content:
-      "Siraba Organic may request supporting documentation, laboratory reports, or certification proof during the verification process. All vendors must ensure:",
+      "Vendors are responsible for maintaining regulatory compliance, certification validity, and marketplace quality standards.",
     list: [
-      "Products listed are authentic and accurately described",
-      "Products comply with certification standards",
-      "Product information and labeling are accurate",
-      "Products meet applicable food safety regulations",
+      "Maintain valid certifications and regulatory compliance",
+      "Provide authentic and accurate product information",
+      "Ensure all organic claims are legally compliant and verifiable",
+      "Maintain hygienic storage, packaging, and transportation practices",
+      "Ensure food safety and product quality",
+      "Comply with marketplace quality standards",
+      "Promptly update expired or modified certifications",
+      "Maintain transparent sourcing and supply-chain documentation",
     ],
   },
+
   {
     id: "listing",
     icon: <ListChecks size={18} className="text-emerald-600" />,
-    title: "Product Listing Approval",
+    title: "Product Listing Standards",
     content:
-      "Siraba Organic reserves the right to approve, reject, or remove any product listing that does not meet platform standards. Before products are listed:",
+      "Only approved and verification-compliant products may be listed on the marketplace.",
     list: [
-      "Vendors must submit required documentation",
-      "Siraba Organic will review certification and product details",
-      "Approval will be granted only after successful verification",
+      "Products must match submitted certifications",
+      "Misleading labeling or false organic claims are prohibited",
+      "Products containing prohibited substances may be rejected",
+      "Product images and descriptions must accurately represent the actual product",
+      "SIRABA ORGANIC™ may remove non-compliant listings without prior notice",
     ],
   },
+
   {
-    id: "responsibilities",
-    icon: <ListChecks size={18} className="text-emerald-600" />,
-    title: "Vendor Responsibilities",
-    content: "Vendors are responsible for:",
+    id: "verification",
+    icon: <ShieldCheck size={18} className="text-emerald-600" />,
+    title: "Certification & Verification Compliance",
+    content:
+      "All certifications and supporting documents submitted by vendors are subject to independent verification.",
     list: [
-      "Maintaining valid certifications",
-      "Ensuring product quality and authenticity",
-      "Providing accurate product descriptions and images",
-      "Complying with applicable laws and regulations",
-      "Fulfilling orders in a timely manner (if applicable)",
+      "Document reviews",
+      "Certification checks",
+      "Product verification procedures",
+      "Traceability assessments",
+      "Listing restrictions for non-compliance",
+      "Vendor suspension for failure to provide requested documents",
     ],
   },
+
   {
     id: "pricing",
     icon: <Tag size={18} className="text-emerald-600" />,
-    title: "Pricing and Product Information",
+    title: "Pricing & Commercial Terms",
     content:
-      "Siraba Organic reserves the right to request corrections or modifications where necessary. Vendors must ensure:",
+      "Vendors remain responsible for pricing accuracy and commercial compliance.",
     list: [
-      "Product pricing is transparent and accurate",
-      "Product descriptions are truthful and not misleading",
-      "Packaging information complies with regulatory requirements",
+      "Pricing accuracy",
+      "Taxation compliance",
+      "Order fulfillment obligations",
+      "Marketplace commissions may apply",
+      "Promotional fees or service charges may apply",
+      "Settlement timelines governed by marketplace operational policies",
     ],
   },
+
   {
-    id: "compliance",
-    icon: <Scale size={18} className="text-emerald-600" />,
-    title: "Compliance with Regulations",
-    content:
-      "Siraba Organic may suspend vendor listings if regulatory compliance concerns arise. Vendors must comply with:",
-    list: [
-      "Organic certification standards",
-      "Food safety regulations",
-      "Export regulations where applicable",
-      "Packaging and labeling laws",
-    ],
-  },
-  {
-    id: "ip",
+    id: "branding",
     icon: <Copyright size={18} className="text-emerald-600" />,
-    title: "Intellectual Property",
+    title: "Intellectual Property & Branding",
     content:
-      "By submitting product content, vendors grant Siraba Organic the right to display such content on the platform. Vendors must ensure:",
+      "Vendors retain ownership of their trademarks, certifications, product images, and branding materials.",
     list: [
-      "Product images and descriptions are owned by them or properly licensed",
-      "Listings do not infringe on the intellectual property rights of third parties",
+      "Vendor retains ownership of brand assets",
+      "Marketplace may display brand assets",
+      "Marketplace may use product information for promotion",
+      "Marketplace may use materials for verification and visibility purposes",
+      "Non-exclusive promotional rights granted to SIRABA ORGANIC™",
     ],
   },
-  {
-    id: "platform",
-    icon: <LayoutDashboard size={18} className="text-emerald-600" />,
-    title: "Platform Rights",
-    content: "Siraba Organic reserves the right to:",
-    list: [
-      "Approve or reject vendor applications",
-      "Request additional documentation",
-      "Remove products that do not meet quality standards",
-      "Suspend or terminate vendor accounts for policy violations",
-    ],
-  },
+
   {
     id: "liability",
     icon: <ShieldCheck size={18} className="text-emerald-600" />,
-    title: "Liability Disclaimer",
+    title: "Product Safety & Liability",
     content:
-      "Siraba Organic acts as a marketplace platform connecting verified vendors with customers. Siraba Organic shall not be liable for any loss arising from vendor-provided product information or certification claims. Vendors are responsible for:",
+      "Vendors remain solely responsible for the legality, safety, authenticity, quality, and regulatory compliance of all products sold through the marketplace.",
     list: [
-      "Product quality",
-      "Certification compliance",
-      "Regulatory obligations",
+      "Product contamination",
+      "False organic claims",
+      "Expired certifications",
+      "Regulatory violations",
+      "Mislabeling",
+      "Consumer harm caused by vendor products",
     ],
   },
+
   {
-    id: "suspension",
+    id: "audits",
+    icon: <Scale size={18} className="text-emerald-600" />,
+    title: "Marketplace Audits & Compliance Monitoring",
+    content:
+      "SIRABA ORGANIC™ reserves the right to conduct periodic compliance reviews, random audits, certification verification checks, and product quality assessments.",
+    list: [
+      "Certification validity review",
+      "NABL testing review",
+      "Supply-chain traceability checks",
+      "Packaging compliance review",
+      "Consumer complaint investigations",
+      "Organic authenticity reviews",
+    ],
+  },
+
+  {
+    id: "prohibited",
     icon: <AlertTriangle size={18} className="text-amber-500" />,
-    title: "Suspension or Termination",
-    content:
-      "Siraba Organic may suspend or terminate vendor accounts if:",
-    list: [
-      "Certification becomes invalid",
-      "Product authenticity is questioned",
-      "Vendor fails to comply with platform policies",
-      "Fraudulent or misleading information is provided",
-    ],
+    title: "Prohibited Activities",
     warning: true,
-  },
-  {
-    id: "changes",
-    icon: <RefreshCw size={18} className="text-emerald-600" />,
-    title: "Changes to Vendor Policy",
     content:
-      "Siraba Organic reserves the right to modify these Vendor Terms & Conditions at any time. Vendors will be notified of significant changes when applicable.",
+      "The following activities are strictly prohibited and may result in immediate action.",
+    list: [
+      "Submission of fake or manipulated certifications",
+      "False organic claims",
+      "Sale of adulterated or prohibited products",
+      "Misleading advertising",
+      "Unauthorized intellectual property use",
+      "Marketplace manipulation",
+      "Fraudulent activity",
+      "Circumventing platform verification systems",
+    ],
+  },
+
+  {
+    id: "termination",
+    icon: <AlertTriangle size={18} className="text-amber-500" />,
+    title: "Suspension & Termination Rights",
+    warning: true,
+    content:
+      "SIRABA ORGANIC™ reserves the right to suspend, restrict, or permanently terminate vendor access when necessary.",
+    list: [
+      "Certification fraud",
+      "Regulatory non-compliance",
+      "Repeated quality violations",
+      "Consumer safety concerns",
+      "Misleading marketplace behavior",
+      "Failure to cooperate with verification procedures",
+    ],
+  },
+
+  {
+    id: "confidentiality",
+    icon: <ShieldCheck size={18} className="text-emerald-600" />,
+    title: "Confidentiality & Data Protection",
+    content:
+      "Vendor business information, certifications, operational documents, and commercial details shall be handled with reasonable confidentiality standards.",
+    list: [
+      "Confidential handling of business records",
+      "Protection of operational documentation",
+      "Protection of certification records",
+      "Vendors responsible for account security",
+      "Vendors responsible for protecting credentials and business data",
+    ],
+  },
+
+  {
+    id: "frameworks",
+    icon: <Scale size={18} className="text-emerald-600" />,
+    title: "Governing Compliance Frameworks",
+    content:
+      "Marketplace governance follows recognized national and international compliance standards.",
+    list: [
+      "National Programme for Organic Production (NPOP)",
+      "USDA National Organic Program (NOP)",
+      "EU Organic Standards",
+      "FSSAI Food Safety Regulations",
+      "Applicable Indian laws and marketplace regulations",
+    ],
+  },
+
+  {
+    id: "disclaimer",
+    icon: <ShieldCheck size={18} className="text-emerald-600" />,
+    title: "Disclaimer",
+    content:
+      "Marketplace verification does not constitute a guarantee of product performance, therapeutic claims, or regulatory immunity.",
+    list: [
+      "Consumers should independently review product suitability",
+      "Verification is not a guarantee of effectiveness",
+      "Verification is not a guarantee of regulatory immunity",
+    ],
+  },
+
+  {
+    id: "ecosystem",
+    icon: <BadgeCheck size={18} className="text-emerald-600" />,
+    title: "Strategic Ecosystem Statement",
+    content:
+      "SIRABA ORGANIC™ is building a governance-driven premium organic ecosystem focused on verified trust, certification integrity, traceable sourcing, and long-term marketplace credibility.",
+    list: [
+      "Certification",
+      "Verification",
+      "Qualification",
+    ],
   },
 ];
 
@@ -255,7 +346,7 @@ const VendorTermsAndConditions = () => {
         {/* Header */}
         <div className="mb-12">
           <p className="text-text-secondary text-sm uppercase tracking-[0.2em] mb-3">
-            Siraba Organic · Certification-Led | Traceable | Globally Compliant
+            SIRABA ORGANIC™ · Certification | Verification | Qualification
           </p>
           <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-2">
             Vendor Terms & Conditions
@@ -267,20 +358,46 @@ const VendorTermsAndConditions = () => {
 
         {/* Introduction */}
         <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-7 mb-10">
-          <h2 className="font-heading font-bold text-primary text-lg mb-3">Introduction</h2>
+          <h2 className="font-heading font-bold text-primary text-lg mb-3">
+            Introduction
+          </h2>
+
           <p className="text-text-secondary font-light leading-relaxed text-sm mb-3">
             These Vendor Terms & Conditions govern the relationship between
-            Siraba Organic and vendors who wish to list and sell products on the
-            Siraba Organic platform.
+            SIRABA ORGANIC™ and vendors who apply to list, promote, and sell
+            products through the SIRABA ORGANIC™ marketplace ecosystem.
           </p>
+
           <p className="text-text-secondary font-light leading-relaxed text-sm mb-3">
-            By applying to become a vendor and listing products on Siraba
-            Organic, you agree to comply with the terms outlined in this policy.
+            SIRABA ORGANIC™ operates as a certification-led premium organic
+            marketplace focused on authenticity, traceability, verified
+            compliance, and long-term consumer trust.
           </p>
-          <p className="text-text-secondary font-light leading-relaxed text-sm">
-            Siraba Organic operates as a quality-focused organic marketplace
-            that promotes certified organic products and maintains strict
-            verification standards.
+
+          <p className="text-text-secondary font-light leading-relaxed text-sm mb-3">
+            Vendor onboarding is selective and based on qualification,
+            certification, verification, and compliance review.
+          </p>
+
+          <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+            <h3 className="font-semibold text-primary mb-2">
+              Marketplace Principles
+            </h3>
+
+            <ul className="space-y-2 text-sm text-text-secondary">
+              <li>• Certification-first vendor qualification framework</li>
+              <li>• Verified organic authenticity and compliance standards</li>
+              <li>• Transparent sourcing and traceability requirements</li>
+              <li>• Food safety, quality assurance, and regulatory compliance</li>
+              <li>• Long-term consumer trust and marketplace credibility</li>
+            </ul>
+          </div>
+
+          <p className="text-text-secondary font-light leading-relaxed text-sm mt-5">
+            By applying for vendor onboarding and listing products on the
+            marketplace, vendors acknowledge and agree to comply with all
+            qualification requirements, certification obligations, verification
+            procedures, and operational policies established by SIRABA ORGANIC™.
           </p>
         </div>
 

@@ -13,82 +13,95 @@ import {
 
 const sections = [
   {
-    id: "business",
-    icon: <Building size={20} className="text-emerald-600" />,
-    title: "Business Information",
-    items: [
-      "Company / Brand Name",
-      "Business registration certificate",
-      "Registered business address",
-      "Contact person name",
-      "Email address and phone number",
-      "Website or product catalog (optional)",
-    ],
-  },
-  {
     id: "certifications",
     icon: <ShieldCheck size={20} className="text-emerald-600" />,
-    title: "Organic Certification Documents",
+    title: "Organic Certification Requirements",
     items: [
-      "EU Organic Certification, USDA Organic Certification, or NPOP (India Organic)",
-      "Valid organic certification copy",
-      "Certification scope document (if available)",
-      "Certification validity details",
+      "Valid NPOP Certification (Mandatory)",
+      "USDA Organic Certification OR EU Organic Certification",
+      "Certification validity period is active",
+      "Certification scope matches product category",
     ],
   },
+
   {
-    id: "product",
-    icon: <Package size={20} className="text-emerald-600" />,
-    title: "Product Information",
-    items: [
-      "Product name",
-      "Product category",
-      "Product description",
-      "Ingredients (if applicable)",
-      "Country or region of origin",
-      "Certification coverage for the product",
-    ],
-  },
-  {
-    id: "images",
-    icon: <Image size={20} className="text-emerald-600" />,
-    title: "Product Images",
-    items: [
-      "Front packaging image",
-      "Back label image",
-      "Product close-up image",
-    ],
-  },
-  {
-    id: "quality",
+    id: "laboratory",
     icon: <ClipboardCheck size={20} className="text-emerald-600" />,
-    title: "Quality & Compliance Documentation",
+    title: "Laboratory & Product Compliance",
     items: [
-      "Product specification sheet",
-      "Laboratory testing reports (if available)",
-      "Quality assurance documentation",
-      "Food safety compliance details",
+      "NABL-accredited laboratory test reports",
+      "Pesticide residue testing reports",
+      "Heavy metal / contamination testing reports",
+      "Product specification sheets",
+      "Ingredient declarations",
+      "Batch identification records",
     ],
   },
+
   {
-    id: "pricing",
-    icon: <DollarSign size={20} className="text-emerald-600" />,
-    title: "Pricing and Supply Details",
+    id: "business",
+    icon: <Building size={20} className="text-emerald-600" />,
+    title: "Business Verification Documents",
     items: [
-      "Product pricing",
-      "Minimum order quantity",
-      "Available packaging sizes",
-      "Supply capacity",
+      "GST Registration Certificate",
+      "FSSAI License / Registration",
+      "PAN Card",
+      "Business Address Proof",
+      "Cancelled Cheque / Bank Verification",
+      "Authorized Signatory Details",
     ],
   },
+
   {
-    id: "logistics",
+    id: "packaging",
+    icon: <Package size={20} className="text-emerald-600" />,
+    title: "Product & Packaging Requirements",
+    items: [
+      "Product labels and packaging images",
+      "Food-grade packaging compliance confirmation",
+      "Storage and handling process details",
+      "Shelf-life declaration",
+      "Packaging material specifications",
+    ],
+  },
+
+  {
+    id: "traceability",
     icon: <Truck size={20} className="text-emerald-600" />,
-    title: "Logistics Information",
+    title: "Supply Chain & Traceability",
     items: [
-      "Shipping origin location",
-      "Export capability (if applicable)",
-      "Packaging standards used for delivery",
+      "Farm/source traceability records",
+      "Supplier and procurement records",
+      "Organic handling process details",
+      "Transportation and storage information",
+      "Batch tracking capability",
+    ],
+  },
+
+  {
+    id: "compliance",
+    icon: <CheckCircle size={20} className="text-emerald-600" />,
+    title: "Marketplace Compliance Requirements",
+    items: [
+      "Acceptance of Vendor Terms & Conditions",
+      "Acceptance of Vendor Verification Policy",
+      "Agreement to marketplace compliance audits",
+      "Commitment to ethical organic practices",
+      "Agreement to product authenticity responsibility",
+    ],
+  },
+
+  {
+    id: "priority",
+    icon: <ShieldCheck size={20} className="text-emerald-600" />,
+    title: "Additional Priority Compliance (Recommended)",
+    items: [
+      "ISO 22000 Food Safety Certification",
+      "HACCP Certification",
+      "Export Compliance Documentation",
+      "Fair Trade Certification",
+      "Sustainability & Ethical Sourcing Programs",
+      "Regenerative Agriculture Practices",
     ],
   },
 ];
@@ -217,7 +230,7 @@ const VendorOnboardingChecklist = () => {
         {/* Header */}
         <div className="mb-12">
           <p className="text-text-secondary text-sm uppercase tracking-[0.2em] mb-3">
-            Siraba Organic · Certification-Led | Traceable | Globally Compliant
+            SIRABA ORGANIC™ · Certification | Verification | Qualification
           </p>
           <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-3">
             Vendor Onboarding Checklist
@@ -229,12 +242,45 @@ const VendorOnboardingChecklist = () => {
 
         {/* Intro */}
         <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-7 mb-10">
-          <p className="text-text-secondary leading-relaxed font-light">
-            Before applying to become a vendor on Siraba Organic, please ensure
-            you have the following documents and information ready. Preparing
-            these items helps speed up the verification process and ensures
-            compliance with marketplace standards.
-          </p>
+          <h2 className="font-heading font-bold text-primary text-lg mb-4">
+            Vendor Eligibility Overview
+          </h2>
+
+          <div className="space-y-3 text-text-secondary font-light leading-relaxed">
+            <p>
+              Only certification-compliant organic vendors are eligible for onboarding.
+            </p>
+
+            <p>
+              All submitted documents must be valid, traceable, and verifiable.
+            </p>
+
+            <p>
+              SIRABA ORGANIC™ reserves the right to reject, suspend, or re-verify any vendor application.
+            </p>
+
+            <p>
+              Submission of incomplete or misleading information may result in onboarding rejection.
+            </p>
+          </div>
+
+          <div className="mt-6 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+            <p className="font-semibold text-primary mb-2">
+              Verification Notice
+            </p>
+
+            <p className="text-sm text-text-secondary">
+              SIRABA ORGANIC™ may conduct document verification,
+              certification validation, product authenticity review,
+              or compliance checks at any stage of onboarding
+              or marketplace operations.
+            </p>
+
+            <p className="text-sm text-text-secondary mt-3">
+              Marketplace approval is granted only after successful
+              verification and compliance review.
+            </p>
+          </div>
         </div>
 
         {/* Checklist Sections */}
@@ -244,15 +290,28 @@ const VendorOnboardingChecklist = () => {
           ))}
         </div>
 
+        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-7 mb-10">
+          <h2 className="font-heading font-bold text-primary text-lg mb-4">
+            Strategic Marketplace Positioning
+          </h2>
+
+          <p className="text-text-secondary leading-relaxed">
+            SIRABA ORGANIC™ is a premium certification-led organic marketplace
+            where trust, traceability, compliance, and verified organic
+            authenticity form the foundation of vendor onboarding.
+          </p>
+        </div>
+
         {/* Final Step CTA */}
         <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-green-600 p-8 text-white shadow-lg text-center">
           <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={24} className="text-white" />
           </div>
-          <h3 className="font-heading text-xl font-bold mb-2">Final Step</h3>
+          <h3 className="font-heading text-xl font-bold mb-2">Marketplace Approval Process</h3>
           <p className="text-emerald-100 text-sm mb-6 max-w-md mx-auto">
-            Submit your vendor application through the Siraba Organic vendor
-            portal or email us directly with the subject line below.
+            Vendor onboarding approval is granted only after successful
+            certification verification, documentation review,
+            compliance assessment, and marketplace qualification review.
           </p>
           <a
             href="mailto:info@sirabaorganic.com?subject=Vendor%20Registration%20%E2%80%93%20Siraba%20Organic"
