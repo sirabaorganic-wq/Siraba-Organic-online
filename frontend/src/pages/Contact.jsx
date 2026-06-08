@@ -175,7 +175,7 @@ const Contact = () => {
                   <p className="pt-2 font-semibold">Registered Office:</p>
                   <p>1C, Shani Enclave, Nayagaon Bhondsi,<br />Gurugram, Haryana – 122102, India</p>
                   <p className="pt-2 font-semibold">Corporate Office:</p>
-                  <p>Plot No. 77, Basement, Neelkanth Enclave,<br />Near Ekta Hospital, Sohna Road,<br />Badshahpur, Sector 69, Gurugram – 122101, Haryana, India</p>
+                  <p>TFSA Global, 206, Tower-A, Spaze i-Tech Park, Sector-49, Sohna Road, <br /> Gurugram -122018. Haryana, INDIA.</p>
                 </div>
                 </div>
                 <div className="pt-4 border-t border-secondary/10 mt-4">
