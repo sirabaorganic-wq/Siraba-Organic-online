@@ -6,6 +6,7 @@ const userSchema = mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
+    role: { type: String, enum: ['customer', 'admin', 'vendor_onboarder', 'blog_creator'], default: 'customer' },
     phone: { type: String },
     isEmailVerified: { type: Boolean, default: false },
     isPhoneVerified: { type: Boolean, default: false },

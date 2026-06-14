@@ -22,86 +22,254 @@ import Logo from "../../assets/SIRABALOGO.png";
 import client from "../../api/client";
 
 const DOCUMENT_TYPES = [
+  // ── SECTION 1: Business Eligibility (Mandatory) ──────────────────────────
   {
     type: "business_license",
     label: "Business License / Registration",
     required: true,
+    section: "Section 1: Business Eligibility",
   },
   {
     type: "gst_certificate",
     label: "GST Certificate",
     required: true,
+    section: "Section 1: Business Eligibility",
   },
   {
     type: "fssai_license",
     label: "FSSAI License",
     required: true,
+    section: "Section 1: Business Eligibility",
   },
   {
     type: "pan_card",
-    label: "PAN Card",
+    label: "PAN Card (Authorized Signatory Details)",
     required: true,
+    section: "Section 1: Business Eligibility",
   },
+
+  // ── SECTION 2: Organic Certification (Mandatory) ─────────────────────────
   {
     type: "npop_certificate",
-    label: "NPOP Certificate",
+    label: "NPOP Certification (Active)",
     required: true,
+    section: "Section 2: Organic Certification",
+  },
+  {
+    type: "product_scope_certificate",
+    label: "Product Scope Certificate",
+    required: true,
+    section: "Section 2: Organic Certification",
   },
   {
     type: "usda_organic_certificate",
     label: "USDA Organic Certification",
     required: false,
+    note: "At least one of USDA or EU required",
+    section: "Section 2: Organic Certification",
   },
   {
     type: "eu_organic_certificate",
     label: "EU Organic Certification",
     required: false,
+    note: "At least one of USDA or EU required",
+    section: "Section 2: Organic Certification",
+  },
+  // Optional additional certifications
+  {
+    type: "jas_organic_certificate",
+    label: "JAS Organic Certification",
+    required: false,
+    section: "Section 2: Organic Certification",
   },
   {
-    type: "nabl_certificate",
-    label: "NABL Accredited Lab Report",
-    required: true,
-  },
-  {
-    type: "product_documentation",
-    label: "Product Documentation Package",
-    required: true,
-  },
-  {
-    type: "traceability_records",
-    label: "Traceable Sourcing Records",
-    required: true,
-  },
-  {
-    type: "food_grade_packaging",
-    label: "Food Grade Packaging Compliance",
-    required: true,
-  },
-
-  // Premium Certifications
-  {
-    type: "iso_22000_certificate",
-    label: "ISO 22000 Certification",
-  },
-  {
-    type: "haccp_certificate",
-    label: "HACCP Certification",
+    type: "india_organic_certificate",
+    label: "India Organic Certification",
+    required: false,
+    section: "Section 2: Organic Certification",
   },
   {
     type: "fair_trade_certificate",
     label: "Fair Trade Certification",
+    required: false,
+    section: "Section 2: Organic Certification",
   },
   {
-    type: "regenerative_agriculture",
-    label: "Regenerative Agriculture Compliance",
+    type: "rainforest_alliance_certificate",
+    label: "Rainforest Alliance Certification",
+    required: false,
+    section: "Section 2: Organic Certification",
   },
   {
-    type: "export_compliance",
-    label: "Export Compliance Documentation",
+    type: "other_international_organic",
+    label: "Other Recognized International Organic Certification",
+    required: false,
+    section: "Section 2: Organic Certification",
+  },
+
+  // ── SECTION 3: Product Compliance (Mandatory) ────────────────────────────
+  {
+    type: "product_list",
+    label: "Product List",
+    required: true,
+    section: "Section 3: Product Compliance",
   },
   {
-    type: "sustainability_program",
-    label: "Sustainability & Ethical Sourcing Program",
+    type: "product_labels",
+    label: "Product Labels",
+    required: true,
+    section: "Section 3: Product Compliance",
+  },
+  {
+    type: "packaging_information",
+    label: "Packaging Information",
+    required: true,
+    section: "Section 3: Product Compliance",
+  },
+  {
+    type: "batch_identification",
+    label: "Batch Identification System Documentation",
+    required: true,
+    section: "Section 3: Product Compliance",
+  },
+  {
+    type: "product_images",
+    label: "Product Images",
+    required: true,
+    section: "Section 3: Product Compliance",
+  },
+  // Preferred
+  {
+    type: "certificate_of_analysis",
+    label: "Certificate of Analysis (CoA)",
+    required: false,
+    section: "Section 3: Product Compliance",
+  },
+  {
+    type: "product_specification_sheets",
+    label: "Product Specification Sheets",
+    required: false,
+    section: "Section 3: Product Compliance",
+  },
+  {
+    type: "shelf_life_documentation",
+    label: "Shelf-Life Documentation",
+    required: false,
+    section: "Section 3: Product Compliance",
+  },
+  {
+    type: "ingredient_declaration",
+    label: "Ingredient Declaration",
+    required: false,
+    section: "Section 3: Product Compliance",
+  },
+
+  // ── SECTION 4: Scientific Validation (Preferred) ─────────────────────────
+  {
+    type: "nabl_certificate",
+    label: "NABL-Accredited Laboratory Test Reports",
+    required: false,
+    section: "Section 4: Scientific Validation",
+  },
+  {
+    type: "pesticide_residue_report",
+    label: "Pesticide Residue Testing Reports",
+    required: false,
+    section: "Section 4: Scientific Validation",
+  },
+  {
+    type: "heavy_metal_report",
+    label: "Heavy Metal Testing Reports",
+    required: false,
+    section: "Section 4: Scientific Validation",
+  },
+  {
+    type: "microbiological_report",
+    label: "Microbiological Testing Reports",
+    required: false,
+    section: "Section 4: Scientific Validation",
+  },
+  {
+    type: "product_quality_report",
+    label: "Product Quality Reports",
+    required: false,
+    section: "Section 4: Scientific Validation",
+  },
+
+  // ── SECTION 5: Traceability & Transparency (Preferred) ───────────────────
+  {
+    type: "farm_to_fork_records",
+    label: "Farm-to-Fork Traceability Records",
+    required: false,
+    section: "Section 5: Traceability & Transparency",
+  },
+  {
+    type: "source_farm_documentation",
+    label: "Source Farm / Producer Documentation",
+    required: false,
+    section: "Section 5: Traceability & Transparency",
+  },
+  {
+    type: "procurement_records",
+    label: "Procurement Records",
+    required: false,
+    section: "Section 5: Traceability & Transparency",
+  },
+  {
+    type: "supply_chain_documentation",
+    label: "Supply Chain Documentation",
+    required: false,
+    section: "Section 5: Traceability & Transparency",
+  },
+  {
+    type: "batch_traceability_system",
+    label: "Batch Traceability System",
+    required: false,
+    section: "Section 5: Traceability & Transparency",
+  },
+  {
+    type: "organic_compliance_records",
+    label: "Organic Compliance Records",
+    required: false,
+    section: "Section 5: Traceability & Transparency",
+  },
+
+  // ── SECTION 6: Packaging & Labelling Compliance (Mandatory) ──────────────
+  {
+    type: "food_grade_packaging",
+    label: "Food-Grade Packaging Compliance",
+    required: true,
+    section: "Section 6: Packaging & Labelling Compliance",
+  },
+  {
+    type: "fssai_compliant_labeling",
+    label: "FSSAI-Compliant Labeling",
+    required: true,
+    section: "Section 6: Packaging & Labelling Compliance",
+  },
+  {
+    type: "certification_claims_display",
+    label: "Certification Claims Properly Displayed",
+    required: true,
+    section: "Section 6: Packaging & Labelling Compliance",
+  },
+  {
+    type: "batch_number_documentation",
+    label: "Batch Number Documentation",
+    required: true,
+    section: "Section 6: Packaging & Labelling Compliance",
+  },
+  {
+    type: "manufacturing_details",
+    label: "Manufacturing Details",
+    required: true,
+    section: "Section 6: Packaging & Labelling Compliance",
+  },
+  {
+    type: "best_before_expiry",
+    label: "Best Before / Expiry Information",
+    required: true,
+    section: "Section 6: Packaging & Labelling Compliance",
   },
 ];
 const ALLOWED_MIME_TYPES = new Set([
@@ -159,32 +327,34 @@ const VendorOnboarding = () => {
 
   // Pre-submit validation for each step
   const validateStep1 = () => {
-  let isValid = true;
+    // Mandatory field checks first (clearest message wins, no overwriting)
+    if (!businessDetails.gstNumber?.trim()) {
+      setError("GST Number is mandatory.");
+      return false;
+    }
+    if (!businessDetails.panNumber?.trim()) {
+      setError("PAN Number is mandatory.");
+      return false;
+    }
+    if (!businessDetails.fssaiNumber?.trim()) {
+      setError("FSSAI License Number is mandatory.");
+      return false;
+    }
 
-  const fields = ["panNumber", "gstNumber", "fssaiNumber"];
+    // Format checks
+    const fields = ["panNumber", "gstNumber", "fssaiNumber"];
+    let isValid = true;
+    fields.forEach((f) => {
+      const ok = validateField(f, businessDetails[f]);
+      if (!ok) isValid = false;
+    });
 
-  fields.forEach((f) => {
-    const ok = validateField(f, businessDetails[f]);
-    if (!ok) isValid = false;
-  });
+    if (!isValid) {
+      setError("Please fix the highlighted errors before continuing.");
+    }
 
-  if (!businessDetails.gstNumber?.trim()) {
-    setError("GST Number is mandatory.");
-    isValid = false;
-  }
-
-  if (!businessDetails.fssaiNumber?.trim()) {
-    setError("FSSAI License Number is mandatory.");
-    isValid = false;
-  }
-
-  if (!businessDetails.panNumber?.trim()) {
-    setError("PAN Number is mandatory.");
-    isValid = false;
-  }
-
-  return isValid;
-};
+    return isValid;
+  };
 
   const validateStep3 = () => {
     let isValid = true;
@@ -228,6 +398,7 @@ const VendorOnboarding = () => {
 
   const [selectedPlan, setSelectedPlan] = useState("starter");
   const [billingCycle, setBillingCycle] = useState("monthly");
+  const [qualificationFormFilled, setQualificationFormFilled] = useState(false);
   const [docUploads, setDocUploads] = useState(() =>
     DOCUMENT_TYPES.reduce((acc, doc) => {
       acc[doc.type] = {
@@ -404,67 +575,96 @@ const VendorOnboarding = () => {
   };
 
   const handleDocumentsSubmit = async () => {
-  if (!docUploads.business_license?.url) {
-    setError("Business License / Registration is required.");
-    return;
-  }
+    // Section 1: Business Eligibility — Mandatory
+    if (!docUploads.business_license?.url) {
+      setError("Business License / Registration is required.");
+      return;
+    }
+    if (!docUploads.gst_certificate?.url) {
+      setError("GST Certificate is required.");
+      return;
+    }
+    if (!docUploads.fssai_license?.url) {
+      setError("FSSAI License is required.");
+      return;
+    }
+    if (!docUploads.pan_card?.url) {
+      setError("PAN Card (Authorized Signatory Details) is required.");
+      return;
+    }
 
-  if (!docUploads.gst_certificate?.url) {
-    setError("GST Certificate is required.");
-    return;
-  }
+    // Section 2: Organic Certification — Mandatory
+    if (!docUploads.npop_certificate?.url) {
+      setError("NPOP Certification (Active) is required.");
+      return;
+    }
+    if (!docUploads.product_scope_certificate?.url) {
+      setError("Product Scope Certificate is required.");
+      return;
+    }
+    const hasInternationalOrganic =
+      docUploads.usda_organic_certificate?.url ||
+      docUploads.eu_organic_certificate?.url;
+    if (!hasInternationalOrganic) {
+      setError(
+        "Upload either USDA Organic Certification OR EU Organic Certification."
+      );
+      return;
+    }
 
-  if (!docUploads.fssai_license?.url) {
-    setError("FSSAI License is required.");
-    return;
-  }
+    // Section 3: Product Compliance — Mandatory
+    if (!docUploads.product_list?.url) {
+      setError("Product List is required.");
+      return;
+    }
+    if (!docUploads.product_labels?.url) {
+      setError("Product Labels are required.");
+      return;
+    }
+    if (!docUploads.packaging_information?.url) {
+      setError("Packaging Information is required.");
+      return;
+    }
+    if (!docUploads.batch_identification?.url) {
+      setError("Batch Identification System Documentation is required.");
+      return;
+    }
+    if (!docUploads.product_images?.url) {
+      setError("Product Images are required.");
+      return;
+    }
 
-  if (!docUploads.pan_card?.url) {
-    setError("PAN Card is required.");
-    return;
-  }
+    // Section 6: Packaging & Labelling Compliance — Mandatory
+    if (!docUploads.food_grade_packaging?.url) {
+      setError("Food-Grade Packaging Compliance document is required.");
+      return;
+    }
+    if (!docUploads.fssai_compliant_labeling?.url) {
+      setError("FSSAI-Compliant Labeling document is required.");
+      return;
+    }
+    if (!docUploads.certification_claims_display?.url) {
+      setError("Certification Claims Properly Displayed document is required.");
+      return;
+    }
+    if (!docUploads.batch_number_documentation?.url) {
+      setError("Batch Number Documentation is required.");
+      return;
+    }
+    if (!docUploads.manufacturing_details?.url) {
+      setError("Manufacturing Details document is required.");
+      return;
+    }
+    if (!docUploads.best_before_expiry?.url) {
+      setError("Best Before / Expiry Information document is required.");
+      return;
+    }
 
-  if (!docUploads.npop_certificate?.url) {
-    setError("NPOP Certificate is required.");
-    return;
-  }
-
-  if (!docUploads.nabl_certificate?.url) {
-    setError("NABL Accredited Lab Report is required.");
-    return;
-  }
-
-  if (!docUploads.product_documentation?.url) {
-    setError("Product Documentation Package is required.");
-    return;
-  }
-
-  if (!docUploads.traceability_records?.url) {
-    setError("Traceable Sourcing Records are required.");
-    return;
-  }
-
-  if (!docUploads.food_grade_packaging?.url) {
-    setError("Food Grade Packaging Compliance document is required.");
-    return;
-  }
-
-  const hasInternationalOrganic =
-    docUploads.usda_organic_certificate?.url ||
-    docUploads.eu_organic_certificate?.url;
-
-  if (!hasInternationalOrganic) {
-    setError(
-      "Upload either USDA Organic Certification OR EU Organic Certification."
-    );
-    return;
-  }
-
-  await handleStepSubmit({
-    documentsUploaded: true,
-    certificationCompliant: true,
-  });
-};
+    await handleStepSubmit({
+      documentsUploaded: true,
+      certificationCompliant: true,
+    });
+  };
 
   const getPlanIcon = (planName) => {
     switch (planName) {
@@ -546,6 +746,14 @@ const VendorOnboarding = () => {
                       setBusinessDetails({ ...businessDetails, gstNumber: val });
                       validateField("gstNumber", val);
                     }}
+                    onBlur={(e) => {
+                      // Re-sync on blur to catch values set via browser autofill
+                      const val = e.target.value.trim().toUpperCase();
+                      if (val !== businessDetails.gstNumber) {
+                        setBusinessDetails((prev) => ({ ...prev, gstNumber: val }));
+                      }
+                      validateField("gstNumber", val);
+                    }}
                     className={`w-full px-4 py-2 border rounded-lg ${validationErrors.gstNumber ? "border-red-500" : ""
                       }`}
                     placeholder="22AAAAA0000A1Z5"
@@ -564,6 +772,13 @@ const VendorOnboarding = () => {
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
                       setBusinessDetails({ ...businessDetails, panNumber: val });
+                      validateField("panNumber", val);
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim().toUpperCase();
+                      if (val !== businessDetails.panNumber) {
+                        setBusinessDetails((prev) => ({ ...prev, panNumber: val }));
+                      }
                       validateField("panNumber", val);
                     }}
                     className={`w-full px-4 py-2 border rounded-lg ${validationErrors.panNumber ? "border-red-500" : ""
@@ -589,6 +804,13 @@ const VendorOnboarding = () => {
                     setBusinessDetails({ ...businessDetails, fssaiNumber: val });
                     validateField("fssaiNumber", val);
                   }}
+                  onBlur={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").slice(0, 14);
+                    if (val !== businessDetails.fssaiNumber) {
+                      setBusinessDetails((prev) => ({ ...prev, fssaiNumber: val }));
+                    }
+                    validateField("fssaiNumber", val);
+                  }}
                   className={`w-full px-4 py-2 border rounded-lg ${validationErrors.fssaiNumber ? "border-red-500" : ""
                     }`}
                   placeholder="14-digit FSSAI license number"
@@ -603,7 +825,6 @@ const VendorOnboarding = () => {
             <button
               onClick={() => {
                 if (!validateStep1()) {
-                  setError("Please fix the highlighted errors before continuing.");
                   return;
                 }
                 handleStepSubmit(businessDetails);
@@ -776,6 +997,13 @@ const VendorOnboarding = () => {
                       setBankDetails({ ...bankDetails, accountNumber: val });
                       validateField("accountNumber", val);
                     }}
+                    onBlur={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val !== bankDetails.accountNumber) {
+                        setBankDetails((prev) => ({ ...prev, accountNumber: val }));
+                      }
+                      validateField("accountNumber", val);
+                    }}
                     required
                     className={`w-full px-4 py-2 border rounded-lg ${validationErrors.accountNumber ? "border-red-500" : ""
                       }`}
@@ -794,6 +1022,13 @@ const VendorOnboarding = () => {
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
                       setBankDetails({ ...bankDetails, ifscCode: val });
+                      validateField("ifscCode", val);
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim().toUpperCase();
+                      if (val !== bankDetails.ifscCode) {
+                        setBankDetails((prev) => ({ ...prev, ifscCode: val }));
+                      }
                       validateField("ifscCode", val);
                     }}
                     required
@@ -1029,11 +1264,13 @@ const VendorOnboarding = () => {
             </div>
 
             <p className="text-sm text-blue-800">
-              <strong>SIRABA ORGANIC™ Certification Requirements</strong>
+              <strong>SIRABA ORGANIC™ — Vendor Qualification Checklist</strong>
+              <br />
+              <em>India's Triple-Verified Organic Marketplace™</em>
 
               <br /><br />
 
-              Mandatory Documents:
+              <strong>Section 1: Business Eligibility (Mandatory)</strong>
               <br />
               • Business License / Registration
               <br />
@@ -1041,114 +1278,276 @@ const VendorOnboarding = () => {
               <br />
               • FSSAI License
               <br />
-              • PAN Card
-              <br />
-              • NPOP Certification
-              <br />
-              • NABL Accredited Lab Report
-              <br />
-              • Product Documentation Package
-              <br />
-              • Traceable Sourcing Records
-              <br />
-              • Food Grade Packaging Compliance
+              • PAN Card (Authorized Signatory Details)
               <br /><br />
 
-              Vendors must additionally upload:
+              <strong>Section 2: Organic Certification (Mandatory)</strong>
               <br />
-              • USDA Organic Certification
-              <b> OR </b>
-              • EU Organic Certification
+              • NPOP Certification (Active)
+              <br />
+              • Product Scope Certificate
+              <br />
+              • USDA Organic Certification <b>OR</b> EU Organic Certification (at least one required)
               <br /><br />
 
-              Premium certifications such as ISO 22000, HACCP, Fair Trade,
-              Sustainability Programs and Export Compliance may improve
-              marketplace visibility and placement.
+              <em>Optional additional certifications:</em>
+              <br />
+              • JAS Organic Certification
+              <br />
+              • India Organic Certification
+              <br />
+              • Fair Trade Certification
+              <br />
+              • Rainforest Alliance Certification
+              <br />
+              • Other Recognized International Organic Certifications
+              <br /><br />
+
+              <strong>Section 3: Product Compliance (Mandatory)</strong>
+              <br />
+              • Product List
+              <br />
+              • Product Labels
+              <br />
+              • Packaging Information
+              <br />
+              • Batch Identification System Documentation
+              <br />
+              • Product Images
+              <br /><br />
+
+              <em>Preferred:</em>
+              <br />
+              • Certificate of Analysis (CoA)
+              <br />
+              • Product Specification Sheets
+              <br />
+              • Shelf-Life Documentation
+              <br />
+              • Ingredient Declaration
+              <br /><br />
+
+              <strong>Section 4: Scientific Validation (Preferred but Strongly Recommended)</strong>
+              <br />
+              • NABL-Accredited Laboratory Test Reports
+              <br />
+              • Pesticide Residue Testing Reports
+              <br />
+              • Heavy Metal Testing Reports
+              <br />
+              • Microbiological Testing Reports
+              <br />
+              • Product Quality Reports
+              <br /><br />
+
+              <strong>Section 5: Traceability & Transparency (Preferred)</strong>
+              <br />
+              • Farm-to-Fork Traceability Records
+              <br />
+              • Source Farm / Producer Documentation
+              <br />
+              • Procurement Records
+              <br />
+              • Supply Chain Documentation
+              <br />
+              • Batch Traceability System
+              <br />
+              • Organic Compliance Records
+              <br /><br />
+
+              <strong>Section 6: Packaging & Labelling Compliance (Mandatory)</strong>
+              <br />
+              • Food-Grade Packaging Compliance
+              <br />
+              • FSSAI-Compliant Labeling
+              <br />
+              • Certification Claims Properly Displayed
+              <br />
+              • Batch Number Documentation
+              <br />
+              • Manufacturing Details
+              <br />
+              • Best Before / Expiry Information
             </p>
 
-            <div className="space-y-4">
-              {DOCUMENT_TYPES.map((doc) => {
-                const state = docUploads[doc.type];
+            <div className="space-y-6">
+              {(() => {
+                const sections = [];
+                let lastSection = null;
+                let currentGroup = null;
+                DOCUMENT_TYPES.forEach((doc) => {
+                  if (doc.section !== lastSection) {
+                    currentGroup = { section: doc.section, docs: [] };
+                    sections.push(currentGroup);
+                    lastSection = doc.section;
+                  }
+                  currentGroup.docs.push(doc);
+                });
+                return sections.map((group) => (
+                  <div key={group.section}>
+                    <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3 border-b pb-1">
+                      {group.section}
+                    </h3>
+                    <div className="space-y-3">
+                      {group.docs.map((doc) => {
+                        const state = docUploads[doc.type];
+                        return (
+                          <div key={doc.type} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                              <div>
+                                <p className="font-medium">{doc.label}</p>
+                                <p className="text-sm text-text-secondary">
+                                  PDF, JPG, PNG, WEBP (Max 5MB)
+                                </p>
+                                {doc.required ? (
+                                  <p className="text-xs text-primary mt-1">Required</p>
+                                ) : doc.note ? (
+                                  <p className="text-xs text-amber-600 mt-1">{doc.note}</p>
+                                ) : (
+                                  <p className="text-xs text-text-secondary mt-1">Optional</p>
+                                )}
+                              </div>
 
-                return (
-                  <div key={doc.type} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                      <div>
-                        <p className="font-medium">{doc.label}</p>
-                        <p className="text-sm text-text-secondary">
-                          PDF, JPG, PNG, WEBP (Max 5MB)
-                        </p>
-                        {doc.required && (
-                          <p className="text-xs text-primary mt-1">Required</p>
-                        )}
-                      </div>
+                              <div className="flex items-center gap-3">
+                                {state?.url && (
+                                  <a
+                                    href={state.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-accent text-sm font-medium hover:text-primary"
+                                  >
+                                    View
+                                  </a>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    document
+                                      .getElementById(`upload-${doc.type}`)
+                                      ?.click()
+                                  }
+                                  disabled={state?.uploading}
+                                  className={`px-4 py-2 border rounded-lg flex items-center gap-2 ${state?.uploading
+                                    ? "opacity-60 cursor-not-allowed"
+                                    : "hover:bg-gray-50"
+                                    }`}
+                                >
+                                  <Upload className="w-4 h-4" />
+                                  {state?.uploading
+                                    ? "Uploading..."
+                                    : state?.url
+                                      ? "Replace"
+                                      : "Upload"}
+                                </button>
+                              </div>
+                            </div>
 
-                      <div className="flex items-center gap-3">
-                        {state?.url && (
-                          <a
-                            href={state.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-accent text-sm font-medium hover:text-primary"
-                          >
-                            View
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            document
-                              .getElementById(`upload-${doc.type}`)
-                              ?.click()
-                          }
-                          disabled={state?.uploading}
-                          className={`px-4 py-2 border rounded-lg flex items-center gap-2 ${state?.uploading
-                            ? "opacity-60 cursor-not-allowed"
-                            : "hover:bg-gray-50"
-                            }`}
-                        >
-                          <Upload className="w-4 h-4" />
-                          {state?.uploading
-                            ? "Uploading..."
-                            : state?.url
-                              ? "Replace"
-                              : "Upload"}
-                        </button>
-                      </div>
+                            <input
+                              id={`upload-${doc.type}`}
+                              type="file"
+                              className="hidden"
+                              accept="application/pdf,image/jpeg,image/png,image/webp"
+                              onChange={(e) =>
+                                handleFileChange(doc.type, e.target.files?.[0])
+                              }
+                            />
+
+                            {state?.uploading && (
+                              <div className="mt-3 w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className="h-2 bg-primary transition-all"
+                                  style={{ width: `${state.progress || 0}%` }}
+                                />
+                              </div>
+                            )}
+
+                            {state?.error && (
+                              <p className="text-sm text-red-600 mt-2">{state.error}</p>
+                            )}
+
+                            {state?.url && !state?.error && !state?.uploading && (
+                              <p className="text-xs text-green-700 mt-2">
+                                Uploaded and saved
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-
-                    <input
-                      id={`upload-${doc.type}`}
-                      type="file"
-                      className="hidden"
-                      accept="application/pdf,image/jpeg,image/png,image/webp"
-                      onChange={(e) =>
-                        handleFileChange(doc.type, e.target.files?.[0])
-                      }
-                    />
-
-                    {state?.uploading && (
-                      <div className="mt-3 w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-2 bg-primary transition-all"
-                          style={{ width: `${state.progress || 0}%` }}
-                        />
-                      </div>
-                    )}
-
-                    {state?.error && (
-                      <p className="text-sm text-red-600 mt-2">{state.error}</p>
-                    )}
-
-                    {state?.url && !state?.error && !state?.uploading && (
-                      <p className="text-xs text-green-700 mt-2">
-                        Uploaded and saved
-                      </p>
-                    )}
                   </div>
-                );
-              })}
+                ));
+              })()}
             </div>
+
+            {/* ── Vendor Qualification Form ───────────────────────────── */}
+            <div className="border border-secondary/20 rounded-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-5 border-b border-secondary/10">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-primary text-base leading-snug">
+                      SIRABA ORGANIC™ Vendor Qualification Form
+                    </h3>
+                    <p className="text-sm text-text-secondary mt-1 leading-relaxed">
+                      As the final step of your onboarding, you are required to complete the
+                      official Vendor Qualification Form. This form captures your declaration,
+                      business details, and compliance acknowledgements necessary for your
+                      application to be reviewed and approved by the SIRABA ORGANIC™ team.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-5 space-y-4">
+                <div className="flex items-center gap-2 text-xs text-text-secondary uppercase tracking-wider font-semibold">
+                  <span className="w-4 h-px bg-secondary/30 inline-block" />
+                  Required for Final Submission
+                  <span className="flex-1 h-px bg-secondary/30 inline-block" />
+                </div>
+
+                <p className="text-sm text-text-secondary leading-relaxed">
+                  Please click the button below to open the qualification form in a new tab.
+                  Once you have filled and submitted it, return here and confirm to unlock
+                  your final submission.
+                </p>
+
+                <a
+                  href="https://forms.gle/SDVDPbwidNTyCVkp7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  Open Qualification Form
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+
+                <label className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all ${qualificationFormFilled ? "border-green-400 bg-green-50" : "border-secondary/20 hover:border-accent/40 hover:bg-accent/5"}`}>
+                  <input
+                    type="checkbox"
+                    checked={qualificationFormFilled}
+                    onChange={(e) => setQualificationFormFilled(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-primary cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-sm leading-relaxed text-text-secondary">
+                    I confirm that I have fully completed and submitted the{" "}
+                    <strong className="text-primary">SIRABA ORGANIC™ Vendor Qualification Form</strong>.
+                    I understand that my onboarding application will not be processed until this
+                    form is received and verified by the team.
+                  </span>
+                </label>
+
+                {!qualificationFormFilled && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                    You must complete and confirm the qualification form above before submitting your application.
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* ────────────────────────────────────────────────────────── */}
 
             <div className="flex gap-3">
               <button
@@ -1159,8 +1558,12 @@ const VendorOnboarding = () => {
               </button>
               <button
                 onClick={handleDocumentsSubmit}
-                disabled={loading}
-                className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+                disabled={loading || !qualificationFormFilled}
+                title={!qualificationFormFilled ? "Please complete the Vendor Qualification Form to proceed" : undefined}
+                className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-all ${qualificationFormFilled
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-secondary/20 text-text-secondary cursor-not-allowed"
+                  }`}
               >
                 {loading ? "Submitting..." : "Submit for Review"}
                 <ArrowRight className="w-5 h-5" />

@@ -4,7 +4,7 @@ import { useProducts } from "../../context/ProductContext";
 import { useOrders } from "../../context/OrderContext";
 import { useSocket } from "../../context/SocketContext";
 import { useCurrency } from "../../context/CurrencyContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
   Users,
   ShoppingBag,
@@ -45,6 +45,12 @@ import { History as HistoryIcon } from "lucide-react";
 
 const AdminDashboard = () => {
   const { isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/admin");
+  };
   const {
     products,
     addProduct,
@@ -61,6 +67,13 @@ const AdminDashboard = () => {
   const [expandedOrders, setExpandedOrders] = useState({});
   const [inquiries, setInquiries] = useState([]);
   const [users, setUsers] = useState([]);
+  const [subadmins, setSubadmins] = useState([]);
+  const [showSubadminModal, setShowSubadminModal] = useState(false);
+  const [subadminForm, setSubadminForm] = useState({ name: "", email: "", password: "", role: "vendor_onboarder" });
+  const [showResetPwdModal, setShowResetPwdModal] = useState(false);
+  const [selectedSubadmin, setSelectedSubadmin] = useState(null);
+  const [newResetPwd, setNewResetPwd] = useState("");
+  const [pendingBlogs, setPendingBlogs] = useState([]);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -330,17 +343,26 @@ const AdminDashboard = () => {
         }
       } else if (activeTab === "approvals") {
         try {
-          const [approvalsRes, productsRes] = await Promise.all([
+          const [approvalsRes, productsRes, blogsRes] = await Promise.all([
             client.get("/admin/approvals"),
             client.get("/admin/vendor-products?status=pending"),
+            client.get("/blogs/admin"),
           ]);
           setPendingApprovals(approvalsRes.data);
           setPendingProducts(productsRes.data.products || []);
           setPendingProductsCounts(
             productsRes.data.counts || { pending: 0, approved: 0, rejected: 0 },
           );
+          setPendingBlogs(blogsRes.data.filter(b => b.approvalStatus === 'pending') || []);
         } catch (error) {
           console.error("Failed to fetch approvals", error);
+        }
+      } else if (activeTab === "subadmins") {
+        try {
+          const { data } = await client.get("/admin/subadmins");
+          setSubadmins(data || []);
+        } catch (error) {
+          console.error("Failed to fetch sub-admins", error);
         }
       } else if (activeTab === "pricing") {
         try {
@@ -466,9 +488,9 @@ const AdminDashboard = () => {
       features:
         typeof currentProduct.features === "string"
           ? currentProduct.features
-              .split(",")
-              .map((f) => f.trim())
-              .filter(Boolean)
+            .split(",")
+            .map((f) => f.trim())
+            .filter(Boolean)
           : currentProduct.features || [],
     };
 
@@ -509,14 +531,63 @@ const AdminDashboard = () => {
     setIsProductModalOpen(true);
   };
 
+  // --- Sub-Admin Handlers ---
+  const fetchSubadmins = async () => {
+    try {
+      const { data } = await client.get("/admin/subadmins");
+      setSubadmins(data || []);
+    } catch (error) {
+      console.error("Failed to fetch sub-admins", error);
+    }
+  };
+
+  const handleCreateSubadmin = async (e) => {
+    e.preventDefault();
+    try {
+      await client.post("/admin/subadmins", subadminForm);
+      alert("Sub-admin account created successfully!");
+      setSubadminForm({ name: "", email: "", password: "", role: "vendor_onboarder" });
+      setShowSubadminModal(false);
+      fetchSubadmins();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to create sub-admin account");
+    }
+  };
+
+  const handleDeleteSubadmin = async (id) => {
+    if (window.confirm("Are you sure you want to delete this sub-admin account?")) {
+      try {
+        await client.delete(`/admin/subadmins/${id}`);
+        alert("Sub-admin account deleted successfully!");
+        fetchSubadmins();
+      } catch (error) {
+        alert(error.response?.data?.message || "Failed to delete sub-admin account");
+      }
+    }
+  };
+
+  const handleResetPwdSubadmin = async (e) => {
+    e.preventDefault();
+    if (!newResetPwd) return;
+    try {
+      await client.put(`/admin/subadmins/${selectedSubadmin._id}/reset-password`, { password: newResetPwd });
+      alert("Password reset successfully!");
+      setNewResetPwd("");
+      setShowResetPwdModal(false);
+      setSelectedSubadmin(null);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to reset password");
+    }
+  };
+
   // --- Coupon Handlers ---
   const handleOpenCouponModal = (user = null) => {
     setSelectedUser(user);
     setCouponData({
       code: user
         ? `WELCOME-${user.name.split(" ")[0].toUpperCase()}-${Math.floor(
-            Math.random() * 100,
-          )}`
+          Math.random() * 100,
+        )}`
         : "",
       discountType: "percentage",
       discountValue: "10",
@@ -849,36 +920,32 @@ const AdminDashboard = () => {
                         <div class="invoice-label">
                             <h2>INVOICE</h2>
                             <div class="inv-number">#${order._id
-                              .slice(-8)
-                              .toUpperCase()}</div>
+        .slice(-8)
+        .toUpperCase()}</div>
                         </div>
                     </div>
 
                     <div class="detail-cards">
                         <div class="card">
                             <h3>Bill To</h3>
-                            <p class="highlight">${
-                              order.shippingAddress?.name ||
-                              order.user?.name ||
-                              "Customer"
-                            }</p>
+                            <p class="highlight">${order.shippingAddress?.name ||
+      order.user?.name ||
+      "Customer"
+      }</p>
                             <p>${order.shippingAddress?.address || ""}</p>
-                            <p>${order.shippingAddress?.city || ""}, ${
-                              order.shippingAddress?.postalCode || "00000"
-                            }</p>
-                            <p>${
-                              order.shippingAddress?.country || "Country"
-                            }</p>
+                            <p>${order.shippingAddress?.city || ""}, ${order.shippingAddress?.postalCode || "00000"
+      }</p>
+                            <p>${order.shippingAddress?.country || "Country"
+      }</p>
                         </div>
                         <div class="card">
                             <h3>Invoice Date</h3>
                             <p class="highlight">${new Date(
-                              order.createdAt,
-                            ).toLocaleDateString("en-IN")}</p>
+        order.createdAt,
+      ).toLocaleDateString("en-IN")}</p>
                             <p style="margin-top: 6px; font-size: 10px; color: #888;">Order ID:</p>
-                            <p style="font-size: 10px; word-break: break-all;">${
-                              order._id
-                            }</p>
+                            <p style="font-size: 10px; word-break: break-all;">${order._id
+      }</p>
                         </div>
                         <div class="card">
                             <h3>Status</h3>
@@ -900,31 +967,28 @@ const AdminDashboard = () => {
                             </thead>
                             <tbody>
                                 ${order.orderItems
-                                  .map(
-                                    (item) => `
+        .map(
+          (item) => `
                                     <tr>
                                         <td>
-                                            <div class="product-name">${
-                                              item.name
-                                            }</div>
+                                            <div class="product-name">${item.name
+            }</div>
                                             <div class="product-desc">Premium Organic Selection</div>
                                         </td>
-                                        <td style="text-align: center; font-size: 11px; color: #666;">${
-                                          item.hsn || "0909"
-                                        }</td>
-                                        <td style="text-align: center; font-weight: 700;">${
-                                          item.quantity
-                                        }</td>
+                                        <td style="text-align: center; font-size: 11px; color: #666;">${item.hsn || "0909"
+            }</td>
+                                        <td style="text-align: center; font-weight: 700;">${item.quantity
+            }</td>
                                         <td style="text-align: right;">₹${item.price.toFixed(
-                                          2,
-                                        )}</td>
+              2,
+            )}</td>
                                         <td style="text-align: right; font-weight: 700; color: #1a4d2e;">₹${(
-                                          item.price * item.quantity
-                                        ).toFixed(2)}</td>
+              item.price * item.quantity
+            ).toFixed(2)}</td>
                                     </tr>
                                 `,
-                                  )
-                                  .join("")}
+        )
+        .join("")}
                             </tbody>
                         </table>
                     </div>
@@ -1072,21 +1136,19 @@ const AdminDashboard = () => {
           <div className="flex bg-secondary/5 rounded-sm p-1">
             <button
               onClick={() => setDateFilter("all")}
-              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${
-                dateFilter === "all"
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${dateFilter === "all"
                   ? "bg-white shadow-sm text-primary"
                   : "text-text-secondary hover:text-primary"
-              }`}
+                }`}
             >
               All Orders
             </button>
             <button
               onClick={() => setDateFilter("today")}
-              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${
-                dateFilter === "today"
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${dateFilter === "today"
                   ? "bg-white shadow-sm text-primary"
                   : "text-text-secondary hover:text-primary"
-              }`}
+                }`}
             >
               Today
             </button>
@@ -1179,20 +1241,19 @@ const AdminDashboard = () => {
                         <div className="flex flex-col gap-1">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide text-center
-                                                    ${
-                                                      order.status === "Pending"
-                                                        ? "bg-yellow-100 text-yellow-800"
-                                                        : order.status ===
-                                                            "Approved"
-                                                          ? "bg-blue-100 text-blue-800"
-                                                          : order.status ===
-                                                              "Packed"
-                                                            ? "bg-purple-100 text-purple-800"
-                                                            : order.status ===
-                                                                "Shipped"
-                                                              ? "bg-indigo-100 text-indigo-800"
-                                                              : "bg-green-100 text-green-800"
-                                                    }`}
+                                                    ${order.status === "Pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : order.status ===
+                                  "Approved"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : order.status ===
+                                    "Packed"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : order.status ===
+                                      "Shipped"
+                                      ? "bg-indigo-100 text-indigo-800"
+                                      : "bg-green-100 text-green-800"
+                              }`}
                           >
                             {order.status}
                           </span>
@@ -1210,21 +1271,20 @@ const AdminDashboard = () => {
                                 updateOrderStatus(order._id, e.target.value)
                               }
                               className={`appearance-none px-3 py-1.5 pr-8 text-xs font-bold uppercase tracking-wider border rounded-sm focus:outline-none focus:ring-1 focus:ring-opacity-50 cursor-pointer
-                                                            ${
-                                                              order.status ===
-                                                              "Pending"
-                                                                ? "bg-yellow-50 text-yellow-700 border-yellow-200 focus:ring-yellow-400"
-                                                                : order.status ===
-                                                                    "Approved"
-                                                                  ? "bg-blue-50 text-blue-700 border-blue-200 focus:ring-blue-400"
-                                                                  : order.status ===
-                                                                      "Packed"
-                                                                    ? "bg-purple-50 text-purple-700 border-purple-200 focus:ring-purple-400"
-                                                                    : order.status ===
-                                                                        "Shipped"
-                                                                      ? "bg-indigo-50 text-indigo-700 border-indigo-200 focus:ring-indigo-400"
-                                                                      : "bg-green-50 text-green-700 border-green-200 focus:ring-green-400"
-                                                            }`}
+                                                            ${order.status ===
+                                  "Pending"
+                                  ? "bg-yellow-50 text-yellow-700 border-yellow-200 focus:ring-yellow-400"
+                                  : order.status ===
+                                    "Approved"
+                                    ? "bg-blue-50 text-blue-700 border-blue-200 focus:ring-blue-400"
+                                    : order.status ===
+                                      "Packed"
+                                      ? "bg-purple-50 text-purple-700 border-purple-200 focus:ring-purple-400"
+                                      : order.status ===
+                                        "Shipped"
+                                        ? "bg-indigo-50 text-indigo-700 border-indigo-200 focus:ring-indigo-400"
+                                        : "bg-green-50 text-green-700 border-green-200 focus:ring-green-400"
+                                }`}
                             >
                               <option value="Pending">Placed</option>
                               <option value="Approved">Confirmed</option>
@@ -1272,9 +1332,8 @@ const AdminDashboard = () => {
                                   <div
                                     className="h-full bg-primary transition-all duration-500"
                                     style={{
-                                      width: `${
-                                        ((statusInfo.step - 1) / 3) * 100
-                                      }%`,
+                                      width: `${((statusInfo.step - 1) / 3) * 100
+                                        }%`,
                                     }}
                                   />
                                 </div>
@@ -1298,22 +1357,20 @@ const AdminDashboard = () => {
                                       className="flex flex-col items-center relative z-10"
                                     >
                                       <div
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${
-                                          isComplete
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${isComplete
                                             ? "bg-primary text-white"
                                             : isCurrent
                                               ? "bg-primary text-white ring-4 ring-primary/20"
                                               : "bg-white border-2 border-secondary/20 text-text-secondary"
-                                        }`}
+                                          }`}
                                       >
                                         <StepIcon size={18} />
                                       </div>
                                       <p
-                                        className={`text-xs font-medium text-center ${
-                                          isComplete || isCurrent
+                                        className={`text-xs font-medium text-center ${isComplete || isCurrent
                                             ? "text-primary font-bold"
                                             : "text-text-secondary"
-                                        }`}
+                                          }`}
                                       >
                                         {stepInfo.label}
                                       </p>
@@ -1403,9 +1460,8 @@ const AdminDashboard = () => {
             {products.map((product) => (
               <tr
                 key={product._id || product.id}
-                className={`hover:bg-secondary/5 transition-colors ${
-                  product.isVendorProduct ? "bg-blue-50/30" : ""
-                }`}
+                className={`hover:bg-secondary/5 transition-colors ${product.isVendorProduct ? "bg-blue-50/30" : ""
+                  }`}
               >
                 <td className="px-6 py-4">
                   <div className="w-10 h-10 bg-white rounded-sm border border-secondary/10 p-1">
@@ -1600,6 +1656,85 @@ const AdminDashboard = () => {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderSubAdmins = () => (
+    <div className="bg-surface rounded-sm shadow-sm border border-secondary/10 overflow-hidden animate-fade-in">
+      <div className="p-6 border-b border-secondary/10 flex justify-between items-center bg-white">
+        <div>
+          <h2 className="text-xl font-bold text-primary">Sub-Admin Accounts</h2>
+          <p className="text-xs text-text-secondary mt-1">Manage accounts and passwords for Vendor Onboarders and Blog Creators.</p>
+        </div>
+        <button
+          onClick={() => {
+            setSubadminForm({ name: "", email: "", password: "", role: "vendor_onboarder" });
+            setShowSubadminModal(true);
+          }}
+          className="bg-primary hover:bg-primary/95 text-surface px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center gap-2 shadow-md transition-all"
+        >
+          <Plus size={16} /> Create Sub-Admin
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-secondary/5 text-text-secondary font-medium uppercase tracking-wider">
+            <tr>
+              <th className="px-6 py-4">Name</th>
+              <th className="px-6 py-4">Email</th>
+              <th className="px-6 py-4">Authority Role</th>
+              <th className="px-6 py-4">Date Created</th>
+              <th className="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-secondary/10">
+            {subadmins.map((sub) => (
+              <tr key={sub._id} className="hover:bg-secondary/5 transition-colors">
+                <td className="px-6 py-4 font-bold text-primary">{sub.name}</td>
+                <td className="px-6 py-4 text-text-secondary">{sub.email}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full ${sub.role === "vendor_onboarder"
+                      ? "bg-purple-50 text-purple-700 border border-purple-100"
+                      : "bg-blue-50 text-blue-700 border border-blue-100"
+                    }`}>
+                    {sub.role === "vendor_onboarder" ? "Vendor Onboarder" : "Blog Creator"}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-xs text-text-secondary">
+                  {sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : "N/A"}
+                </td>
+                <td className="px-6 py-4 text-right space-x-3">
+                  <button
+                    onClick={() => {
+                      setSelectedSubadmin(sub);
+                      setNewResetPwd("");
+                      setShowResetPwdModal(true);
+                    }}
+                    className="text-accent hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider"
+                  >
+                    Reset Password
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSubadmin(sub._id)}
+                    className="text-red-600 hover:text-red-900 inline-block align-middle"
+                    title="Delete Account"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {subadmins.length === 0 && (
+              <tr>
+                <td colSpan="5" className="px-6 py-10 text-center text-text-secondary italic">
+                  No sub-admins configured in the system.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1970,11 +2105,10 @@ const AdminDashboard = () => {
             key={opt}
             onClick={() => setB2bSection(opt)}
             className={`px-6 py-2 text-sm font-bold uppercase tracking-wider rounded-sm transition-all
-                            ${
-                              b2bSection === opt
-                                ? "bg-primary text-surface shadow-md"
-                                : "text-text-secondary hover:text-primary hover:bg-secondary/5"
-                            }`}
+                            ${b2bSection === opt
+                ? "bg-primary text-surface shadow-md"
+                : "text-text-secondary hover:text-primary hover:bg-secondary/5"
+              }`}
           >
             {opt.charAt(0).toUpperCase() + opt.slice(1)}
           </button>
@@ -2302,12 +2436,12 @@ const AdminDashboard = () => {
       messageFilter === "all"
         ? contactMessages
         : contactMessages.filter((msg) => {
-            if (messageFilter === "new") return msg.status === "New";
-            if (messageFilter === "read")
-              return msg.status === "Read" || msg.status === "Replied";
-            if (messageFilter === "closed") return msg.status === "Closed";
-            return true;
-          });
+          if (messageFilter === "new") return msg.status === "New";
+          if (messageFilter === "read")
+            return msg.status === "Read" || msg.status === "Replied";
+          if (messageFilter === "closed") return msg.status === "Closed";
+          return true;
+        });
 
     // Filter by date
     const filteredMessages = filteredByStatus.filter((msg) => {
@@ -2361,11 +2495,10 @@ const AdminDashboard = () => {
                   <button
                     key={filter.key}
                     onClick={() => setMessageFilter(filter.key)}
-                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors relative ${
-                      messageFilter === filter.key
+                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors relative ${messageFilter === filter.key
                         ? "bg-white shadow-sm text-primary"
                         : "text-text-secondary hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {filter.label}
                     {filter.badge > 0 && (
@@ -2388,11 +2521,10 @@ const AdminDashboard = () => {
                   <button
                     key={filter.key}
                     onClick={() => setMessageDateFilter(filter.key)}
-                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${
-                      messageDateFilter === filter.key
+                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${messageDateFilter === filter.key
                         ? "bg-white shadow-sm text-primary"
                         : "text-text-secondary hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {filter.label}
                   </button>
@@ -2452,9 +2584,8 @@ const AdminDashboard = () => {
                 return (
                   <React.Fragment key={msg._id}>
                     <tr
-                      className={`hover:bg-secondary/5 transition-colors ${
-                        msg.status === "New" ? "bg-blue-50/30" : ""
-                      }`}
+                      className={`hover:bg-secondary/5 transition-colors ${msg.status === "New" ? "bg-blue-50/30" : ""
+                        }`}
                     >
                       <td className="px-6 py-4">
                         <span
@@ -2694,11 +2825,10 @@ const AdminDashboard = () => {
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`px-2 py-1 rounded-sm text-xs font-bold uppercase ${
-                      new Date(coupon.expiryDate) < new Date()
+                    className={`px-2 py-1 rounded-sm text-xs font-bold uppercase ${new Date(coupon.expiryDate) < new Date()
                         ? "bg-red-50 text-red-500"
                         : "bg-green-50 text-green-500"
-                    }`}
+                      }`}
                   >
                     {new Date(coupon.expiryDate) < new Date()
                       ? "Expired"
@@ -2904,9 +3034,9 @@ const AdminDashboard = () => {
             <p className="text-xs text-text-secondary">
               {analyticsData.totalUsers > 0
                 ? `${(
-                    (analyticsData.uniqueCustomers / analyticsData.totalUsers) *
-                    100
-                  ).toFixed(1)}% of registered users`
+                  (analyticsData.uniqueCustomers / analyticsData.totalUsers) *
+                  100
+                ).toFixed(1)}% of registered users`
                 : "No data"}
             </p>
           </div>
@@ -2947,11 +3077,9 @@ const AdminDashboard = () => {
                       i === 0 ? `M ${p.x},${p.y}` : `L ${p.x},${p.y}`,
                     )
                     .join(" ");
-                  const areaPath = `${pathData} L ${
-                    points[points.length - 1].x
-                  },${height - paddingY} L ${points[0].x},${
-                    height - paddingY
-                  } Z`;
+                  const areaPath = `${pathData} L ${points[points.length - 1].x
+                    },${height - paddingY} L ${points[0].x},${height - paddingY
+                    } Z`;
 
                   return (
                     <svg
@@ -3107,11 +3235,10 @@ const AdminDashboard = () => {
                     fill="none"
                     stroke="#1a4d2e"
                     strokeWidth="12"
-                    strokeDasharray={`${
-                      ((analyticsData.completedOrders || 0) /
+                    strokeDasharray={`${((analyticsData.completedOrders || 0) /
                         (analyticsData.totalOrders || 1)) *
                       251
-                    } 251`}
+                      } 251`}
                     className="transition-all duration-1000 ease-out"
                   />
                 </svg>
@@ -3174,9 +3301,8 @@ const AdminDashboard = () => {
                       <div
                         className="h-full bg-primary"
                         style={{
-                          width: `${
-                            (product.totalQuantity / maxDemand) * 100
-                          }%`,
+                          width: `${(product.totalQuantity / maxDemand) * 100
+                            }%`,
                         }}
                       ></div>
                     </div>
@@ -3185,10 +3311,10 @@ const AdminDashboard = () => {
               ))}
               {(!analyticsData.mostDemanding ||
                 analyticsData.mostDemanding.length === 0) && (
-                <p className="text-center text-sm text-text-secondary">
-                  No sales data yet.
-                </p>
-              )}
+                  <p className="text-center text-sm text-text-secondary">
+                    No sales data yet.
+                  </p>
+                )}
             </div>
           </div>
 
@@ -3454,13 +3580,12 @@ const AdminDashboard = () => {
                     <td className="px-6 py-4">
                       <span
                         className={`text-xs px-2 py-1 rounded-full font-bold uppercase
-                            ${
-                              vendor.subscription?.plan === "enterprise"
-                                ? "bg-purple-100 text-purple-700"
-                                : vendor.subscription?.plan === "professional"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-gray-100 text-gray-700"
-                            }`}
+                            ${vendor.subscription?.plan === "enterprise"
+                            ? "bg-purple-100 text-purple-700"
+                            : vendor.subscription?.plan === "professional"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
                       >
                         {vendor.subscription?.plan || "Starter"}
                       </span>
@@ -3478,8 +3603,7 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          vendor.status === "approved"
+                        className={`text-xs px-2 py-1 rounded-full ${vendor.status === "approved"
                             ? "bg-green-100 text-green-700"
                             : vendor.status === "pending"
                               ? "bg-yellow-100 text-yellow-700"
@@ -3488,7 +3612,7 @@ const AdminDashboard = () => {
                                 : vendor.status === "suspended"
                                   ? "bg-orange-100 text-orange-700"
                                   : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {vendor.status?.replace("_", " ")}
                       </span>
@@ -3596,21 +3720,19 @@ const AdminDashboard = () => {
               {/* Modal Tabs */}
               <div className="flex border-b border-secondary/20 mb-6">
                 <button
-                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${
-                    activeVendorModalTab === "details"
+                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeVendorModalTab === "details"
                       ? "border-primary text-primary"
                       : "border-transparent text-text-secondary hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => setActiveVendorModalTab("details")}
                 >
                   Details
                 </button>
                 <button
-                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${
-                    activeVendorModalTab === "products"
+                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeVendorModalTab === "products"
                       ? "border-primary text-primary"
                       : "border-transparent text-text-secondary hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => {
                     setActiveVendorModalTab("products");
                     fetchAdminVendorProducts(selectedVendor._id);
@@ -3619,11 +3741,10 @@ const AdminDashboard = () => {
                   Products
                 </button>
                 <button
-                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${
-                    activeVendorModalTab === "messages"
+                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeVendorModalTab === "messages"
                       ? "border-primary text-primary"
                       : "border-transparent text-text-secondary hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => {
                     setActiveVendorModalTab("messages");
                     fetchAdminVendorMessages(selectedVendor._id);
@@ -3760,13 +3881,12 @@ const AdminDashboard = () => {
                                 View
                               </button>
                               <span
-                                className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${
-                                  doc.status === "approved"
+                                className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${doc.status === "approved"
                                     ? "bg-green-100 text-green-700"
                                     : doc.status === "rejected"
                                       ? "bg-red-100 text-red-700"
                                       : "bg-yellow-100 text-yellow-700"
-                                }`}
+                                  }`}
                               >
                                 {doc.status}
                               </span>
@@ -3888,15 +4008,14 @@ const AdminDashboard = () => {
                               <td className="p-3">
                                 <span
                                   className={`text-xs px-2 py-1 rounded-full uppercase font-bold
-                                                      ${
-                                                        prod.vendorStatus ===
-                                                        "approved"
-                                                          ? "bg-green-100 text-green-700"
-                                                          : prod.vendorStatus ===
-                                                              "rejected"
-                                                            ? "bg-red-100 text-red-700"
-                                                            : "bg-yellow-100 text-yellow-700"
-                                                      }`}
+                                                      ${prod.vendorStatus ===
+                                      "approved"
+                                      ? "bg-green-100 text-green-700"
+                                      : prod.vendorStatus ===
+                                        "rejected"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-yellow-100 text-yellow-700"
+                                    }`}
                                 >
                                   {prod.vendorStatus || "Pending"}
                                 </span>
@@ -3981,26 +4100,23 @@ const AdminDashboard = () => {
                       adminVendorMessages.map((msg) => (
                         <div
                           key={msg._id}
-                          className={`flex ${
-                            msg.sender === "admin"
+                          className={`flex ${msg.sender === "admin"
                               ? "justify-end"
                               : "justify-start"
-                          }`}
+                            }`}
                         >
                           <div
-                            className={`max-w-[70%] p-3 rounded-lg ${
-                              msg.sender === "admin"
+                            className={`max-w-[70%] p-3 rounded-lg ${msg.sender === "admin"
                                 ? "bg-primary text-white rounded-br-none"
                                 : "bg-white border border-secondary/20 rounded-bl-none"
-                            }`}
+                              }`}
                           >
                             <p className="text-sm">{msg.message}</p>
                             <p
-                              className={`text-[10px] mt-1 ${
-                                msg.sender === "admin"
+                              className={`text-[10px] mt-1 ${msg.sender === "admin"
                                   ? "text-white/70"
                                   : "text-text-secondary"
-                              }`}
+                                }`}
                             >
                               <span className="uppercase font-bold mr-1 text-[8px] opacity-70">
                                 {msg.sender}
@@ -4104,7 +4220,7 @@ const AdminDashboard = () => {
               {pendingApprovals.vendors.map((vendor) => (
                 <div
                   key={vendor._id}
-                  className="flex items-center justify-between p-4 bg-secondary/5 rounded-sm"
+                  className="flex items-center justify-between p-4 bg-secondary/5 rounded-sm border border-secondary/10"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -4121,31 +4237,82 @@ const AdminDashboard = () => {
                         Applied:{" "}
                         {new Date(vendor.createdAt).toLocaleDateString()}
                       </p>
+                      {vendor.status === "subadmin_approved" && (
+                        <p className="text-xs text-purple-600 font-semibold mt-1">
+                          Verified by Sub-admin: {vendor.subadminApprovedBy?.name || "Onboarder"} on {new Date(vendor.subadminApprovedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                      {vendor.status === "subadmin_rejected" && (
+                        <p className="text-xs text-red-500 font-semibold mt-1">
+                          Rejected by Sub-admin: {vendor.subadminApprovedBy?.name || "Onboarder"} (Reason: {vendor.rejectionReason})
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() =>
-                        handleVendorStatusUpdate(vendor._id, "approved")
-                      }
-                      className="px-4 py-2 bg-green-600 text-white rounded-sm hover:bg-green-700 flex items-center gap-2"
-                    >
-                      <Check size={16} /> Approve
-                    </button>
-                    <button
-                      onClick={() => {
-                        const reason = prompt("Rejection reason:");
-                        if (reason)
-                          handleVendorStatusUpdate(
-                            vendor._id,
-                            "rejected",
-                            reason,
-                          );
-                      }}
-                      className="px-4 py-2 border border-red-300 text-red-600 rounded-sm hover:bg-red-50 flex items-center gap-2"
-                    >
-                      <X size={16} /> Reject
-                    </button>
+                    {vendor.status === "subadmin_approved" ? (
+                      <>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await client.put(`/admin/vendors/${vendor._id}/status`, { status: "approved" });
+                              alert("Vendor final approved and listed in the system!");
+                              // Refresh approvals tab data
+                              const [approvalsRes, blogsRes] = await Promise.all([
+                                client.get("/admin/approvals"),
+                                client.get("/blogs/admin"),
+                              ]);
+                              setPendingApprovals(approvalsRes.data);
+                              setPendingBlogs(blogsRes.data.filter(b => b.approvalStatus === 'pending') || []);
+                            } catch (err) {
+                              alert("Failed to finalize vendor approval");
+                            }
+                          }}
+                          className="px-4 py-2 bg-green-600 text-white rounded-sm hover:bg-green-700 flex items-center gap-2 font-bold text-xs uppercase"
+                        >
+                          <Check size={16} /> Final Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = prompt("Rejection reason:");
+                            if (reason)
+                              handleVendorStatusUpdate(
+                                vendor._id,
+                                "rejected",
+                                reason,
+                              );
+                          }}
+                          className="px-4 py-2 border border-red-300 text-red-600 rounded-sm hover:bg-red-50 flex items-center gap-2 font-bold text-xs uppercase"
+                        >
+                          <X size={16} /> Reject
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() =>
+                            handleVendorStatusUpdate(vendor._id, "approved")
+                          }
+                          className="px-4 py-2 bg-green-600 text-white rounded-sm hover:bg-green-700 flex items-center gap-2"
+                        >
+                          <Check size={16} /> Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = prompt("Rejection reason:");
+                            if (reason)
+                              handleVendorStatusUpdate(
+                                vendor._id,
+                                "rejected",
+                                reason,
+                              );
+                          }}
+                          className="px-4 py-2 border border-red-300 text-red-600 rounded-sm hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <X size={16} /> Reject
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -4317,6 +4484,77 @@ const AdminDashboard = () => {
             </p>
           )}
         </div>
+
+        {/* Pending Blogs */}
+        <div className="bg-surface rounded-sm border border-secondary/10 p-6">
+          <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+            <FileText size={18} /> Blog Post Submissions
+          </h3>
+          {pendingBlogs?.length > 0 ? (
+            <div className="space-y-4">
+              {pendingBlogs.map((blog) => (
+                <div
+                  key={blog._id}
+                  className="flex items-center justify-between p-4 bg-secondary/5 rounded-sm border border-secondary/10 gap-4"
+                >
+                  <div>
+                    <p className="font-bold text-primary">{blog.title}</p>
+                    <p className="text-xs text-text-secondary">Category: {blog.category} • Created by: {blog.author?.name || "Blog Creator"}</p>
+                    <p className="text-xs text-text-secondary mt-1">Submitted: {new Date(blog.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await client.put(`/blogs/id/${blog._id}/approval`, { approvalStatus: 'approved' });
+                          alert('Blog approved and published successfully!');
+                          // Refresh approvals tab data
+                          const [approvalsRes, blogsRes] = await Promise.all([
+                            client.get("/admin/approvals"),
+                            client.get("/blogs/admin"),
+                          ]);
+                          setPendingApprovals(approvalsRes.data);
+                          setPendingBlogs(blogsRes.data.filter(b => b.approvalStatus === 'pending') || []);
+                        } catch (err) {
+                          console.error(err);
+                          alert('Failed to approve blog post');
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-sm hover:bg-green-700 flex items-center gap-2 font-bold text-xs uppercase"
+                    >
+                      <Check size={14} /> Approve & Publish
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('Are you sure you want to reject this blog post?')) {
+                          try {
+                            await client.put(`/blogs/id/${blog._id}/approval`, { approvalStatus: 'rejected' });
+                            alert('Blog post rejected.');
+                            // Refresh
+                            const [approvalsRes, blogsRes] = await Promise.all([
+                              client.get("/admin/approvals"),
+                              client.get("/blogs/admin"),
+                            ]);
+                            setPendingApprovals(approvalsRes.data);
+                            setPendingBlogs(blogsRes.data.filter(b => b.approvalStatus === 'pending') || []);
+                          } catch (err) {
+                            console.error(err);
+                            alert('Failed to reject blog post');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 border border-red-300 text-red-600 rounded-sm hover:bg-red-50 flex items-center gap-2 font-bold text-xs uppercase"
+                    >
+                      <X size={14} /> Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-secondary italic">No pending blog posts waiting for approval.</p>
+          )}
+        </div>
       </div>
     );
   };
@@ -4362,13 +4600,12 @@ const AdminDashboard = () => {
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
-                      log.initiatedBy === "Admin"
+                    className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${log.initiatedBy === "Admin"
                         ? "bg-purple-100 text-purple-700"
                         : log.initiatedBy === "Vendor"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-yellow-100 text-yellow-700"
-                    }`}
+                      }`}
                   >
                     {log.initiatedBy}
                   </span>
@@ -4419,9 +4656,8 @@ const AdminDashboard = () => {
             {Object.entries(pricingTiers).map(([key, tier]) => (
               <div
                 key={key}
-                className={`bg-surface rounded-sm border-2 p-6 ${
-                  key === "premium" ? "border-primary" : "border-secondary/20"
-                }`}
+                className={`bg-surface rounded-sm border-2 p-6 ${key === "premium" ? "border-primary" : "border-secondary/20"
+                  }`}
               >
                 {key === "premium" && (
                   <div className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full inline-block mb-4">
@@ -4638,9 +4874,8 @@ const AdminDashboard = () => {
       };
       return (
         <span
-          className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider ${
-            styles[status] || "bg-gray-100 text-gray-700"
-          }`}
+          className={`text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider ${styles[status] || "bg-gray-100 text-gray-700"
+            }`}
         >
           {status}
         </span>
@@ -4700,11 +4935,10 @@ const AdminDashboard = () => {
             <div
               key={stat.label}
               onClick={() => setReturnsFilter(stat.label.toLowerCase())}
-              className={`bg-surface p-4 rounded-sm shadow-sm border border-secondary/10 cursor-pointer hover:shadow-md transition-shadow ${
-                returnsFilter === stat.label.toLowerCase()
+              className={`bg-surface p-4 rounded-sm shadow-sm border border-secondary/10 cursor-pointer hover:shadow-md transition-shadow ${returnsFilter === stat.label.toLowerCase()
                   ? `ring-2 ring-${stat.color}-400`
                   : ""
-              }`}
+                }`}
             >
               <p className="text-2xl font-bold text-primary">{stat.value}</p>
               <p className="text-xs text-text-secondary uppercase tracking-wider">
@@ -4932,8 +5166,7 @@ const AdminDashboard = () => {
                           }
                         }}
                         disabled={selectedReturn.status === status}
-                        className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${
-                          selectedReturn.status === status
+                        className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${selectedReturn.status === status
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                             : status === "Approved"
                               ? "bg-green-100 text-green-700 hover:bg-green-200"
@@ -4942,7 +5175,7 @@ const AdminDashboard = () => {
                                 : status === "Refunded"
                                   ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
                                   : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        }`}
+                          }`}
                       >
                         {status}
                       </button>
@@ -4978,9 +5211,8 @@ const AdminDashboard = () => {
 
       {/* Sidebar */}
       <aside
-        className={`w-64 bg-surface border-r border-secondary/10 fixed left-0 top-20 z-20 transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`w-64 bg-surface border-r border-secondary/10 fixed left-0 top-20 z-20 transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         style={{ height: "calc(100vh - 5rem)" }}
       >
         <div className="p-6 flex-1 overflow-y-auto">
@@ -5010,6 +5242,7 @@ const AdminDashboard = () => {
               { id: "pricing", icon: DollarSign, label: "Pricing" },
               { id: "users", icon: Users, label: "Users" },
               { id: "content", icon: Edit2, label: "Content" },
+              { id: "subadmins", icon: Settings, label: "Sub-Admins" },
             ].map((item) => (
               <button
                 key={item.id}
@@ -5019,11 +5252,10 @@ const AdminDashboard = () => {
                     : setActiveTab(item.id)
                 }
                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-sm transition-colors
-                                    ${
-                                      activeTab === item.id
-                                        ? "bg-primary text-surface"
-                                        : "text-text-secondary hover:bg-secondary/5"
-                                    }`}
+                                    ${activeTab === item.id
+                    ? "bg-primary text-surface"
+                    : "text-text-secondary hover:bg-secondary/5"
+                  }`}
               >
                 <item.icon size={18} />
                 {item.label}
@@ -5033,7 +5265,7 @@ const AdminDashboard = () => {
         </div>
         <div className="p-6 border-t border-secondary/10 bg-surface">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 rounded-sm transition-colors"
           >
             <LogOut size={18} /> Logout
@@ -5075,6 +5307,7 @@ const AdminDashboard = () => {
         {activeTab === "pricing" && renderPricing()}
         {activeTab === "returns" && renderReturns()}
         {activeTab === "refunds" && renderRefunds()}
+        {activeTab === "subadmins" && renderSubAdmins()}
       </main>
 
       {/* Product Modal */}
@@ -5555,6 +5788,134 @@ const AdminDashboard = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Sub-Admin Modal */}
+      {showSubadminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface w-full max-w-md rounded-sm shadow-xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-primary">Create Sub-Admin Account</h2>
+              <button
+                onClick={() => setShowSubadminModal(false)}
+                className="text-text-secondary hover:text-red-500"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateSubadmin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={subadminForm.name}
+                  onChange={(e) => setSubadminForm({ ...subadminForm, name: e.target.value })}
+                  placeholder="e.g. Rahul Sharma"
+                  className="w-full bg-background border border-secondary/20 p-3 rounded-sm focus:border-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={subadminForm.email}
+                  onChange={(e) => setSubadminForm({ ...subadminForm, email: e.target.value })}
+                  placeholder="e.g. rahul@siraba.com"
+                  className="w-full bg-background border border-secondary/20 p-3 rounded-sm focus:border-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={subadminForm.password}
+                  onChange={(e) => setSubadminForm({ ...subadminForm, password: e.target.value })}
+                  placeholder="Min. 6 characters"
+                  className="w-full bg-background border border-secondary/20 p-3 rounded-sm focus:border-accent outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Role</label>
+                <select
+                  value={subadminForm.role}
+                  onChange={(e) => setSubadminForm({ ...subadminForm, role: e.target.value })}
+                  className="w-full bg-background border border-secondary/20 p-3 rounded-sm focus:border-accent outline-none transition-colors"
+                >
+                  <option value="vendor_onboarder">Vendor Onboarder</option>
+                  <option value="blog_creator">Blog Creator</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSubadminModal(false)}
+                  className="flex-1 py-3 border border-secondary/20 rounded-sm hover:bg-secondary/5 font-medium text-text-secondary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-primary text-surface py-3 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 rounded-sm shadow"
+                >
+                  Create Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Sub-Admin Password Modal */}
+      {showResetPwdModal && selectedSubadmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface w-full max-w-md rounded-sm shadow-xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-primary">Reset Password</h2>
+                <p className="text-xs text-text-secondary mt-1">For: <span className="font-semibold text-primary">{selectedSubadmin.name}</span> ({selectedSubadmin.email})</p>
+              </div>
+              <button
+                onClick={() => { setShowResetPwdModal(false); setSelectedSubadmin(null); setNewResetPwd(""); }}
+                className="text-text-secondary hover:text-red-500"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleResetPwdSubadmin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">New Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newResetPwd}
+                  onChange={(e) => setNewResetPwd(e.target.value)}
+                  placeholder="Enter new password (min. 6 characters)"
+                  className="w-full bg-background border border-secondary/20 p-3 rounded-sm focus:border-accent outline-none transition-colors"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowResetPwdModal(false); setSelectedSubadmin(null); setNewResetPwd(""); }}
+                  className="flex-1 py-3 border border-secondary/20 rounded-sm hover:bg-secondary/5 font-medium text-text-secondary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-primary text-surface py-3 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 rounded-sm shadow"
+                >
+                  Reset Password
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

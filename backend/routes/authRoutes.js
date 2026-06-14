@@ -147,6 +147,7 @@ router.post('/register', registerLimiter, validateRegistration, async (req, res)
                 name: user.name,
                 email: user.email,
                 isAdmin: user.isAdmin,
+                role: user.role,
                 cart: user.cart,
                 token: generateToken(user._id)
             });
@@ -240,6 +241,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
             name: user.name,
             email: user.email,
             isAdmin: user.isAdmin,
+            role: user.role,
             cart: user.cart,
             token: generateToken(user._id)
         });
@@ -310,6 +312,7 @@ router.put('/profile', protect, async (req, res) => {
                 phone: updatedUser.phone,
                 addresses: updatedUser.addresses,
                 isAdmin: updatedUser.isAdmin,
+                role: updatedUser.role,
                 cart: updatedUser.cart,
                 token: generateToken(updatedUser._id)
             });

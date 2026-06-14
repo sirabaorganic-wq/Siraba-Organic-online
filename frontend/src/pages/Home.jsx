@@ -70,7 +70,7 @@ const Home = () => {
           </p>
 
           <div className="bg-primary text-surface text-sm tracking-widest uppercase px-8 py-4 hover:bg-accent transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-50vw md:w-auto">
-              Not Every Organic Product Qualifies for SIRABA ORGANIC.
+            Not Every Organic Product Qualifies for SIRABA ORGANIC.
           </div>
 
           {/* Trust Statement */}
@@ -190,75 +190,202 @@ const Home = () => {
       </section>
 
       {/* ── SECTION 3 — TRIPLE VERIFICATION FRAMEWORK™ ── */}
-      <section className="py-20 md:py-28 bg-surface border-b border-secondary/10">
+      <section className="py-20 md:py-28 bg-surface border-b border-secondary/10 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 space-y-4">
+
+          {/* ── Principle Header ── */}
+          <div className="text-center mb-6 space-y-4">
             <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full">
               Our Framework
             </span>
             <h2 className="font-heading text-4xl md:text-5xl text-primary">
-              The SIRABA Triple Verification Framework™
+              SIRABA ORGANIC™ Triple Verification Principle
             </h2>
-            <p className="text-text-secondary text-lg max-w-2xl mx-auto font-light">
-              Every approved product on SIRABA ORGANIC must satisfy three critical layers of verification.
-            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          {/* ── CERTIFIED → VERIFIED → QUALIFIED flow bar ── */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-0 mb-8">
             {[
-              {
-                layer: "Layer 1",
-                title: "Indian Organic Compliance",
-                badge: "NPOP Certification",
-                desc: "Products must comply with India's National Programme for Organic Production (NPOP), governed by APEDA.",
-                ensures: [
-                  "Recognized organic cultivation standards",
-                  "Regulated compliance systems",
-                  "Traceable organic production practices",
-                ],
-              },
-              {
-                layer: "Layer 2",
-                title: "International Organic Validation",
-                badge: "USDA Organic OR EU Organic Certification",
-                desc: "Vendors must additionally hold globally recognized organic certification standards accepted in international markets.",
-                ensures: [
-                  "International organic compliance",
-                  "Export-oriented credibility",
-                  "Globally accepted organic practices",
-                ],
-              },
-              {
-                layer: "Layer 3",
-                title: "Scientific Documentation",
-                badge: "NABL-Accredited Lab Testing",
-                desc: "Products must be supported by laboratory documentation aligned with NABL-accredited testing standards.",
-                ensures: [
-                  "Scientific quality validation",
-                  "Documentation-backed compliance",
-                  "Greater consumer confidence",
-                ],
-              },
+              { label: "CERTIFIED", color: "bg-primary text-surface" },
+              { label: "VERIFIED", color: "bg-accent text-primary" },
+              { label: "QUALIFIED", color: "bg-secondary text-surface" },
+            ].map((step, i) => (
+              <div key={i} className="flex items-center">
+                <div className={`${step.color} px-7 py-3 font-heading font-bold text-sm tracking-[0.2em] uppercase shadow-md`}>
+                  {step.label}
+                </div>
+                {i < 2 && (
+                  <div className="hidden sm:block w-8 h-0.5 bg-gradient-to-r from-secondary/40 to-secondary/10" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* ── Principle sub-descriptions ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16 max-w-5xl mx-auto text-center">
+            {[
+              { title: "Certified", desc: "Certified by recognized regulatory and certification bodies." },
+              { title: "Verified", desc: "Verified through scientific testing, documentation, and traceability." },
+              { title: "Qualified", desc: "Qualified through SIRABA ORGANIC™ marketplace assessment and ongoing compliance review." },
             ].map((item, i) => (
-              <div key={i} className="bg-background border border-secondary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow duration-300">
-                <span className="text-accent text-xs font-bold uppercase tracking-widest">{item.layer}</span>
-                <h3 className="font-heading text-xl text-primary font-bold">{item.title}</h3>
-                <span className="inline-block bg-accent/10 text-primary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/20">
-                  {item.badge}
-                </span>
+              <div key={i} className="bg-background rounded-xl px-6 py-5 border border-secondary/10 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-accent">{item.title}</p>
                 <p className="text-text-secondary text-sm leading-relaxed font-light">{item.desc}</p>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">Ensures:</p>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Divider ── */}
+          <div className="flex items-center gap-4 mb-14 max-w-3xl mx-auto">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-secondary/20 to-transparent" />
+            <span className="text-accent text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap px-3">
+              THE SIRABA FRAMEWORK
+            </span>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-secondary/20 to-transparent" />
+          </div>
+
+          {/* ── Three Layer Cards ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            {/* LAYER 1 — CERTIFIED */}
+            <div className="relative bg-background border border-secondary/10 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
+              {/* Top accent stripe */}
+              <div className="h-1.5 w-full bg-primary" />
+              <div className="p-8 space-y-5 flex-1 flex flex-col">
+                <div className="space-y-1">
+                  <span className="text-primary text-xs font-bold uppercase tracking-[0.2em]">Layer 1</span>
+                  <h3 className="font-heading text-2xl text-primary font-bold leading-tight">CERTIFIED</h3>
+                  <p className="text-text-secondary text-xs font-light tracking-wide">Organic Regulatory & Certification Compliance</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent">Mandatory</p>
                   <ul className="space-y-1.5">
-                    {item.ensures.map((e, j) => (
+                    {[
+                      "Valid NPOP Certification",
+                      "Product Scope Certificate",
+                      "FSSAI License",
+                      "GST Registration",
+                      "USDA Organic OR EU Organic Certification",
+                    ].map((item, j) => (
                       <li key={j} className="flex items-start gap-2 text-sm text-text-secondary">
-                        <ShieldCheck size={14} className="text-accent flex-shrink-0 mt-0.5" />
-                        {e}
+                        <ShieldCheck size={13} className="text-primary flex-shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-text-secondary font-light pt-1 pl-5 italic">
+                    Other Recognized International Organic Certifications (Optional)
+                  </p>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-secondary/10 space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-primary">Ensures</p>
+                  {[
+                    "Regulatory compliance",
+                    "Organic production standards",
+                    "National and international certification recognition",
+                  ].map((e, j) => (
+                    <div key={j} className="flex items-center gap-2 text-sm text-text-secondary">
+                      <span className="text-primary font-bold text-base leading-none">✓</span>
+                      {e}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* LAYER 2 — VERIFIED (highlighted) */}
+            <div className="relative bg-primary border border-primary rounded-2xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 flex flex-col">
+              <div className="h-1.5 w-full bg-accent" />
+              {/* Subtle glow overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent pointer-events-none" />
+              <div className="p-8 space-y-5 flex-1 flex flex-col relative z-10">
+                <div className="space-y-1">
+                  <span className="text-accent text-xs font-bold uppercase tracking-[0.2em]">Layer 2</span>
+                  <h3 className="font-heading text-2xl text-surface font-bold leading-tight">VERIFIED</h3>
+                  <p className="text-surface/60 text-xs font-light tracking-wide">Scientific & Documentation Validation</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent/80">Documentation</p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "NABL-Accredited Lab Reports",
+                      "Product Documentation",
+                      "Farm-to-Fork Traceability Records",
+                      "Packaging Compliance",
+                      "Supply Chain Verification",
+                    ].map((item, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-surface/80">
+                        <ShieldCheck size={13} className="text-accent flex-shrink-0 mt-0.5" />
+                        {item}
                       </li>
                     ))}
                   </ul>
                 </div>
+
+                <div className="mt-auto pt-4 border-t border-surface/10 space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent">Ensures</p>
+                  {[
+                    "Scientific validation",
+                    "Documentation-backed authenticity",
+                    "Traceability and transparency",
+                  ].map((e, j) => (
+                    <div key={j} className="flex items-center gap-2 text-sm text-surface/80">
+                      <span className="text-accent font-bold text-base leading-none">✓</span>
+                      {e}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* LAYER 3 — QUALIFIED */}
+            <div className="relative bg-background border border-secondary/10 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
+              <div className="h-1.5 w-full bg-secondary" />
+              <div className="p-8 space-y-5 flex-1 flex flex-col">
+                <div className="space-y-1">
+                  <span className="text-secondary text-xs font-bold uppercase tracking-[0.2em]">Layer 3</span>
+                  <h3 className="font-heading text-2xl text-primary font-bold leading-tight">QUALIFIED</h3>
+                  <p className="text-text-secondary text-xs font-light tracking-wide">SIRABA ORGANIC™ Marketplace Qualification Framework</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent">Assessment Criteria</p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "Vendor Documentation Review",
+                      "Brand Presence Assessment",
+                      "Ethical Sourcing Evaluation",
+                      "Responsiveness Assessment",
+                      "Product Quality Evaluation",
+                      "Continuous Compliance Monitoring",
+                    ].map((item, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-text-secondary">
+                        <ShieldCheck size={13} className="text-secondary flex-shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-secondary/10 space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-primary">Ensures</p>
+                  {[
+                    "Marketplace readiness",
+                    "Quality consistency",
+                    "Long-term trust and accountability",
+                  ].map((e, j) => (
+                    <div key={j} className="flex items-center gap-2 text-sm text-text-secondary">
+                      <span className="text-secondary font-bold text-base leading-none">✓</span>
+                      {e}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

@@ -213,7 +213,7 @@ const vendorSchema = mongoose.Schema(
     // Vendor Status
     status: {
       type: String,
-      enum: ["pending", "under_review", "approved", "suspended", "rejected"],
+      enum: ["pending", "under_review", "subadmin_approved", "subadmin_rejected", "approved", "suspended", "rejected"],
       default: "pending",
     },
     onboardingStep: { type: Number, default: 1 }, // Track onboarding progress (1-5)
@@ -279,6 +279,8 @@ const vendorSchema = mongoose.Schema(
     // Approval Info
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     approvedAt: { type: Date },
+    subadminApprovedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    subadminApprovedAt: { type: Date },
     rejectionReason: { type: String },
 
     // Password Reset

@@ -148,6 +148,86 @@ const VendorIntro = () => {
         }
     ];
 
+
+    // Subscription Plans
+    const plans = [
+        {
+            id: 'starter',
+            name: 'Starter',
+            icon: Rocket,
+            price: null,
+            priceMonthly: null,
+            priceYearly: null,
+            priceLabel: 'Free',
+            commission: '15%',
+            badge: null,
+            color: 'from-emerald-500 to-green-600',
+            iconBg: 'bg-emerald-50',
+            iconColor: 'text-emerald-600',
+            borderHover: 'hover:border-emerald-300',
+            highlight: false,
+            features: [
+                'Up to 10 products',
+                'Basic analytics dashboard',
+                'Standard support',
+                'Basic shop profile',
+                'Manual weekly payouts',
+            ]
+        },
+        {
+            id: 'professional',
+            name: 'Professional',
+            icon: Zap,
+            priceMonthly: '₹1,999',
+            priceYearly: '₹19,990',
+            commission: '10%',
+            badge: 'Most Popular',
+            color: 'from-accent to-primary',
+            iconBg: 'bg-accent/10',
+            iconColor: 'text-accent',
+            borderHover: 'hover:border-accent',
+            highlight: true,
+            features: [
+                'Up to 100 products',
+                'Advanced analytics & reports',
+                'Priority support',
+                'Custom shop page',
+                '3 featured product slots',
+                'Auto payouts (bi-weekly)',
+                'Promotional tools',
+                'Bulk product upload',
+            ]
+        },
+        {
+            id: 'enterprise',
+            name: 'Enterprise',
+            icon: Crown,
+            priceMonthly: '₹4,999',
+            priceYearly: '₹49,990',
+            commission: '5%',
+            badge: 'Best Value',
+            color: 'from-amber-500 to-orange-600',
+            iconBg: 'bg-amber-50',
+            iconColor: 'text-amber-600',
+            borderHover: 'hover:border-amber-300',
+            highlight: false,
+            features: [
+                'Unlimited products',
+                'Real-time analytics',
+                'Dedicated account manager',
+                'Branded storefront',
+                '10 featured product slots',
+                'Auto payouts (weekly)',
+                'API access',
+                'White-label invoicing',
+                'Priority product approval',
+                'Custom commission negotiation',
+            ]
+        }
+    ];
+
+    const [billingCycle, setBillingCycle] = useState('monthly');
+
     // FAQs
     const faqs = [
         { q: 'What are the requirements?', a: 'Valid business registration (GST), organic certification, and minimum 5 products initially.' },
@@ -624,6 +704,172 @@ const VendorIntro = () => {
                             </details>
                         ))}
                     </div>
+                </div>
+            </section>
+
+
+            {/* Subscription Plans */}
+            <section className="py-28 bg-background relative overflow-hidden">
+                {/* Subtle background decoration */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[1px] bg-gradient-to-r from-transparent via-secondary/20 to-transparent" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[1px] bg-gradient-to-r from-transparent via-secondary/20 to-transparent" />
+                </div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    {/* Section Header */}
+                    <div className="text-center mb-14">
+                        <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full text-accent text-xs font-bold uppercase tracking-widest mb-5">
+                            <Star size={13} />
+                            Vendor Subscription Plans
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-heading font-bold text-primary mb-4">
+                            Choose the Plan That Fits Your Business
+                        </h2>
+                        <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+                            Start free and scale as you grow. Every plan includes full access to the SIRABA ORGANIC&trade; vendor ecosystem.
+                        </p>
+
+                        {/* Billing Toggle */}
+                        <div className="inline-flex items-center mt-8 bg-surface border border-secondary/15 rounded-xl p-1.5 shadow-sm">
+                            <button
+                                onClick={() => setBillingCycle('monthly')}
+                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${billingCycle === 'monthly' ? 'bg-primary text-surface shadow' : 'text-text-secondary hover:text-primary'}`}
+                            >
+                                Monthly
+                            </button>
+                            <button
+                                onClick={() => setBillingCycle('yearly')}
+                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${billingCycle === 'yearly' ? 'bg-primary text-surface shadow' : 'text-text-secondary hover:text-primary'}`}
+                            >
+                                Yearly
+                                <span className="ml-2 inline-block bg-accent/20 text-accent text-xs px-2 py-0.5 rounded-full font-bold">Save ~17%</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Plans Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                        {plans.map((plan) => {
+                            const PlanIcon = plan.icon;
+                            const displayPrice = plan.priceLabel
+                                ? plan.priceLabel
+                                : billingCycle === 'monthly'
+                                    ? plan.priceMonthly
+                                    : plan.priceYearly;
+                            const priceSuffix = plan.priceLabel
+                                ? null
+                                : billingCycle === 'monthly' ? '/month' : '/year';
+
+                            return (
+                                <div
+                                    key={plan.id}
+                                    className={`relative flex flex-col rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                                        plan.highlight
+                                            ? 'border-accent shadow-xl shadow-accent/10 bg-gradient-to-b from-primary to-secondary text-surface'
+                                            : `border-secondary/15 bg-surface ${plan.borderHover}`
+                                    }`}
+                                >
+                                    {/* Badge */}
+                                    {plan.badge && (
+                                        <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg ${
+                                            plan.highlight
+                                                ? 'bg-accent text-primary'
+                                                : 'bg-amber-500 text-white'
+                                        }`}>
+                                            {plan.badge}
+                                        </div>
+                                    )}
+
+                                    {/* Card Header */}
+                                    <div className={`p-8 pb-6 border-b ${plan.highlight ? 'border-surface/15' : 'border-secondary/10'}`}>
+                                        <div className="flex items-center gap-3 mb-5">
+                                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${plan.highlight ? 'bg-surface/15' : plan.iconBg}`}>
+                                                <PlanIcon className={plan.highlight ? 'text-accent' : plan.iconColor} size={22} />
+                                            </div>
+                                            <div>
+                                                <h3 className={`font-heading font-bold text-xl leading-none ${plan.highlight ? 'text-surface' : 'text-primary'}`}>
+                                                    {plan.name}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        {/* Pricing */}
+                                        <div className="mb-4">
+                                            <div className="flex items-end gap-1">
+                                                <span className={`text-4xl font-bold font-heading ${plan.highlight ? 'text-surface' : 'text-primary'}`}>
+                                                    {displayPrice}
+                                                </span>
+                                                {priceSuffix && (
+                                                    <span className={`text-sm mb-1.5 font-medium ${plan.highlight ? 'text-surface/60' : 'text-text-secondary'}`}>
+                                                        {priceSuffix}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {!plan.priceLabel && billingCycle === 'yearly' && (
+                                                <p className={`text-xs mt-1 ${plan.highlight ? 'text-surface/60' : 'text-text-secondary'}`}>
+                                                    Billed annually
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Commission Badge */}
+                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold ${
+                                            plan.highlight
+                                                ? 'bg-accent/20 text-accent'
+                                                : 'bg-secondary/10 text-text-secondary'
+                                        }`}>
+                                            <TrendingUp size={13} />
+                                            {plan.commission} commission rate
+                                        </div>
+                                    </div>
+
+                                    {/* Features */}
+                                    <div className="p-8 pt-6 flex-1 flex flex-col">
+                                        <p className={`text-xs font-bold uppercase tracking-widest mb-4 ${plan.highlight ? 'text-surface/50' : 'text-text-secondary'}`}>
+                                            Key Features
+                                        </p>
+                                        <ul className="space-y-3 flex-1">
+                                            {plan.features.map((feature, fi) => (
+                                                <li key={fi} className="flex items-start gap-2.5 text-sm">
+                                                    <CheckCircle
+                                                        size={16}
+                                                        className={`flex-shrink-0 mt-0.5 ${plan.highlight ? 'text-accent' : 'text-emerald-500'}`}
+                                                    />
+                                                    <span className={plan.highlight ? 'text-surface/85' : 'text-text-secondary'}>
+                                                        {feature}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        {/* CTA */}
+                                        <Link
+                                            to="/vendor/register"
+                                            className={`mt-8 block text-center py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider transition-all hover:scale-[1.02] ${
+                                                plan.highlight
+                                                    ? 'bg-accent text-primary hover:bg-surface hover:text-primary shadow-lg'
+                                                    : plan.id === 'enterprise'
+                                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:opacity-90 shadow-md'
+                                                        : 'bg-primary text-surface hover:bg-secondary'
+                                            }`}
+                                        >
+                                            {plan.priceLabel ? 'Get Started Free' : `Start with ${plan.name}`}
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Footer Note */}
+                    <p className="text-center text-sm text-text-secondary mt-10">
+                        All plans include full SIRABA ORGANIC&trade; vendor ecosystem access. &nbsp;
+                        <a href="https://wa.me/918586836660" target="_blank" rel="noopener noreferrer" className="text-accent font-semibold hover:underline">
+                            Talk to our team
+                        </a>
+                        &nbsp;to find the right plan for your business.
+                    </p>
                 </div>
             </section>
 

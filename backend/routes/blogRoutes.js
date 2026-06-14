@@ -7,21 +7,25 @@ const {
     getBlogById,
     createBlog,
     updateBlog,
-    deleteBlog
+    deleteBlog,
+    approveBlog
 } = require('../controllers/blogController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin, adminOrBlogCreator } = require('../middleware/authMiddleware');
 
 router.route('/')
     .get(getBlogs)
-    .post(protect, admin, createBlog);
+    .post(protect, adminOrBlogCreator, createBlog);
 
-router.route('/admin').get(protect, admin, getAdminBlogs);
+router.route('/admin').get(protect, adminOrBlogCreator, getAdminBlogs);
 
 router.route('/:slug').get(getBlogBySlug);
 
 router.route('/id/:id')
-    .get(protect, admin, getBlogById)
-    .put(protect, admin, updateBlog)
-    .delete(protect, admin, deleteBlog);
+    .get(protect, adminOrBlogCreator, getBlogById)
+    .put(protect, adminOrBlogCreator, updateBlog)
+    .delete(protect, adminOrBlogCreator, deleteBlog);
+
+router.route('/id/:id/approval')
+    .put(protect, admin, approveBlog);
 
 module.exports = router;

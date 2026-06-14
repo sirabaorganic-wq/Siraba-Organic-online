@@ -43,7 +43,13 @@ const blogPostSchema = new mongoose.Schema({
     published: {
         type: Boolean,
         default: true
-    }
+    },
+    approvalStatus: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'approved'
+    },
+    authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, {
     timestamps: true
 });

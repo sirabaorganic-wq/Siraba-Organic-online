@@ -14,7 +14,16 @@ const AdminLogin = () => {
         e.preventDefault();
         const result = await login(username, password);
         if (result.success) {
-            navigate('/admin/dashboard');
+            const loggedInUser = result.user;
+            if (loggedInUser.role === 'vendor_onboarder') {
+                navigate('/vendor-onboarder/dashboard');
+            } else if (loggedInUser.role === 'blog_creator') {
+                navigate('/blog-creator/dashboard');
+            } else if (loggedInUser.isAdmin || loggedInUser.role === 'admin') {
+                navigate('/admin/dashboard');
+            } else {
+                setError('Not authorized to access administration portals');
+            }
         } else {
             setError(result.message || 'Invalid credentials');
         }
@@ -59,9 +68,9 @@ const AdminLogin = () => {
                     >
                         Login
                     </button>
-                    <p className="text-xs text-center text-text-secondary mt-4">
+                    {/* <p className="text-xs text-center text-text-secondary mt-4">
                         Default: admin / admin123
-                    </p>
+                    </p> */}
                 </form>
             </div>
         </div>

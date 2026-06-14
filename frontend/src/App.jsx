@@ -33,6 +33,8 @@ import { OrderProvider } from "./context/OrderContext";
 import { VendorProvider } from "./context/VendorContext";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
+import VendorOnboarderDashboard from "./pages/admin/VendorOnboarderDashboard";
+import BlogCreatorDashboard from "./pages/admin/BlogCreatorDashboard";
 import VendorLogin from "./pages/vendor/VendorLogin";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import VendorOnboarding from "./pages/vendor/VendorOnboarding";
@@ -64,7 +66,7 @@ import { ConfirmProvider } from "./components/ConfirmModal";
 
 const FooterWrapper = () => {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith("/admin");
+  const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/vendor-onboarder") || location.pathname.startsWith("/blog-creator");
   const isVendorPortal = location.pathname === "/vendor" || location.pathname.startsWith("/vendor/");
   return !isAdmin && !isVendorPortal ? <Footer /> : null;
 };
@@ -72,7 +74,8 @@ const FooterWrapper = () => {
 const NavbarWrapper = () => {
   const location = useLocation();
   const isVendorPortal = location.pathname === "/vendor" || location.pathname.startsWith("/vendor/");
-  return !isVendorPortal ? <Navbar /> : null;
+  const isSubAdmin = location.pathname.startsWith("/vendor-onboarder") || location.pathname.startsWith("/blog-creator") || location.pathname.startsWith("/admin");
+  return !isVendorPortal && !isSubAdmin ? <Navbar /> : null;
 };
 
 function App() {
@@ -177,6 +180,14 @@ function App() {
                               <Route
                                 path="/admin/dashboard"
                                 element={<AdminDashboard />}
+                              />
+                              <Route
+                                path="/vendor-onboarder/dashboard"
+                                element={<VendorOnboarderDashboard />}
+                              />
+                              <Route
+                                path="/blog-creator/dashboard"
+                                element={<BlogCreatorDashboard />}
                               />
                               <Route
                                 path="/admin/blogs"

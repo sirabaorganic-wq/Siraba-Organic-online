@@ -5,7 +5,7 @@ const VendorOrder = require("../models/VendorOrder");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, admin, adminOrVendorOnboarder } = require("../middleware/authMiddleware");
 const RefundLog = require("../models/RefundLog");
 const { invalidateCache } = require("../config/cache");
 
@@ -14,7 +14,7 @@ const { invalidateCache } = require("../config/cache");
 // @desc    Get all vendors
 // @route   GET /api/admin/vendors
 // @access  Private/Admin
-router.get("/vendors", protect, admin, async (req, res) => {
+router.get("/vendors", protect, adminOrVendorOnboarder, async (req, res) => {
   try {
     const { status, search, page = 1, limit = 20 } = req.query;
     const query = {};
@@ -50,7 +50,7 @@ router.get("/vendors", protect, admin, async (req, res) => {
 // @desc    Get single vendor details
 // @route   GET /api/admin/vendors/:id
 // @access  Private/Admin
-router.get("/vendors/:id", protect, admin, async (req, res) => {
+router.get("/vendors/:id", protect, adminOrVendorOnboarder, async (req, res) => {
   try {
     const vendor = await Vendor.findById(req.params.id)
       .select("-password")
@@ -93,7 +93,7 @@ router.get("/vendors/:id", protect, admin, async (req, res) => {
 // @desc    Update vendor status (approve/reject/suspend)
 // @route   PUT /api/admin/vendors/:id/status
 // @access  Private/Admin
-router.put("/vendors/:id/status", protect, admin, async (req, res) => {
+router.put("/vendors/:id/status", protect, adminOrVendorOnboarder, async (req, res) => {
   try {
     const { status, rejectionReason, adminNote } = req.body;
     const vendor = await Vendor.findById(req.params.id);
@@ -102,12 +102,22 @@ router.put("/vendors/:id/status", protect, admin, async (req, res) => {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
+    // Role-based status constraints
+    if (req.user.role === 'vendor_onboarder' && !req.user.isAdmin) {
+      if (!['subadmin_approved', 'subadmin_rejected', 'under_review'].includes(status)) {
+        return res.status(403).json({ message: "Vendor Onboarder is not authorized to set this status" });
+      }
+    }
+
     vendor.status = status;
 
     if (status === "approved") {
       vendor.approvedBy = req.user._id;
       vendor.approvedAt = new Date();
-    } else if (status === "rejected") {
+    } else if (status === "subadmin_approved") {
+      vendor.subadminApprovedBy = req.user._id;
+      vendor.subadminApprovedAt = new Date();
+    } else if (status === "rejected" || status === "subadmin_rejected") {
       vendor.rejectionReason = rejectionReason;
     }
 
@@ -172,7 +182,7 @@ router.put("/vendors/:id/status", protect, admin, async (req, res) => {
 router.put(
   "/vendors/:id/compliance/:docId",
   protect,
-  admin,
+  adminOrVendorOnboarder,
   async (req, res) => {
     try {
       const { status, rejectionReason } = req.body;
@@ -202,9 +212,15 @@ router.put(
 
       const allDocsApproved = vendor.complianceDocuments.length > 0 && vendor.complianceDocuments.every(d => d.status === "approved");
       if (allDocsApproved) {
-        vendor.status = "approved";
-        vendor.approvedBy = req.user._id;
-        vendor.approvedAt = new Date();
+        if (req.user.role === 'vendor_onboarder') {
+          vendor.status = "subadmin_approved";
+          vendor.subadminApprovedBy = req.user._id;
+          vendor.subadminApprovedAt = new Date();
+        } else {
+          vendor.status = "approved";
+          vendor.approvedBy = req.user._id;
+          vendor.approvedAt = new Date();
+        }
       }
 
       await vendor.save();
@@ -685,13 +701,19 @@ router.get("/pricing", protect, admin, async (req, res) => {
 // @desc    Get pending approvals
 // @route   GET /api/admin/approvals
 // @access  Private/Admin
-router.get("/approvals", protect, admin, async (req, res) => {
+router.get("/approvals", protect, adminOrVendorOnboarder, async (req, res) => {
   try {
     // Pending vendor approvals
-    const pendingVendors = await Vendor.find({
-      status: { $in: ["pending", "under_review"] },
-    })
+    let query = {};
+    if (req.user.role === 'vendor_onboarder' && !req.user.isAdmin) {
+      query.status = { $in: ["pending", "under_review"] };
+    } else {
+      query.status = { $in: ["pending", "under_review", "subadmin_approved", "subadmin_rejected"] };
+    }
+
+    const pendingVendors = await Vendor.find(query)
       .select("-password")
+      .populate("subadminApprovedBy", "name email")
       .sort({ createdAt: -1 });
 
     // Pending document reviews
@@ -1300,6 +1322,119 @@ router.put("/returns/:id", protect, admin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating return status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ================== SUB-ADMIN MANAGEMENT ==================
+
+// @desc    Get all sub-admins
+// @route   GET /api/admin/subadmins
+// @access  Private/Admin
+router.get("/subadmins", protect, admin, async (req, res) => {
+  try {
+    const subadmins = await User.find({
+      role: { $in: ["vendor_onboarder", "blog_creator"] },
+    }).select("-password");
+    res.json(subadmins);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Create a sub-admin account
+// @route   POST /api/admin/subadmins
+// @access  Private/Admin
+router.post("/subadmins", protect, admin, async (req, res) => {
+  const { name, email, password, role } = req.body;
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  if (!["vendor_onboarder", "blog_creator"].includes(role)) {
+    return res.status(400).json({ message: "Invalid role specified" });
+  }
+
+  try {
+    const userExists = await User.findOne({ email: email.toLowerCase() });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const bcrypt = require("bcryptjs");
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const subadmin = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role,
+      isEmailVerified: true,
+      lastPasswordChange: new Date(),
+    });
+
+    res.status(201).json({
+      _id: subadmin._id,
+      name: subadmin.name,
+      email: subadmin.email,
+      role: subadmin.role,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Reset sub-admin password
+// @route   PUT /api/admin/subadmins/:id/reset-password
+// @access  Private/Admin
+router.put("/subadmins/:id/reset-password", protect, admin, async (req, res) => {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ message: "Password is required" });
+  }
+
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "Sub-admin not found" });
+    }
+
+    if (!["vendor_onboarder", "blog_creator"].includes(user.role)) {
+      return res.status(400).json({ message: "Can only reset password for sub-admins" });
+    }
+
+    const bcrypt = require("bcryptjs");
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user.password = hashedPassword;
+    user.lastPasswordChange = new Date();
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Delete sub-admin account
+// @route   DELETE /api/admin/subadmins/:id
+// @access  Private/Admin
+router.delete("/subadmins/:id", protect, admin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "Sub-admin not found" });
+    }
+
+    if (!["vendor_onboarder", "blog_creator"].includes(user.role)) {
+      return res.status(400).json({ message: "Can only delete sub-admin accounts" });
+    }
+
+    await user.deleteOne();
+    res.json({ message: "Sub-admin account deleted successfully" });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });

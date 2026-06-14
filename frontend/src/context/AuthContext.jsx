@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
             setUser(data);
             localStorage.setItem('userInfo', JSON.stringify(data));
             localStorage.setItem('token', data.token); // Separate token for axios interceptor
-            return { success: true };
+            return { success: true, user: data };
         } catch (error) {
             const data = error.response?.data;
             let message = data?.message || data?.error || 'Login failed';

@@ -175,4 +175,61 @@ const optionalAuth = async (req, res, next) => {
     next();
 };
 
-module.exports = { protect, admin, ownResource, optionalAuth };
+const adminOrVendorOnboarder = (req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+
+    if (req.user && (req.user.isAdmin || req.user.role === 'vendor_onboarder')) {
+        next();
+    } else {
+        securityLogger.logUnauthorizedAccess(
+            req.user ? req.user._id : 'unknown',
+            `Admin/VendorOnboarder: ${req.method} ${req.path}`,
+            ip,
+            req.get('user-agent')
+        );
+        return res.status(403).json({
+            message: 'Not authorized. Vendor Onboarder or Admin role required.',
+            code: 'FORBIDDEN'
+        });
+    }
+};
+
+const adminOrBlogCreator = (req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+
+    if (req.user && (req.user.isAdmin || req.user.role === 'blog_creator')) {
+        next();
+    } else {
+        securityLogger.logUnauthorizedAccess(
+            req.user ? req.user._id : 'unknown',
+            `Admin/BlogCreator: ${req.method} ${req.path}`,
+            ip,
+            req.get('user-agent')
+        );
+        return res.status(403).json({
+            message: 'Not authorized. Blog Creator or Admin role required.',
+            code: 'FORBIDDEN'
+        });
+    }
+};
+
+const adminOrSubAdmin = (req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+
+    if (req.user && (req.user.isAdmin || req.user.role === 'vendor_onboarder' || req.user.role === 'blog_creator')) {
+        next();
+    } else {
+        securityLogger.logUnauthorizedAccess(
+            req.user ? req.user._id : 'unknown',
+            `Admin/SubAdmin: ${req.method} ${req.path}`,
+            ip,
+            req.get('user-agent')
+        );
+        return res.status(403).json({
+            message: 'Not authorized. Sub-Admin or Admin role required.',
+            code: 'FORBIDDEN'
+        });
+    }
+};
+
+module.exports = { protect, admin, ownResource, optionalAuth, adminOrVendorOnboarder, adminOrBlogCreator, adminOrSubAdmin };

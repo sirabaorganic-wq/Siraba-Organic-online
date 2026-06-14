@@ -6,7 +6,7 @@ const BlogPost = require('../models/BlogPost');
 const getBlogs = async (req, res) => {
     try {
         const { category, tag } = req.query;
-        let query = { published: true };
+        let query = { published: true, approvalStatus: 'approved' };
 
         if (category && category !== 'All') {
             query.category = category;
@@ -27,7 +27,11 @@ const getBlogs = async (req, res) => {
 // @access  Private/Admin
 const getAdminBlogs = async (req, res) => {
     try {
-        const blogs = await BlogPost.find({}).sort({ createdAt: -1 });
+        const query = {};
+        if (req.user && req.user.role === 'blog_creator' && !req.user.isAdmin) {
+            query.authorId = req.user._id;
+        }
+        const blogs = await BlogPost.find(query).sort({ createdAt: -1 });
         res.json(blogs);
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -79,6 +83,8 @@ const createBlog = async (req, res) => {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)+/g, '');
 
+        const isBlogCreator = req.user && req.user.role === 'blog_creator' && !req.user.isAdmin;
+
         const blog = new BlogPost({
             title,
             slug,
@@ -87,7 +93,15 @@ const createBlog = async (req, res) => {
             image,
             category,
             tags,
-            featured
+            featured,
+            published: isBlogCreator ? false : true,
+            approvalStatus: isBlogCreator ? 'pending' : 'approved',
+            authorId: req.user._id,
+            author: {
+                name: req.user.name,
+                title: isBlogCreator ? 'Blog Creator' : 'Ayurvedic Specialist',
+                avatar: ''
+            }
         });
 
         const createdBlog = await blog.save();
@@ -114,7 +128,14 @@ const updateBlog = async (req, res) => {
             blog.category = category || blog.category;
             blog.tags = tags || blog.tags;
             blog.featured = featured !== undefined ? featured : blog.featured;
-            blog.published = published !== undefined ? published : blog.published;
+
+            const isBlogCreator = req.user && req.user.role === 'blog_creator' && !req.user.isAdmin;
+            if (isBlogCreator) {
+                blog.approvalStatus = 'pending';
+                blog.published = false;
+            } else {
+                blog.published = published !== undefined ? published : blog.published;
+            }
 
             // Re-generate slug if title changed (optional, usually kept same for SEO)
             if (title && title !== blog.title) {
@@ -149,6 +170,28 @@ const deleteBlog = async (req, res) => {
     }
 };
 
+const approveBlog = async (req, res) => {
+    try {
+        const { approvalStatus } = req.body; // 'approved' or 'rejected'
+        if (!['approved', 'rejected'].includes(approvalStatus)) {
+            return res.status(400).json({ message: 'Invalid approval status value' });
+        }
+
+        const blog = await BlogPost.findById(req.params.id);
+        if (!blog) {
+            return res.status(404).json({ message: 'Blog post not found' });
+        }
+
+        blog.approvalStatus = approvalStatus;
+        blog.published = approvalStatus === 'approved';
+        await blog.save();
+
+        res.json({ message: `Blog post ${approvalStatus} successfully`, blog });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 module.exports = {
     getBlogs,
     getAdminBlogs,
@@ -156,5 +199,6 @@ module.exports = {
     getBlogById,
     createBlog,
     updateBlog,
-    deleteBlog
+    deleteBlog,
+    approveBlog
 };
