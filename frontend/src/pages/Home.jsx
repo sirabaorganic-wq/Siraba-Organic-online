@@ -224,8 +224,8 @@ const Home = () => {
           {/* ── Principle sub-descriptions ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16 max-w-5xl mx-auto text-center">
             {[
-              { title: "Certified", desc: "Certified by recognized regulatory and certification bodies." },
-              { title: "Verified", desc: "Verified through scientific testing, documentation, and traceability." },
+              { title: "Certified", desc: "Certified by recognized regulatory and organic certification bodies." },
+              { title: "Verified", desc: "Scientifically Verified through evidence-based review of laboratory reports, scientific documentation, and traceability records." },
               { title: "Qualified", desc: "Qualified through SIRABA ORGANIC™ marketplace assessment and ongoing compliance review." },
             ].map((item, i) => (
               <div key={i} className="bg-background rounded-xl px-6 py-5 border border-secondary/10 space-y-2">
@@ -266,7 +266,7 @@ const Home = () => {
                       "Product Scope Certificate",
                       "FSSAI License",
                       "GST Registration",
-                      "USDA Organic OR EU Organic Certification",
+                      "USDA Organic Certification OR EU Organic Certification",
                     ].map((item, j) => (
                       <li key={j} className="flex items-start gap-2 text-sm text-text-secondary">
                         <ShieldCheck size={13} className="text-primary flex-shrink-0 mt-0.5" />
@@ -274,8 +274,9 @@ const Home = () => {
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-text-secondary font-light pt-1 pl-5 italic">
-                    Other Recognized International Organic Certifications (Optional)
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent pt-2">Optional</p>
+                  <p className="text-xs text-text-secondary font-light pl-1 italic">
+                    Other International Organic Certifications
                   </p>
                 </div>
 
@@ -291,6 +292,11 @@ const Home = () => {
                       {e}
                     </div>
                   ))}
+                  <div className="pt-3">
+                    <span className="inline-block bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/20">
+                      ✔ Certified Organic Compliance Confirmed
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -304,18 +310,19 @@ const Home = () => {
                 <div className="space-y-1">
                   <span className="text-accent text-xs font-bold uppercase tracking-[0.2em]">Layer 2</span>
                   <h3 className="font-heading text-2xl text-surface font-bold leading-tight">VERIFIED</h3>
-                  <p className="text-surface/60 text-xs font-light tracking-wide">Scientific & Documentation Validation</p>
+                  <p className="text-surface/60 text-xs font-light tracking-wide">Scientific Evidence & Traceability Validation</p>
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-accent/80">Documentation</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent/80">Evidence Reviewed</p>
                   <ul className="space-y-1.5">
                     {[
-                      "NABL-Accredited Lab Reports",
+                      "Laboratory Evidence (NABL / ISO 17025 / ILAC-MRA / Recognized International Laboratories)",
+                      "Certificate of Analysis (CoA)",
                       "Product Documentation",
+                      "Batch-wise Test Reports",
                       "Farm-to-Fork Traceability Records",
-                      "Packaging Compliance",
-                      "Supply Chain Verification",
+                      "Packaging & Supply Chain Verification",
                     ].map((item, j) => (
                       <li key={j} className="flex items-start gap-2 text-sm text-surface/80">
                         <ShieldCheck size={13} className="text-accent flex-shrink-0 mt-0.5" />
@@ -328,15 +335,21 @@ const Home = () => {
                 <div className="mt-auto pt-4 border-t border-surface/10 space-y-1.5">
                   <p className="text-xs font-bold uppercase tracking-wider text-accent">Ensures</p>
                   {[
-                    "Scientific validation",
+                    "Scientific evidence review",
                     "Documentation-backed authenticity",
-                    "Traceability and transparency",
+                    "Product traceability and transparency",
+                    "Evidence-based verification",
                   ].map((e, j) => (
                     <div key={j} className="flex items-center gap-2 text-sm text-surface/80">
                       <span className="text-accent font-bold text-base leading-none">✓</span>
                       {e}
                     </div>
                   ))}
+                  <div className="pt-3">
+                    <span className="inline-block bg-accent/20 text-accent text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/30">
+                      ✔ Scientifically Verified by SIRABA ORGANIC™
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -382,11 +395,40 @@ const Home = () => {
                       {e}
                     </div>
                   ))}
+                  <div className="pt-3">
+                    <span className="inline-block bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border border-secondary/20">
+                      ✔ SIRABA Qualified Vendor™
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
           </div>
+
+          {/* ── Architecture Footer ── */}
+          <div className="mt-14 text-center space-y-3">
+            <div className="flex items-center justify-center gap-0 flex-wrap">
+              {[
+                { label: "CERTIFIED™", sub: "Certification Compliance", color: "bg-primary text-surface" },
+                { label: "VERIFIED™", sub: "Scientific Evidence Review", color: "bg-accent text-primary" },
+                { label: "QUALIFIED™", sub: "Marketplace Qualification", color: "bg-secondary text-surface" },
+              ].map((step, i) => (
+                <div key={i} className="flex items-center">
+                  <div className={`${step.color} px-5 py-3 text-center shadow-md`}>
+                    <p className="font-heading font-bold text-xs tracking-[0.2em] uppercase">{step.label}</p>
+                    <p className="text-[10px] opacity-75 font-light tracking-wide mt-0.5">{step.sub}</p>
+                  </div>
+                  {i < 2 && (
+                    <div className="flex items-center px-1">
+                      <ArrowRight size={16} className="text-accent/60" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
