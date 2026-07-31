@@ -17,6 +17,7 @@ import {
   Upload,
   X,
   ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import Logo from "../../assets/SIRABALOGO.png";
 import client from "../../api/client";
@@ -289,6 +290,7 @@ const VendorOnboarding = () => {
     fetchPlans,
     plans,
     addComplianceDoc,
+    logout,
   } = useVendor();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -1561,8 +1563,8 @@ const VendorOnboarding = () => {
                 disabled={loading || !qualificationFormFilled}
                 title={!qualificationFormFilled ? "Please complete the Vendor Qualification Form to proceed" : undefined}
                 className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-all ${qualificationFormFilled
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-secondary/20 text-text-secondary cursor-not-allowed"
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-secondary/20 text-text-secondary cursor-not-allowed"
                   }`}
               >
                 {loading ? "Submitting..." : "Submit for Review"}
@@ -1592,12 +1594,24 @@ const VendorOnboarding = () => {
           <span className="font-subheading text-accent text-sm tracking-[0.1em] uppercase font-bold">
             Vendor Onboarding
           </span>
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors font-medium"
-          >
-            <ArrowLeft size={16} /> Exit
-          </Link>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate("/vendor/login");
+              }}
+              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-red-600 transition-colors font-medium cursor-pointer"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+            {/* <Link
+              to="/"
+              className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors font-medium"
+            >
+              <ArrowLeft size={16} /> Exit
+            </Link> */}
+          </div>
         </div>
       </header>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useVendor } from "../../context/VendorContext";
 import {
@@ -15,6 +16,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   TrendingUp,
+  KeyRound,
+  RefreshCw,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Logo from "../../assets/SIRABALOGO.png";
 import BgImage2 from "../../assets/bgimage2.png";
@@ -33,19 +39,38 @@ const Field = ({ label, children }) => (
   </div>
 );
 
-/* Icon-prefixed input */
-const IconInput = ({ icon: Icon, ...props }) => (
-  <div className="relative">
-    <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-    <input
-      {...props}
-      className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg
-                 text-slate-800 placeholder:text-slate-300
-                 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent
-                 hover:border-slate-300 transition-all duration-200"
-    />
-  </div>
-);
+/* Icon-prefixed input with password toggle support */
+const IconInput = ({ icon: Icon, type, className, ...props }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
+  return (
+    <div className="relative">
+      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+      <input
+        {...props}
+        type={inputType}
+        className={`w-full pl-10 ${isPassword ? "pr-10" : "pr-4"} py-2.5 text-sm bg-white border border-slate-200 rounded-lg
+                   text-slate-800 placeholder:text-slate-300
+                   focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent
+                   hover:border-slate-300 transition-all duration-200 ${className || ""}`}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded transition-colors focus:outline-none cursor-pointer"
+          tabIndex={-1}
+          title={showPassword ? "Hide password" : "Show password"}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      )}
+    </div>
+  );
+};
 
 /* Plain input (no icon) */
 const PlainInput = (props) => (
@@ -97,10 +122,332 @@ const BENEFITS = [
 ];
 
 /* ─────────────────────────────────────────────
+   Forgot Password Modal Component
+───────────────────────────────────────────── */
+const VendorForgotPasswordModal = ({ isOpen, onClose, initialEmail }) => {
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [resending, setResending] = useState(false);
+  const [portalTarget, setPortalTarget] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setEmail(initialEmail || "");
+      setStep(1);
+      setOtp("");
+      setResetToken("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setError("");
+      setSuccessMsg("");
+      const target = document.getElementById("modal-root") || document.body;
+      setPortalTarget(target);
+    } else {
+      setPortalTarget(null);
+    }
+  }, [isOpen, initialEmail]);
+
+  if (!isOpen || !portalTarget) return null;
+
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      await client.post("/vendors/forgot-password/send-otp", { email });
+      setSuccessMsg("OTP sent successfully to your email.");
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP. Please check your email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResending(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      await client.post("/vendors/forgot-password/send-otp", { email });
+      setSuccessMsg("A new OTP has been sent to your email.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend OTP.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.trim().length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const { data } = await client.post("/vendors/forgot-password/verify-otp", {
+        email,
+        otp: otp.trim(),
+      });
+      setResetToken(data.resetToken);
+      setSuccessMsg("OTP verified! Set your new password.");
+      setStep(3);
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      await client.post("/vendors/forgot-password/reset-password", {
+        email,
+        resetToken,
+        newPassword,
+      });
+      setStep(4);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to reset password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
+        {/* Modal Header */}
+        <div className="px-6 py-4 bg-gradient-to-r from-primary via-primary/95 to-primary flex items-center justify-between text-white">
+          <div className="flex items-center gap-2.5">
+            <KeyRound className="w-5 h-5 text-accent" />
+            <h2 className="font-heading font-bold text-lg">Reset Vendor Password</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-white/70 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {/* Messages */}
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-medium flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          {/* STEP 1: Enter Email */}
+          {step === 1 && (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Enter your registered vendor email address. We will send a 6-digit OTP code to verify your identity.
+              </p>
+
+              <Field label="Registered Vendor Email *">
+                <IconInput
+                  icon={Mail}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="vendor@example.com"
+                />
+              </Field>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 bg-gradient-to-r from-accent to-accent/85 text-primary font-bold text-sm rounded-xl shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+              >
+                {loading ? (
+                  <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Send OTP Code</span>
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2: Verify OTP */}
+          {step === 2 && (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Please enter the 6-digit OTP sent to <strong className="text-slate-800">{email}</strong>.
+              </p>
+
+              <Field label="6-Digit OTP Code *">
+                <IconInput
+                  icon={ShieldCheck}
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  required
+                  placeholder="123456"
+                  className="w-full pl-10 pr-4 py-2.5 text-base tracking-[0.2em] font-mono font-bold bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                />
+              </Field>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-slate-400 hover:text-slate-600 font-medium"
+                >
+                  Change Email
+                </button>
+
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={handleResendOtp}
+                  className="text-accent font-semibold hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw size={12} className={resending ? "animate-spin" : ""} />
+                  {resending ? "Resending..." : "Resend OTP"}
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 bg-gradient-to-r from-accent to-accent/85 text-primary font-bold text-sm rounded-xl shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+              >
+                {loading ? (
+                  <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Verify OTP</span>
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 3: Set New Password */}
+          {step === 3 && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Create a new secure password for your vendor account.
+              </p>
+
+              <Field label="New Password *">
+                <IconInput
+                  icon={Lock}
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  placeholder="Min 6 characters"
+                />
+              </Field>
+
+              <Field label="Confirm New Password *">
+                <IconInput
+                  icon={Lock}
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Repeat new password"
+                />
+              </Field>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 bg-gradient-to-r from-accent to-accent/85 text-primary font-bold text-sm rounded-xl shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+              >
+                {loading ? (
+                  <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Update Password</span>
+                    <CheckCircle2 size={15} />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 4: Success */}
+          {step === 4 && (
+            <div className="text-center py-4 space-y-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 size={32} />
+              </div>
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-800">Password Updated!</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                  Your vendor account password has been updated successfully. You can now log in.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-3 bg-primary text-white font-bold text-sm rounded-xl shadow-md hover:bg-primary/90 transition-all cursor-pointer"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    portalTarget
+  );
+};
+
+/* ─────────────────────────────────────────────
    Main Component
 ───────────────────────────────────────────── */
 const VendorLogin = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -383,7 +730,21 @@ const VendorLogin = () => {
                   </Field>
 
                   {/* Password */}
-                  <Field label="Password *">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
+                        Password *
+                      </label>
+                      {isLogin && (
+                        <button
+                          type="button"
+                          onClick={() => setForgotModalOpen(true)}
+                          className="text-xs font-semibold text-accent hover:underline cursor-pointer transition-colors"
+                        >
+                          Forgot Password?
+                        </button>
+                      )}
+                    </div>
                     <IconInput
                       icon={Lock}
                       type="password"
@@ -393,7 +754,7 @@ const VendorLogin = () => {
                       required
                       placeholder="••••••••"
                     />
-                  </Field>
+                  </div>
 
                   {/* Submit */}
                   <button
@@ -554,6 +915,11 @@ const VendorLogin = () => {
             context: "Vendor registration",
           });
         }}
+      />
+      <VendorForgotPasswordModal
+        isOpen={forgotModalOpen}
+        onClose={() => setForgotModalOpen(false)}
+        initialEmail={formData.email}
       />
     </div>
   );

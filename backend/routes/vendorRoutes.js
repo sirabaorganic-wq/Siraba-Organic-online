@@ -21,7 +21,29 @@ const {
   invalidateCache,
 } = require("../config/cache");
 const { cacheByIdMiddleware } = require("../middleware/cacheMiddleware");
-const { sendVendorWelcomeEmail, sendAdminNewVendorEmail } = require("../utils/emailService");
+const { sendVendorWelcomeEmail, sendAdminNewVendorEmail, sendOTPEmail } = require("../utils/emailService");
+const { generateOTP } = require("../utils/otpUtils");
+
+// Helper to create or replace an OTP entry in DB
+const createOrReplaceOtp = async (identifier, type, plainOtp) => {
+  const normalizedIdentifier =
+    type === "email"
+      ? identifier.toLowerCase().trim()
+      : identifier.trim();
+
+  const hashedOtp = await bcrypt.hash(plainOtp, 10);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  await OTP.deleteMany({ identifier: normalizedIdentifier, type });
+
+  await OTP.create({
+    identifier: normalizedIdentifier,
+    otp: hashedOtp,
+    type,
+    attempts: 0,
+    expiresAt,
+  });
+};
 
 // Shared helper to verify OTP for email/phone
 const verifyOtpForIdentifier = async (identifier, type, plainOtp) => {
@@ -264,6 +286,114 @@ router.post("/login", async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Forgot Password - Send OTP to vendor email
+// @route   POST /api/vendors/forgot-password/send-otp
+// @access  Public
+router.post("/forgot-password/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const vendor = await Vendor.findOne({ email: normalizedEmail });
+    if (!vendor) {
+      return res.status(404).json({ message: "No vendor account found with this email address" });
+    }
+
+    const otp = generateOTP();
+    await createOrReplaceOtp(normalizedEmail, "email", otp);
+    await sendOTPEmail(normalizedEmail, otp, "Vendor Password Reset");
+
+    res.status(200).json({
+      message: "OTP sent to email successfully",
+    });
+  } catch (error) {
+    console.error("Vendor forgot password send OTP error:", error);
+    res.status(500).json({ message: error.message || "Failed to send OTP" });
+  }
+});
+
+// @desc    Forgot Password - Verify OTP
+// @route   POST /api/vendors/forgot-password/verify-otp
+// @access  Public
+router.post("/forgot-password/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const vendor = await Vendor.findOne({ email: normalizedEmail });
+    if (!vendor) {
+      return res.status(404).json({ message: "No vendor account found with this email address" });
+    }
+
+    await verifyOtpForIdentifier(normalizedEmail, "email", otp);
+
+    // Generate random reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    vendor.resetPasswordToken = resetPasswordToken;
+    vendor.resetPasswordExpire = resetPasswordExpire;
+    await vendor.save();
+
+    res.status(200).json({
+      message: "OTP verified successfully",
+      resetToken,
+    });
+  } catch (error) {
+    console.error("Vendor forgot password verify OTP error:", error);
+    res.status(400).json({ message: error.message || "Invalid OTP" });
+  }
+});
+
+// @desc    Forgot Password - Reset password using reset token
+// @route   POST /api/vendors/forgot-password/reset-password
+// @access  Public
+router.post("/forgot-password/reset-password", async (req, res) => {
+  try {
+    const { email, resetToken, newPassword } = req.body;
+    if (!email || !resetToken || !newPassword) {
+      return res.status(400).json({ message: "Email, reset token, and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    const vendor = await Vendor.findOne({
+      email: normalizedEmail,
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!vendor) {
+      return res.status(400).json({ message: "Invalid or expired password reset session. Please request a new OTP." });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    vendor.password = await bcrypt.hash(newPassword, salt);
+    vendor.resetPasswordToken = undefined;
+    vendor.resetPasswordExpire = undefined;
+    await vendor.save();
+
+    res.status(200).json({
+      message: "Password updated successfully. You can now log in with your new password.",
+    });
+  } catch (error) {
+    console.error("Vendor reset password error:", error);
+    res.status(500).json({ message: error.message || "Failed to reset password" });
   }
 });
 
