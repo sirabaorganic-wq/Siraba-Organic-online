@@ -18,6 +18,7 @@ import {
   FileText
 } from "lucide-react";
 import client from "../../api/client";
+import { getDocumentViewUrl } from "../../utils/documentViewer";
 
 const VendorOnboarderDashboard = () => {
   const { user, logout } = useAuth();
@@ -252,8 +253,65 @@ const VendorOnboarderDashboard = () => {
                     <div className="flex items-center gap-2 text-text-secondary">
                       <MapPin size={16} className="text-primary" />
                       <span>
-                        <strong>Address:</strong> {selectedVendor.address?.street}, {selectedVendor.address?.city}, {selectedVendor.address?.state} {selectedVendor.address?.postalCode}
+                        <strong>Address:</strong> {selectedVendor.address?.street ? `${selectedVendor.address.street}, ` : ""}{selectedVendor.address?.city}, {selectedVendor.address?.state} {selectedVendor.address?.postalCode}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Onboarding Form Data Summary */}
+                  <div className="border-t border-secondary/10 pt-6 space-y-4">
+                    <h3 className="font-heading font-bold text-primary text-base flex items-center gap-2">
+                      <FileCheck size={18} /> Onboarding Qualification Form Data
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded border border-slate-200 text-xs">
+                      <div>
+                        <span className="text-slate-500 block">PAN / Authorized Signatory:</span>
+                        <span className="font-bold text-slate-800">{selectedVendor.authorizedSignatoryName || selectedVendor.panNumber || "Not Provided"}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">GST Applicability:</span>
+                        <span className="font-bold text-slate-800 uppercase">{selectedVendor.gstApplicable || "Yes"} {selectedVendor.gstNumber ? `(${selectedVendor.gstNumber})` : ""}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">FSSAI Licence Number:</span>
+                        <span className="font-bold text-slate-800">{selectedVendor.fssaiNumber || "Not Provided"}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Legally Registered Business:</span>
+                        <span className="font-bold text-slate-800 capitalize">{selectedVendor.isBusinessRegistered || "Yes"}</span>
+                      </div>
+
+                      {selectedVendor.organicCertification && (
+                        <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
+                          <span className="text-slate-500 block font-bold mb-1">Organic Certification Details:</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-700">
+                            <div><strong>Route:</strong> {selectedVendor.organicCertification.certificationRoute?.toUpperCase()}</div>
+                            <div><strong>Body:</strong> {selectedVendor.organicCertification.certificationBody || "N/A"}</div>
+                            <div><strong>Number:</strong> {selectedVendor.organicCertification.certificateNumber || "N/A"}</div>
+                            <div><strong>Valid Until:</strong> {selectedVendor.organicCertification.certificateValidUntil ? new Date(selectedVendor.organicCertification.certificateValidUntil).toLocaleDateString() : "N/A"}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedVendor.representativeProduct && (
+                        <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
+                          <span className="text-slate-500 block font-bold mb-1">Representative Product:</span>
+                          <div className="grid grid-cols-3 gap-2 text-slate-700">
+                            <div><strong>Product Name:</strong> {selectedVendor.representativeProduct.productName || "N/A"}</div>
+                            <div><strong>Category:</strong> {selectedVendor.representativeProduct.productCategory || "N/A"}</div>
+                            <div><strong>Cert Coverage:</strong> {selectedVendor.representativeProduct.certificationCoverage || "N/A"}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
+                        <span className="text-slate-500 block font-bold mb-1">Quality &amp; Traceability Declarations:</span>
+                        <div className="grid grid-cols-2 gap-2 text-slate-700">
+                          <div><strong>Traceability Records Maintained:</strong> {selectedVendor.maintainsTraceabilityRecords === "yes" ? "Yes ✓" : "No"}</div>
+                          <div><strong>Batch/Source Verification Evidence:</strong> {selectedVendor.canProvideBatchSourceEvidence === "yes" ? "Yes ✓" : "No"}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -283,7 +341,7 @@ const VendorOnboarderDashboard = () => {
                             </div>
                             <div className="flex items-center gap-2 self-start md:self-auto">
                               <a
-                                href={doc.fileUrl}
+                                href={getDocumentViewUrl(doc.fileUrl)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="p-2 border border-secondary/20 hover:border-primary text-text-secondary hover:text-primary rounded-sm transition-colors"

@@ -100,6 +100,57 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 });
 
+// @route GET /api/upload/view-doc
+// @desc  Proxy/viewer endpoint that streams documents with proper inline MIME headers (PDF/Images)
+router.get("/view-doc", async (req, res) => {
+  try {
+    const rawUrl = req.query.url;
+    if (!rawUrl) {
+      return res.status(400).json({ message: "File URL is required" });
+    }
+
+    const decodedUrl = decodeURIComponent(rawUrl);
+
+    // Fetch the remote file
+    const axios = require("axios");
+    const response = await axios.get(decodedUrl, {
+      responseType: "arraybuffer",
+      timeout: 15000,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+      },
+    });
+
+    const buffer = Buffer.from(response.data);
+    let mimeType = "application/pdf"; // default fallback
+
+    // Magic Bytes inspection
+    if (buffer.slice(0, 4).toString() === "%PDF") {
+      mimeType = "application/pdf";
+    } else if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+      mimeType = "image/jpeg";
+    } else if (buffer.slice(0, 4).toString("hex") === "89504e47") {
+      mimeType = "image/png";
+    } else if (buffer.slice(0, 4).toString() === "RIFF" && buffer.slice(8, 12).toString() === "WEBP") {
+      mimeType = "image/webp";
+    } else if (response.headers["content-type"] && response.headers["content-type"] !== "application/octet-stream") {
+      mimeType = response.headers["content-type"];
+    }
+
+    const ext = mimeType.includes("pdf") ? "pdf" : mimeType.includes("png") ? "png" : mimeType.includes("webp") ? "webp" : "jpg";
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader("Content-Disposition", `inline; filename="document.${ext}"`);
+    return res.send(buffer);
+  } catch (error) {
+    console.error("View document error:", error.message);
+    if (req.query.url) {
+      return res.redirect(req.query.url);
+    }
+    return res.status(500).json({ message: "Failed to load document" });
+  }
+});
+
 // @route GET /api/upload/:filename
 // @desc  Previously served files from GridFS. Now direct URLs are returned on upload.
 router.get("/:filename", (req, res) => {

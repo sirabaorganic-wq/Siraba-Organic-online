@@ -469,9 +469,17 @@ const VendorLogin = () => {
     if (location.pathname.includes("register")) setIsLogin(false);
   }, [location]);
 
+  const getVendorRedirectPath = (v) => {
+    if (!v) return "/vendor/login";
+    if (!v.onboardingComplete) return "/vendor/onboarding";
+    if (v.status === "approved" || v.status === "subadmin_approved") return "/vendor/dashboard";
+    if (v.status === "rejected" || v.status === "subadmin_rejected") return "/vendor/rejected";
+    return "/vendor/under-review";
+  };
+
   useEffect(() => {
     if (vendor) {
-      navigate(vendor.onboardingComplete ? "/vendor/dashboard" : "/vendor/onboarding");
+      navigate(getVendorRedirectPath(vendor));
     }
   }, [vendor, navigate]);
 
@@ -489,11 +497,7 @@ const VendorLogin = () => {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
         if (result.success) {
-          navigate(
-            !result.vendor?.onboardingComplete
-              ? "/vendor/onboarding"
-              : "/vendor/dashboard"
-          );
+          // login function sets vendor state which triggers useEffect navigation
         } else {
           setError(result.message);
         }

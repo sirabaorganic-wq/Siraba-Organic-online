@@ -38,6 +38,8 @@ import BlogCreatorDashboard from "./pages/admin/BlogCreatorDashboard";
 import VendorLogin from "./pages/vendor/VendorLogin";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import VendorOnboarding from "./pages/vendor/VendorOnboarding";
+import VendorUnderReview from "./pages/vendor/VendorUnderReview";
+import VendorRejected from "./pages/vendor/VendorRejected";
 import VendorSubscription from "./pages/vendor/VendorSubscription";
 import Login from "./pages/Login";
 import TrackOrder from "./pages/TrackOrder";
@@ -219,6 +221,14 @@ function App() {
                               <Route
                                 path="/vendor/onboarding"
                                 element={<VendorOnboarding />}
+                              />
+                              <Route
+                                path="/vendor/under-review"
+                                element={<VendorUnderReview />}
+                              />
+                              <Route
+                                path="/vendor/rejected"
+                                element={<VendorRejected />}
                               />
                               <Route
                                 path="/vendor/dashboard"

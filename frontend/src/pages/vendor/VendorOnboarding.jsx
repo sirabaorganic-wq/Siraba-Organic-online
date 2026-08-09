@@ -1,1672 +1,983 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useVendor } from "../../context/VendorContext";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  Check,
-  ChevronRight,
-  ChevronLeft,
-  Building,
-  MapPin,
-  CreditCard,
-  FileText,
-  Rocket,
-  Star,
-  Zap,
-  Crown,
-  ArrowRight,
-  Upload,
-  X,
-  ArrowLeft,
-  LogOut,
-} from "lucide-react";
+import { Upload, Check, AlertCircle, LogOut, ArrowRight, Save } from "lucide-react";
 import Logo from "../../assets/SIRABALOGO.png";
 import client from "../../api/client";
 
-const DOCUMENT_TYPES = [
-  // ── SECTION 1: Business Eligibility (Mandatory) ──────────────────────────
+const ACTIVE_DOCUMENTS = [
   {
-    type: "business_license",
-    label: "Business License / Registration",
+    type: "business_legal_identity",
+    title: "Business / Legal Identity Document",
+    hint: "Registration, incorporation, proprietorship, partnership, FPO/cooperative or equivalent.",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
     required: true,
-    section: "Section 1: Business Eligibility",
-  },
-  {
-    type: "gst_certificate",
-    label: "GST Certificate",
-    required: true,
-    section: "Section 1: Business Eligibility",
   },
   {
     type: "fssai_license",
-    label: "FSSAI License",
+    title: "FSSAI Licence / Registration",
+    hint: "Required for applicable food businesses.",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
     required: true,
-    section: "Section 1: Business Eligibility",
   },
   {
-    type: "pan_card",
-    label: "PAN Card (Authorized Signatory Details)",
+    type: "gst_certificate",
+    title: "GST Certificate",
+    hint: "Upload only if GST Registration is applicable • Max 5MB",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
+    required: false, // conditional
+  },
+  {
+    type: "organic_certificate",
+    title: "Organic Certificate",
+    hint: "PDF, JPG, PNG, WEBP • Max 5MB",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
     required: true,
-    section: "Section 1: Business Eligibility",
   },
-
-  // ── SECTION 2: Organic Certification (Mandatory) ─────────────────────────
   {
-    type: "npop_certificate",
-    label: "NPOP Certification (Active)",
+    type: "product_specification",
+    title: "Product Specification / Ingredients",
+    hint: "Optional at initial qualification • Max 5MB",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
+    required: false,
+  },
+  {
+    type: "product_label_packaging",
+    title: "Product Label / Packaging",
+    hint: "Upload the current label/packaging showing applicable declarations.",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
     required: true,
-    section: "Section 2: Organic Certification",
   },
   {
-    type: "product_scope_certificate",
-    label: "Product Scope Certificate",
+    type: "representative_product_image",
+    title: "Representative Product Image",
+    hint: "JPG, PNG, WEBP • Max 5MB",
+    accept: ".jpg,.jpeg,.png,.webp",
+    mime: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
     required: true,
-    section: "Section 2: Organic Certification",
   },
   {
-    type: "usda_organic_certificate",
-    label: "USDA Organic Certification",
+    type: "laboratory_report_coa",
+    title: "Accredited Laboratory Report / CoA",
+    hint: "NABL-accredited or appropriately accredited international laboratory, where available.",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
     required: false,
-    note: "At least one of USDA or EU required",
-    section: "Section 2: Organic Certification",
-  },
-  {
-    type: "eu_organic_certificate",
-    label: "EU Organic Certification",
-    required: false,
-    note: "At least one of USDA or EU required",
-    section: "Section 2: Organic Certification",
-  },
-  // Optional additional certifications
-  {
-    type: "jas_organic_certificate",
-    label: "JAS Organic Certification",
-    required: false,
-    section: "Section 2: Organic Certification",
-  },
-  {
-    type: "india_organic_certificate",
-    label: "India Organic Certification",
-    required: false,
-    section: "Section 2: Organic Certification",
-  },
-  {
-    type: "fair_trade_certificate",
-    label: "Fair Trade Certification",
-    required: false,
-    section: "Section 2: Organic Certification",
-  },
-  {
-    type: "rainforest_alliance_certificate",
-    label: "Rainforest Alliance Certification",
-    required: false,
-    section: "Section 2: Organic Certification",
-  },
-  {
-    type: "other_international_organic",
-    label: "Other Recognized International Organic Certification",
-    required: false,
-    section: "Section 2: Organic Certification",
-  },
-
-  // ── SECTION 3: Product Compliance (Mandatory) ────────────────────────────
-  {
-    type: "product_list",
-    label: "Product List",
-    required: true,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "product_labels",
-    label: "Product Labels",
-    required: true,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "packaging_information",
-    label: "Packaging Information",
-    required: true,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "batch_identification",
-    label: "Batch Identification System Documentation",
-    required: true,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "product_images",
-    label: "Product Images",
-    required: true,
-    section: "Section 3: Product Compliance",
-  },
-  // Preferred
-  {
-    type: "certificate_of_analysis",
-    label: "Certificate of Analysis (CoA)",
-    required: false,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "product_specification_sheets",
-    label: "Product Specification Sheets",
-    required: false,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "shelf_life_documentation",
-    label: "Shelf-Life Documentation",
-    required: false,
-    section: "Section 3: Product Compliance",
-  },
-  {
-    type: "ingredient_declaration",
-    label: "Ingredient Declaration",
-    required: false,
-    section: "Section 3: Product Compliance",
-  },
-
-  // ── SECTION 4: Scientific Validation (Preferred) ─────────────────────────
-  {
-    type: "nabl_certificate",
-    label: "NABL-Accredited Laboratory Test Reports",
-    required: false,
-    section: "Section 4: Scientific Validation",
-  },
-  {
-    type: "pesticide_residue_report",
-    label: "Pesticide Residue Testing Reports",
-    required: false,
-    section: "Section 4: Scientific Validation",
-  },
-  {
-    type: "heavy_metal_report",
-    label: "Heavy Metal Testing Reports",
-    required: false,
-    section: "Section 4: Scientific Validation",
-  },
-  {
-    type: "microbiological_report",
-    label: "Microbiological Testing Reports",
-    required: false,
-    section: "Section 4: Scientific Validation",
-  },
-  {
-    type: "product_quality_report",
-    label: "Product Quality Reports",
-    required: false,
-    section: "Section 4: Scientific Validation",
-  },
-
-  // ── SECTION 5: Traceability & Transparency (Preferred) ───────────────────
-  {
-    type: "farm_to_fork_records",
-    label: "Farm-to-Fork Traceability Records",
-    required: false,
-    section: "Section 5: Traceability & Transparency",
-  },
-  {
-    type: "source_farm_documentation",
-    label: "Source Farm / Producer Documentation",
-    required: false,
-    section: "Section 5: Traceability & Transparency",
-  },
-  {
-    type: "procurement_records",
-    label: "Procurement Records",
-    required: false,
-    section: "Section 5: Traceability & Transparency",
-  },
-  {
-    type: "supply_chain_documentation",
-    label: "Supply Chain Documentation",
-    required: false,
-    section: "Section 5: Traceability & Transparency",
-  },
-  {
-    type: "batch_traceability_system",
-    label: "Batch Traceability System",
-    required: false,
-    section: "Section 5: Traceability & Transparency",
-  },
-  {
-    type: "organic_compliance_records",
-    label: "Organic Compliance Records",
-    required: false,
-    section: "Section 5: Traceability & Transparency",
-  },
-
-  // ── SECTION 6: Packaging & Labelling Compliance (Mandatory) ──────────────
-  {
-    type: "food_grade_packaging",
-    label: "Food-Grade Packaging Compliance",
-    required: true,
-    section: "Section 6: Packaging & Labelling Compliance",
-  },
-  {
-    type: "fssai_compliant_labeling",
-    label: "FSSAI-Compliant Labeling",
-    required: true,
-    section: "Section 6: Packaging & Labelling Compliance",
-  },
-  {
-    type: "certification_claims_display",
-    label: "Certification Claims Properly Displayed",
-    required: true,
-    section: "Section 6: Packaging & Labelling Compliance",
-  },
-  {
-    type: "batch_number_documentation",
-    label: "Batch Number Documentation",
-    required: true,
-    section: "Section 6: Packaging & Labelling Compliance",
-  },
-  {
-    type: "manufacturing_details",
-    label: "Manufacturing Details",
-    required: true,
-    section: "Section 6: Packaging & Labelling Compliance",
-  },
-  {
-    type: "best_before_expiry",
-    label: "Best Before / Expiry Information",
-    required: true,
-    section: "Section 6: Packaging & Labelling Compliance",
   },
 ];
-const ALLOWED_MIME_TYPES = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/jpg",
-  "image/webp",
-]);
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const VendorOnboarding = () => {
-  const {
-    vendor,
-    updateOnboarding,
-    selectPlan,
-    fetchPlans,
-    plans,
-    addComplianceDoc,
-    logout,
-  } = useVendor();
+  const { vendor, updateOnboarding, addComplianceDoc, logout, refreshVendorStatus } = useVendor();
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [validationErrors, setValidationErrors] = useState({});
+  const [success, setSuccess] = useState("");
+  const [activeStep, setActiveStep] = useState(1); // 1: Business, 2: Certification, 3: Product, 4: Quality, 5: Submit
 
-  // ---- Regex patterns (mirror backend) ----
-  const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-  const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-  const FSSAI_REGEX = /^\d{14}$/;
-  const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+  // Form State matching Prototype
+  const [isBusinessRegistered, setIsBusinessRegistered] = useState(vendor?.isBusinessRegistered || "yes");
+  const [gstApplicable, setGstApplicable] = useState(vendor?.gstApplicable || "yes");
+  const [authorizedSignatoryName, setAuthorizedSignatoryName] = useState(vendor?.authorizedSignatoryName || vendor?.panNumber || "");
+  const [panNumber, setPanNumber] = useState(vendor?.panNumber || "");
+  const [fssaiNumber, setFssaiNumber] = useState(vendor?.fssaiNumber || "");
+  const [gstNumber, setGstNumber] = useState(vendor?.gstNumber || "");
 
-  // Live field-level validators (called on onChange)
-  const validateField = (field, value) => {
-    let msg = "";
-    const v = (value || "").trim().toUpperCase();
-    if (field === "panNumber" && v !== "") {
-      if (!PAN_REGEX.test(v)) msg = "Format: ABCDE1234F (5 letters, 4 digits, 1 letter)";
-    }
-    if (field === "gstNumber" && v !== "") {
-      if (!GST_REGEX.test(v)) msg = "Format: 22AAAAA0000A1Z5 (15 characters)";
-    }
-    if (field === "fssaiNumber" && (value || "").trim() !== "") {
-      if (!FSSAI_REGEX.test((value || "").trim())) msg = "Must be exactly 14 digits";
-    }
-    if (field === "ifscCode" && v !== "") {
-      if (!IFSC_REGEX.test(v)) msg = "Format: ABCD0123456 (4 letters, 0, 6 alphanumeric)";
-    }
-    if (field === "accountNumber" && (value || "").trim() !== "") {
-      if (!/^\d{9,18}$/.test((value || "").trim())) msg = "Must be 9–18 digits";
-    }
-    setValidationErrors(prev => ({ ...prev, [field]: msg }));
-    return msg === "";
-  };
-
-  // Pre-submit validation for each step
-  const validateStep1 = () => {
-    // Mandatory field checks first (clearest message wins, no overwriting)
-    if (!businessDetails.gstNumber?.trim()) {
-      setError("GST Number is mandatory.");
-      return false;
-    }
-    if (!businessDetails.panNumber?.trim()) {
-      setError("PAN Number is mandatory.");
-      return false;
-    }
-    if (!businessDetails.fssaiNumber?.trim()) {
-      setError("FSSAI License Number is mandatory.");
-      return false;
-    }
-
-    // Format checks
-    const fields = ["panNumber", "gstNumber", "fssaiNumber"];
-    let isValid = true;
-    fields.forEach((f) => {
-      const ok = validateField(f, businessDetails[f]);
-      if (!ok) isValid = false;
-    });
-
-    if (!isValid) {
-      setError("Please fix the highlighted errors before continuing.");
-    }
-
-    return isValid;
-  };
-
-  const validateStep3 = () => {
-    let isValid = true;
-    const fields = ["ifscCode", "accountNumber"];
-    fields.forEach(f => {
-      const ok = validateField(f, bankDetails[f]);
-      if (!ok) isValid = false;
-    });
-    return isValid;
-  };
-
-  const hasActiveErrors = (...fields) =>
-    fields.some(f => validationErrors[f]);
-
-
-  // Form data for each step
-  const [businessDetails, setBusinessDetails] = useState({
-    businessDescription: "",
-    website: "",
-    gstNumber: "",
-    panNumber: "",
-    fssaiNumber: "",
-  });
-
-  const [addressDetails, setAddressDetails] = useState({
-    street: "",
-    city: vendor?.address?.city || "",
-    state: vendor?.address?.state || "",
-    postalCode: vendor?.address?.postalCode || "",
-    country: "India",
-  });
-
-  const [bankDetails, setBankDetails] = useState({
-    accountHolderName: "",
-    accountNumber: "",
-    bankName: "",
-    ifscCode: "",
-    branchName: "",
-    upiId: "",
-  });
-
-  const [selectedPlan, setSelectedPlan] = useState("starter");
-  const [billingCycle, setBillingCycle] = useState("monthly");
-  const [qualificationFormFilled, setQualificationFormFilled] = useState(false);
-  const [docUploads, setDocUploads] = useState(() =>
-    DOCUMENT_TYPES.reduce((acc, doc) => {
-      acc[doc.type] = {
-        uploading: false,
-        progress: 0,
-        url: "",
-        error: "",
-      };
-      return acc;
-    }, {}),
+  // Certification Details
+  const [certificationRoute, setCertificationRoute] = useState(vendor?.organicCertification?.certificationRoute || "npop");
+  const [certificationBody, setCertificationBody] = useState(vendor?.organicCertification?.certificationBody || "");
+  const [certificateNumber, setCertificateNumber] = useState(vendor?.organicCertification?.certificateNumber || "");
+  const [certificateValidUntil, setCertificateValidUntil] = useState(
+    vendor?.organicCertification?.certificateValidUntil
+      ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
+      : ""
   );
+
+  // Representative Product
+  const [productName, setProductName] = useState(vendor?.representativeProduct?.productName || "");
+  const [productCategory, setProductCategory] = useState(vendor?.representativeProduct?.productCategory || "Organic Dairy");
+  const [certificationCoverage, setCertificationCoverage] = useState(vendor?.representativeProduct?.certificationCoverage || "yes");
+
+  // Quality & Traceability Declarations
+  const [maintainsTraceabilityRecords, setMaintainsTraceabilityRecords] = useState(vendor?.maintainsTraceabilityRecords || "yes");
+  const [canProvideBatchSourceEvidence, setCanProvideBatchSourceEvidence] = useState(vendor?.canProvideBatchSourceEvidence || "yes");
+
+  // Document Uploads State
+  const [uploadedDocs, setUploadedDocs] = useState({});
+  const [uploadingState, setUploadingState] = useState({});
 
   useEffect(() => {
-    fetchPlans();
     if (vendor) {
-      // Pre-fill business details if they exist
-      if (vendor.businessDescription || vendor.gstNumber || vendor.panNumber) {
-        setBusinessDetails((prev) => ({
-          ...prev,
-          businessDescription:
-            vendor.businessDescription || prev.businessDescription,
-          website: vendor.website || prev.website,
-          gstNumber: vendor.gstNumber || prev.gstNumber,
-          panNumber: vendor.panNumber || prev.panNumber,
-          fssaiNumber: vendor.fssaiNumber || prev.fssaiNumber,
-        }));
-      }
-
-      // Determine correct step
-      // Even if backend says step 2 (Address), if we lack basic business details, force Step 1
-      const hasBusinessDetails =
-        vendor.businessDescription && vendor.businessDescription.length > 0;
-
-      if (
-        vendor.onboardingStep &&
-        vendor.onboardingStep > 1 &&
-        !hasBusinessDetails
-      ) {
-        setCurrentStep(1);
-      } else if (vendor.onboardingStep) {
-        setCurrentStep(vendor.onboardingStep);
-      }
-    }
-  }, [vendor]);
-
-  const steps = [
-    { id: 1, title: "Business Details", icon: Building },
-    { id: 2, title: "Address", icon: MapPin },
-    { id: 3, title: "Bank Details", icon: CreditCard },
-    { id: 4, title: "Select Plan", icon: Star },
-    { id: 5, title: "Documents", icon: FileText },
-  ];
-
-  const handleStepSubmit = async (stepData) => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const result = await updateOnboarding(currentStep, stepData);
-      if (result.success) {
-        if (currentStep < 5) {
-          setCurrentStep(currentStep + 1);
-        } else {
-          // Onboarding complete
-          navigate("/vendor/dashboard");
+      if (vendor.status === "approved" || vendor.status === "subadmin_approved") {
+        navigate("/vendor/dashboard");
+      } else if (vendor.status === "under_review" || vendor.status === "pending") {
+        if (vendor.onboardingComplete) {
+          navigate("/vendor/under-review");
         }
-      } else {
-        setError(result.message);
       }
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handlePlanSelect = async () => {
-    setLoading(true);
+      // Populate compliance docs already uploaded
+      if (vendor.complianceDocuments && vendor.complianceDocuments.length > 0) {
+        const docMap = {};
+        vendor.complianceDocuments.forEach((doc) => {
+          docMap[doc.type] = {
+            url: doc.fileUrl,
+            name: doc.name,
+            id: doc._id,
+          };
+        });
+        setUploadedDocs(docMap);
+      }
+    }
+  }, [vendor, navigate]);
+
+  const handleFileUpload = async (docDef, file) => {
+    if (!file) return;
+
+    // Check size & mime
+    if (file.size > docDef.maxSize) {
+      setError(`File size exceeds maximum allowed (5MB) for ${docDef.title}`);
+      return;
+    }
+
+    setUploadingState((prev) => ({ ...prev, [docDef.type]: true }));
     setError("");
 
     try {
-      const result = await selectPlan(selectedPlan, billingCycle);
-      if (result.success) {
-        // If starter plan, move to next step immediately
-        // For paid plans, would integrate payment gateway here
-        await handleStepSubmit({ plan: selectedPlan, billingCycle });
-      } else {
-        setError(result.message);
-      }
-    } catch (err) {
-      setError("Failed to select plan");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", `vendors/${vendor?._id || "vendor"}/compliance`);
+      formData.append("publicId", `${docDef.type}-${Date.now()}`);
 
-  const docLabelMap = useMemo(
-    () =>
-      DOCUMENT_TYPES.reduce((acc, doc) => {
-        acc[doc.type] = doc.label;
-        return acc;
-      }, {}),
-    [],
-  );
-
-  const setDocState = (type, payload) => {
-    setDocUploads((prev) => ({
-      ...prev,
-      [type]: { ...prev[type], ...payload },
-    }));
-  };
-
-  const uploadDocument = async (docType, file) => {
-    setDocState(docType, { uploading: true, progress: 0, error: "" });
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", `vendors/${vendor?._id || "vendor"}/compliance`);
-    formData.append("publicId", `${docType}-${Date.now()}`);
-
-    try {
       const { data } = await client.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          if (!event.total) return;
-          const pct = Math.round((event.loaded * 100) / event.total);
-          setDocState(docType, { progress: pct });
-        },
       });
 
-      const result = await addComplianceDoc({
-        name: docLabelMap[docType],
-        type: docType,
+      // Save to backend compliance list
+      const saveRes = await addComplianceDoc({
+        name: docDef.title,
+        type: docDef.type,
         fileUrl: data.url,
       });
 
-      if (!result.success) {
-        throw new Error(result.message || "Failed to save document");
+      if (saveRes.success) {
+        setUploadedDocs((prev) => ({
+          ...prev,
+          [docDef.type]: {
+            url: data.url,
+            name: file.name,
+          },
+        }));
+        setSuccess(`${docDef.title} uploaded successfully.`);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(saveRes.message || "Failed to save document record.");
       }
-
-      setDocState(docType, {
-        uploading: false,
-        progress: 100,
-        url: data.url,
-        error: "",
-      });
     } catch (err) {
-      const message =
-        err.response?.data?.message || err.message || "Upload failed";
-      setDocState(docType, { uploading: false, error: message });
+      console.error("Upload error:", err);
+      setError(err.response?.data?.message || `Error uploading ${docDef.title}`);
+    } finally {
+      setUploadingState((prev) => ({ ...prev, [docDef.type]: false }));
     }
   };
 
-  const handleFileChange = (docType, file) => {
-    if (!file) return;
+  const handleSaveStep = async (stepNum) => {
+    setLoading(true);
+    setError("");
 
-    if (!ALLOWED_MIME_TYPES.has(file.type)) {
-      setDocState(docType, {
-        error: "Unsupported type. Use PDF, JPG, PNG, or WEBP.",
-        uploading: false,
-      });
-      return;
-    }
+    const stepPayload = {};
 
-    if (file.size > MAX_FILE_SIZE) {
-      setDocState(docType, {
-        error: "File too large. Max 5MB.",
-        uploading: false,
-      });
-      return;
-    }
-
-    uploadDocument(docType, file);
-  };
-
-  const handleDocumentsSubmit = async () => {
-    // Section 1: Business Eligibility — Mandatory
-    if (!docUploads.business_license?.url) {
-      setError("Business License / Registration is required.");
-      return;
-    }
-    if (!docUploads.gst_certificate?.url) {
-      setError("GST Certificate is required.");
-      return;
-    }
-    if (!docUploads.fssai_license?.url) {
-      setError("FSSAI License is required.");
-      return;
-    }
-    if (!docUploads.pan_card?.url) {
-      setError("PAN Card (Authorized Signatory Details) is required.");
-      return;
+    if (stepNum === 1) {
+      stepPayload.isBusinessRegistered = isBusinessRegistered;
+      stepPayload.gstApplicable = gstApplicable;
+      stepPayload.authorizedSignatoryName = authorizedSignatoryName;
+      stepPayload.panNumber = panNumber;
+      stepPayload.fssaiNumber = fssaiNumber;
+      stepPayload.gstNumber = gstNumber;
+    } else if (stepNum === 2) {
+      stepPayload.organicCertification = {
+        certificationRoute,
+        certificationBody,
+        certificateNumber,
+        certificateValidUntil,
+      };
+    } else if (stepNum === 3) {
+      stepPayload.representativeProduct = {
+        productName,
+        productCategory,
+        certificationCoverage,
+      };
+    } else if (stepNum === 4) {
+      stepPayload.maintainsTraceabilityRecords = maintainsTraceabilityRecords;
+      stepPayload.canProvideBatchSourceEvidence = canProvideBatchSourceEvidence;
     }
 
-    // Section 2: Organic Certification — Mandatory
-    if (!docUploads.npop_certificate?.url) {
-      setError("NPOP Certification (Active) is required.");
-      return;
-    }
-    if (!docUploads.product_scope_certificate?.url) {
-      setError("Product Scope Certificate is required.");
-      return;
-    }
-    const hasInternationalOrganic =
-      docUploads.usda_organic_certificate?.url ||
-      docUploads.eu_organic_certificate?.url;
-    if (!hasInternationalOrganic) {
-      setError(
-        "Upload either USDA Organic Certification OR EU Organic Certification."
-      );
-      return;
-    }
-
-    // Section 3: Product Compliance — Mandatory
-    if (!docUploads.product_list?.url) {
-      setError("Product List is required.");
-      return;
-    }
-    if (!docUploads.product_labels?.url) {
-      setError("Product Labels are required.");
-      return;
-    }
-    if (!docUploads.packaging_information?.url) {
-      setError("Packaging Information is required.");
-      return;
-    }
-    if (!docUploads.batch_identification?.url) {
-      setError("Batch Identification System Documentation is required.");
-      return;
-    }
-    if (!docUploads.product_images?.url) {
-      setError("Product Images are required.");
-      return;
-    }
-
-    // Section 6: Packaging & Labelling Compliance — Mandatory
-    if (!docUploads.food_grade_packaging?.url) {
-      setError("Food-Grade Packaging Compliance document is required.");
-      return;
-    }
-    if (!docUploads.fssai_compliant_labeling?.url) {
-      setError("FSSAI-Compliant Labeling document is required.");
-      return;
-    }
-    if (!docUploads.certification_claims_display?.url) {
-      setError("Certification Claims Properly Displayed document is required.");
-      return;
-    }
-    if (!docUploads.batch_number_documentation?.url) {
-      setError("Batch Number Documentation is required.");
-      return;
-    }
-    if (!docUploads.manufacturing_details?.url) {
-      setError("Manufacturing Details document is required.");
-      return;
-    }
-    if (!docUploads.best_before_expiry?.url) {
-      setError("Best Before / Expiry Information document is required.");
-      return;
-    }
-
-    await handleStepSubmit({
-      documentsUploaded: true,
-      certificationCompliant: true,
-    });
-  };
-
-  const getPlanIcon = (planName) => {
-    switch (planName) {
-      case "starter":
-        return Rocket;
-      case "professional":
-        return Zap;
-      case "enterprise":
-        return Crown;
-      default:
-        return Star;
+    try {
+      const res = await updateOnboarding(stepNum, stepPayload);
+      if (res.success) {
+        setSuccess("Information saved.");
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setError(res.message);
+      }
+    } catch (err) {
+      setError("Failed to save progress.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <span className="text-accent text-xs tracking-[0.2em] uppercase font-bold">
-                Step 1 of 5
-              </span>
-              <h2 className="font-heading text-3xl text-primary mt-2">
-                Business Details
-              </h2>
-              <p className="text-text-secondary mt-2 font-light">
-                Tell us more about your business
-              </p>
-            </div>
+  const handleFinalSubmit = async () => {
+    setLoading(true);
+    setError("");
 
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2 tracking-wide uppercase">
-                  Business Description
-                </label>
-                <textarea
-                  value={businessDetails.businessDescription}
-                  onChange={(e) =>
-                    setBusinessDetails({
-                      ...businessDetails,
-                      businessDescription: e.target.value,
-                    })
-                  }
-                  rows={3}
-                  className="w-full px-4 py-3 border border-secondary/20 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all bg-background/50"
-                  placeholder="Describe your business, what you sell, your specialties..."
-                />
-              </div>
+    const fullPayload = {
+      isBusinessRegistered,
+      gstApplicable,
+      authorizedSignatoryName,
+      panNumber,
+      fssaiNumber,
+      gstNumber,
+      organicCertification: {
+        certificationRoute,
+        certificationBody,
+        certificateNumber,
+        certificateValidUntil,
+      },
+      representativeProduct: {
+        productName,
+        productCategory,
+        certificationCoverage,
+      },
+      maintainsTraceabilityRecords,
+      canProvideBatchSourceEvidence,
+    };
 
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2 tracking-wide uppercase">
-                  Website (Optional)
-                </label>
-                <input
-                  type="url"
-                  value={businessDetails.website}
-                  onChange={(e) =>
-                    setBusinessDetails({
-                      ...businessDetails,
-                      website: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border border-secondary/20 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all bg-background/50"
-                  placeholder="https://yourbusiness.com"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    GST Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={businessDetails.gstNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      setBusinessDetails({ ...businessDetails, gstNumber: val });
-                      validateField("gstNumber", val);
-                    }}
-                    onBlur={(e) => {
-                      // Re-sync on blur to catch values set via browser autofill
-                      const val = e.target.value.trim().toUpperCase();
-                      if (val !== businessDetails.gstNumber) {
-                        setBusinessDetails((prev) => ({ ...prev, gstNumber: val }));
-                      }
-                      validateField("gstNumber", val);
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.gstNumber ? "border-red-500" : ""
-                      }`}
-                    placeholder="22AAAAA0000A1Z5"
-                  />
-                  {validationErrors.gstNumber && (
-                    <p className="text-red-500 text-xs mt-1">{validationErrors.gstNumber}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    PAN Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={businessDetails.panNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      setBusinessDetails({ ...businessDetails, panNumber: val });
-                      validateField("panNumber", val);
-                    }}
-                    onBlur={(e) => {
-                      const val = e.target.value.trim().toUpperCase();
-                      if (val !== businessDetails.panNumber) {
-                        setBusinessDetails((prev) => ({ ...prev, panNumber: val }));
-                      }
-                      validateField("panNumber", val);
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.panNumber ? "border-red-500" : ""
-                      }`}
-                    placeholder="ABCDE1234F"
-                    maxLength={10}
-                  />
-                  {validationErrors.panNumber && (
-                    <p className="text-red-500 text-xs mt-1">{validationErrors.panNumber}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  FSSAI License Number *
-                </label>
-                <input
-                  type="text"
-                  value={businessDetails.fssaiNumber}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "").slice(0, 14);
-                    setBusinessDetails({ ...businessDetails, fssaiNumber: val });
-                    validateField("fssaiNumber", val);
-                  }}
-                  onBlur={(e) => {
-                    const val = e.target.value.replace(/\D/g, "").slice(0, 14);
-                    if (val !== businessDetails.fssaiNumber) {
-                      setBusinessDetails((prev) => ({ ...prev, fssaiNumber: val }));
-                    }
-                    validateField("fssaiNumber", val);
-                  }}
-                  className={`w-full px-4 py-2 border rounded-lg ${validationErrors.fssaiNumber ? "border-red-500" : ""
-                    }`}
-                  placeholder="14-digit FSSAI license number"
-                  maxLength={14}
-                />
-                {validationErrors.fssaiNumber && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.fssaiNumber}</p>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                if (!validateStep1()) {
-                  return;
-                }
-                handleStepSubmit(businessDetails);
-              }}
-              disabled={loading || hasActiveErrors("panNumber", "gstNumber", "fssaiNumber")}
-              className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Saving..." : "Continue"}
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Business Address</h2>
-              <p className="text-text-secondary">
-                Where is your business located?
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  value={addressDetails.street}
-                  onChange={(e) =>
-                    setAddressDetails({
-                      ...addressDetails,
-                      street: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Building, Street, Area"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    value={addressDetails.city}
-                    onChange={(e) =>
-                      setAddressDetails({
-                        ...addressDetails,
-                        city: e.target.value,
-                      })
-                    }
-                    required
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    State *
-                  </label>
-                  <input
-                    type="text"
-                    value={addressDetails.state}
-                    onChange={(e) =>
-                      setAddressDetails({
-                        ...addressDetails,
-                        state: e.target.value,
-                      })
-                    }
-                    required
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Postal Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={addressDetails.postalCode}
-                    onChange={(e) =>
-                      setAddressDetails({
-                        ...addressDetails,
-                        postalCode: e.target.value,
-                      })
-                    }
-                    required
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    value={addressDetails.country}
-                    disabled
-                    className="w-full px-4 py-2 border rounded-lg bg-gray-50"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="flex-1 py-3 border rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
-              >
-                <ChevronLeft className="w-5 h-5" /> Back
-              </button>
-              <button
-                onClick={() => handleStepSubmit({ address: addressDetails })}
-                disabled={
-                  loading || !addressDetails.city || !addressDetails.state
-                }
-                className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
-              >
-                {loading ? "Saving..." : "Continue"}
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Bank Details</h2>
-              <p className="text-text-secondary">For receiving your payouts</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Account Holder Name *
-                </label>
-                <input
-                  type="text"
-                  value={bankDetails.accountHolderName}
-                  onChange={(e) =>
-                    setBankDetails({
-                      ...bankDetails,
-                      accountHolderName: e.target.value,
-                    })
-                  }
-                  required
-                  className="w-full px-4 py-2 border rounded-lg"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Account Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={bankDetails.accountNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "");
-                      setBankDetails({ ...bankDetails, accountNumber: val });
-                      validateField("accountNumber", val);
-                    }}
-                    onBlur={(e) => {
-                      const val = e.target.value.replace(/\D/g, "");
-                      if (val !== bankDetails.accountNumber) {
-                        setBankDetails((prev) => ({ ...prev, accountNumber: val }));
-                      }
-                      validateField("accountNumber", val);
-                    }}
-                    required
-                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.accountNumber ? "border-red-500" : ""
-                      }`}
-                  />
-                  {validationErrors.accountNumber && (
-                    <p className="text-red-500 text-xs mt-1">{validationErrors.accountNumber}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    IFSC Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={bankDetails.ifscCode}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      setBankDetails({ ...bankDetails, ifscCode: val });
-                      validateField("ifscCode", val);
-                    }}
-                    onBlur={(e) => {
-                      const val = e.target.value.trim().toUpperCase();
-                      if (val !== bankDetails.ifscCode) {
-                        setBankDetails((prev) => ({ ...prev, ifscCode: val }));
-                      }
-                      validateField("ifscCode", val);
-                    }}
-                    required
-                    className={`w-full px-4 py-2 border rounded-lg ${validationErrors.ifscCode ? "border-red-500" : ""
-                      }`}
-                    placeholder="ABCD0123456"
-                    maxLength={11}
-                  />
-                  {validationErrors.ifscCode && (
-                    <p className="text-red-500 text-xs mt-1">{validationErrors.ifscCode}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Bank Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={bankDetails.bankName}
-                    onChange={(e) =>
-                      setBankDetails({
-                        ...bankDetails,
-                        bankName: e.target.value,
-                      })
-                    }
-                    required
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Branch Name
-                  </label>
-                  <input
-                    type="text"
-                    value={bankDetails.branchName}
-                    onChange={(e) =>
-                      setBankDetails({
-                        ...bankDetails,
-                        branchName: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  UPI ID (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={bankDetails.upiId}
-                  onChange={(e) =>
-                    setBankDetails({ ...bankDetails, upiId: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="yourname@upi"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentStep(2)}
-                className="flex-1 py-3 border rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
-              >
-                <ChevronLeft className="w-5 h-5" /> Back
-              </button>
-              <button
-                onClick={() => {
-                  if (!validateStep3()) {
-                    setError("Please fix the highlighted errors before continuing.");
-                    return;
-                  }
-                  handleStepSubmit({ bankDetails });
-                }}
-                disabled={
-                  loading ||
-                  !bankDetails.accountNumber ||
-                  !bankDetails.ifscCode ||
-                  hasActiveErrors("ifscCode", "accountNumber")
-                }
-                className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Saving..." : "Continue"}
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Choose Your Plan</h2>
-              <p className="text-text-secondary">
-                Select the plan that best fits your business needs
-              </p>
-            </div>
-
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 bg-gray-100 rounded-lg p-2">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-4 py-2 rounded-lg transition ${billingCycle === "monthly" ? "bg-white shadow" : ""
-                  }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("yearly")}
-                className={`px-4 py-2 rounded-lg transition ${billingCycle === "yearly" ? "bg-white shadow" : ""
-                  }`}
-              >
-                Yearly{" "}
-                <span className="text-green-600 text-sm">(Save 17%)</span>
-              </button>
-            </div>
-
-            {/* Plans Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {plans &&
-                Object.entries(plans).map(([key, plan]) => {
-                  const Icon = getPlanIcon(key);
-                  const price =
-                    billingCycle === "yearly"
-                      ? plan.priceYearly
-                      : plan.priceMonthly;
-                  const isSelected = selectedPlan === key;
-
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => setSelectedPlan(key)}
-                      className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all ${isSelected
-                        ? "border-primary bg-primary/5"
-                        : "border-gray-200 hover:border-primary/50"
-                        }`}
-                    >
-                      {plan.badge && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-white text-xs rounded-full">
-                          {plan.badge}
-                        </span>
-                      )}
-
-                      <div className="flex items-center gap-3 mb-4">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${plan.color}20` }}
-                        >
-                          <Icon
-                            className="w-5 h-5"
-                            style={{ color: plan.color }}
-                          />
-                        </div>
-                        <h3 className="font-bold text-lg">{plan.name}</h3>
-                      </div>
-
-                      <div className="mb-4">
-                        <span className="text-3xl font-bold">
-                          {price === 0 ? "Free" : `₹${price.toLocaleString()}`}
-                        </span>
-                        {price > 0 && (
-                          <span className="text-text-secondary text-sm">
-                            /{billingCycle === "yearly" ? "year" : "month"}
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-sm text-text-secondary mb-4">
-                        {plan.commissionRate}% platform commission
-                      </p>
-
-                      <ul className="space-y-2">
-                        {plan.features.slice(0, 5).map((feature, i) => (
-                          <li
-                            key={i}
-                            className="flex items-start gap-2 text-sm"
-                          >
-                            <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-
-                      {isSelected && (
-                        <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentStep(3)}
-                className="flex-1 py-3 border rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
-              >
-                <ChevronLeft className="w-5 h-5" /> Back
-              </button>
-              <button
-                onClick={handlePlanSelect}
-                disabled={loading}
-                className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
-              >
-                {loading
-                  ? "Processing..."
-                  : selectedPlan === "starter"
-                    ? "Start Free"
-                    : "Continue to Payment"}
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Upload Documents</h2>
-              <p className="text-text-secondary">
-                Upload your compliance documents for verification
-              </p>
-            </div>
-
-            <p className="text-sm text-blue-800">
-              <strong>SIRABA ORGANIC™ — Vendor Qualification Checklist</strong>
-              <br />
-              <em>India's Triple-Verified Organic Marketplace™</em>
-
-              <br /><br />
-
-              <strong>Section 1: Business Eligibility (Mandatory)</strong>
-              <br />
-              • Business License / Registration
-              <br />
-              • GST Certificate
-              <br />
-              • FSSAI License
-              <br />
-              • PAN Card (Authorized Signatory Details)
-              <br /><br />
-
-              <strong>Section 2: Organic Certification (Mandatory)</strong>
-              <br />
-              • NPOP Certification (Active)
-              <br />
-              • Product Scope Certificate
-              <br />
-              • USDA Organic Certification <b>OR</b> EU Organic Certification (at least one required)
-              <br /><br />
-
-              <em>Optional additional certifications:</em>
-              <br />
-              • JAS Organic Certification
-              <br />
-              • India Organic Certification
-              <br />
-              • Fair Trade Certification
-              <br />
-              • Rainforest Alliance Certification
-              <br />
-              • Other Recognized International Organic Certifications
-              <br /><br />
-
-              <strong>Section 3: Product Compliance (Mandatory)</strong>
-              <br />
-              • Product List
-              <br />
-              • Product Labels
-              <br />
-              • Packaging Information
-              <br />
-              • Batch Identification System Documentation
-              <br />
-              • Product Images
-              <br /><br />
-
-              <em>Preferred:</em>
-              <br />
-              • Certificate of Analysis (CoA)
-              <br />
-              • Product Specification Sheets
-              <br />
-              • Shelf-Life Documentation
-              <br />
-              • Ingredient Declaration
-              <br /><br />
-
-              <strong>Section 4: Scientific Validation (Preferred but Strongly Recommended)</strong>
-              <br />
-              • NABL-Accredited Laboratory Test Reports
-              <br />
-              • Pesticide Residue Testing Reports
-              <br />
-              • Heavy Metal Testing Reports
-              <br />
-              • Microbiological Testing Reports
-              <br />
-              • Product Quality Reports
-              <br /><br />
-
-              <strong>Section 5: Traceability & Transparency (Preferred)</strong>
-              <br />
-              • Farm-to-Fork Traceability Records
-              <br />
-              • Source Farm / Producer Documentation
-              <br />
-              • Procurement Records
-              <br />
-              • Supply Chain Documentation
-              <br />
-              • Batch Traceability System
-              <br />
-              • Organic Compliance Records
-              <br /><br />
-
-              <strong>Section 6: Packaging & Labelling Compliance (Mandatory)</strong>
-              <br />
-              • Food-Grade Packaging Compliance
-              <br />
-              • FSSAI-Compliant Labeling
-              <br />
-              • Certification Claims Properly Displayed
-              <br />
-              • Batch Number Documentation
-              <br />
-              • Manufacturing Details
-              <br />
-              • Best Before / Expiry Information
-            </p>
-
-            <div className="space-y-6">
-              {(() => {
-                const sections = [];
-                let lastSection = null;
-                let currentGroup = null;
-                DOCUMENT_TYPES.forEach((doc) => {
-                  if (doc.section !== lastSection) {
-                    currentGroup = { section: doc.section, docs: [] };
-                    sections.push(currentGroup);
-                    lastSection = doc.section;
-                  }
-                  currentGroup.docs.push(doc);
-                });
-                return sections.map((group) => (
-                  <div key={group.section}>
-                    <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3 border-b pb-1">
-                      {group.section}
-                    </h3>
-                    <div className="space-y-3">
-                      {group.docs.map((doc) => {
-                        const state = docUploads[doc.type];
-                        return (
-                          <div key={doc.type} className="border rounded-lg p-4">
-                            <div className="flex items-center justify-between gap-4 flex-wrap">
-                              <div>
-                                <p className="font-medium">{doc.label}</p>
-                                <p className="text-sm text-text-secondary">
-                                  PDF, JPG, PNG, WEBP (Max 5MB)
-                                </p>
-                                {doc.required ? (
-                                  <p className="text-xs text-primary mt-1">Required</p>
-                                ) : doc.note ? (
-                                  <p className="text-xs text-amber-600 mt-1">{doc.note}</p>
-                                ) : (
-                                  <p className="text-xs text-text-secondary mt-1">Optional</p>
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-3">
-                                {state?.url && (
-                                  <a
-                                    href={state.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-accent text-sm font-medium hover:text-primary"
-                                  >
-                                    View
-                                  </a>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    document
-                                      .getElementById(`upload-${doc.type}`)
-                                      ?.click()
-                                  }
-                                  disabled={state?.uploading}
-                                  className={`px-4 py-2 border rounded-lg flex items-center gap-2 ${state?.uploading
-                                    ? "opacity-60 cursor-not-allowed"
-                                    : "hover:bg-gray-50"
-                                    }`}
-                                >
-                                  <Upload className="w-4 h-4" />
-                                  {state?.uploading
-                                    ? "Uploading..."
-                                    : state?.url
-                                      ? "Replace"
-                                      : "Upload"}
-                                </button>
-                              </div>
-                            </div>
-
-                            <input
-                              id={`upload-${doc.type}`}
-                              type="file"
-                              className="hidden"
-                              accept="application/pdf,image/jpeg,image/png,image/webp"
-                              onChange={(e) =>
-                                handleFileChange(doc.type, e.target.files?.[0])
-                              }
-                            />
-
-                            {state?.uploading && (
-                              <div className="mt-3 w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                <div
-                                  className="h-2 bg-primary transition-all"
-                                  style={{ width: `${state.progress || 0}%` }}
-                                />
-                              </div>
-                            )}
-
-                            {state?.error && (
-                              <p className="text-sm text-red-600 mt-2">{state.error}</p>
-                            )}
-
-                            {state?.url && !state?.error && !state?.uploading && (
-                              <p className="text-xs text-green-700 mt-2">
-                                Uploaded and saved
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-
-            {/* ── Vendor Qualification Form ───────────────────────────── */}
-            <div className="border border-secondary/20 rounded-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-5 border-b border-secondary/10">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-primary text-base leading-snug">
-                      SIRABA ORGANIC™ Vendor Qualification Form
-                    </h3>
-                    <p className="text-sm text-text-secondary mt-1 leading-relaxed">
-                      As the final step of your onboarding, you are required to complete the
-                      official Vendor Qualification Form. This form captures your declaration,
-                      business details, and compliance acknowledgements necessary for your
-                      application to be reviewed and approved by the SIRABA ORGANIC™ team.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-6 py-5 space-y-4">
-                <div className="flex items-center gap-2 text-xs text-text-secondary uppercase tracking-wider font-semibold">
-                  <span className="w-4 h-px bg-secondary/30 inline-block" />
-                  Required for Final Submission
-                  <span className="flex-1 h-px bg-secondary/30 inline-block" />
-                </div>
-
-                <p className="text-sm text-text-secondary leading-relaxed">
-                  Please click the button below to open the qualification form in a new tab.
-                  Once you have filled and submitted it, return here and confirm to unlock
-                  your final submission.
-                </p>
-
-                <a
-                  href="https://forms.gle/SDVDPbwidNTyCVkp7"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  <FileText className="w-4 h-4" />
-                  Open Qualification Form
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-
-                <label className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all ${qualificationFormFilled ? "border-green-400 bg-green-50" : "border-secondary/20 hover:border-accent/40 hover:bg-accent/5"}`}>
-                  <input
-                    type="checkbox"
-                    checked={qualificationFormFilled}
-                    onChange={(e) => setQualificationFormFilled(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-primary cursor-pointer flex-shrink-0"
-                  />
-                  <span className="text-sm leading-relaxed text-text-secondary">
-                    I confirm that I have fully completed and submitted the{" "}
-                    <strong className="text-primary">SIRABA ORGANIC™ Vendor Qualification Form</strong>.
-                    I understand that my onboarding application will not be processed until this
-                    form is received and verified by the team.
-                  </span>
-                </label>
-
-                {!qualificationFormFilled && (
-                  <p className="text-xs text-amber-600 flex items-center gap-1.5">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                    You must complete and confirm the qualification form above before submitting your application.
-                  </p>
-                )}
-              </div>
-            </div>
-            {/* ────────────────────────────────────────────────────────── */}
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentStep(4)}
-                className="flex-1 py-3 border rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
-              >
-                <ChevronLeft className="w-5 h-5" /> Back
-              </button>
-              <button
-                onClick={handleDocumentsSubmit}
-                disabled={loading || !qualificationFormFilled}
-                title={!qualificationFormFilled ? "Please complete the Vendor Qualification Form to proceed" : undefined}
-                className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-all ${qualificationFormFilled
-                  ? "bg-primary text-white hover:bg-primary/90"
-                  : "bg-secondary/20 text-text-secondary cursor-not-allowed"
-                  }`}
-              >
-                {loading ? "Submitting..." : "Submit for Review"}
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-center text-sm text-text-secondary">
-              You can also upload documents later from your dashboard
-            </p>
-          </div>
-        );
-
-      default:
-        return null;
+    try {
+      const res = await updateOnboarding(5, fullPayload);
+      if (res.success) {
+        await refreshVendorStatus();
+        navigate("/vendor/under-review");
+      } else {
+        setError(res.message);
+      }
+    } catch (err) {
+      setError("Submission failed. Please check required fields and uploads.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-surface border-b border-secondary/10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/">
-            <img src={Logo} alt="Siraba" className="h-10" />
-          </Link>
-          <span className="font-subheading text-accent text-sm tracking-[0.1em] uppercase font-bold">
-            Vendor Onboarding
-          </span>
+    <div className="min-h-screen bg-[#f5f6f4] text-[#24302a] font-serif">
+      <div className="max-w-[860px] mx-auto px-4 py-7 pb-16">
+        {/* Brand */}
+        <div className="text-center mb-5">
+          <div className="text-[13px] tracking-[4px] text-[#9d8043] font-bold">
+            SIRABA ORGANIC™
+          </div>
+          <div className="text-[10px] tracking-[2px] text-slate-500 mt-0.5">
+            CERTIFIED • VERIFIED • QUALIFIED
+          </div>
+        </div>
+
+        {/* Topbar */}
+        <div className="flex justify-between items-center text-[11px] text-slate-500 mb-5 font-sans">
+          <span className="font-semibold uppercase tracking-wider text-slate-600">Vendor Onboarding</span>
           <div className="flex items-center gap-4">
             <button
-              type="button"
+              onClick={() => handleSaveStep(activeStep)}
+              disabled={loading}
+              className="hover:text-slate-800 flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <Save size={13} /> Save Progress
+            </button>
+            <button
               onClick={() => {
                 logout();
                 navigate("/vendor/login");
               }}
-              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-red-600 transition-colors font-medium cursor-pointer"
+              className="text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer font-medium"
             >
-              <LogOut size={16} /> Logout
+              <LogOut size={13} /> Logout
             </button>
-            {/* <Link
-              to="/"
-              className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors font-medium"
-            >
-              <ArrowLeft size={16} /> Exit
-            </Link> */}
           </div>
         </div>
-      </header>
 
-      {/* Progress Steps */}
-      <div className="bg-surface border-b border-secondary/10">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${currentStep > step.id
-                      ? "bg-secondary text-surface"
-                      : currentStep === step.id
-                        ? "bg-accent text-primary"
-                        : "bg-secondary/10 text-text-secondary"
+        {/* Stepper */}
+        <div className="flex items-center justify-center my-3 mb-7 font-sans">
+          {[
+            { num: 1, name: "Business" },
+            { num: 2, name: "Certification" },
+            { num: 3, name: "Product" },
+            { num: 4, name: "Quality" },
+            { num: 5, name: "Submit" },
+          ].map((st, idx, arr) => (
+            <React.Fragment key={st.num}>
+              <div
+                onClick={() => setActiveStep(st.num)}
+                className={`flex items-center gap-1.5 text-[11px] cursor-pointer ${
+                  activeStep === st.num
+                    ? "font-bold text-[#24302a]"
+                    : "text-[#8a908c]"
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] ${
+                    activeStep > st.num
+                      ? "bg-[#6d8a72] border-[#6d8a72] text-white"
+                      : activeStep === st.num
+                      ? "bg-[#6d8a72] border-[#6d8a72] text-white"
+                      : "bg-white border-[#c8cec9] text-[#24302a]"
+                  }`}
+                >
+                  {activeStep > st.num ? "✓" : st.num}
+                </div>
+                <span className="hidden sm:inline">{st.name}</span>
+              </div>
+              {idx < arr.length - 1 && (
+                <div className="w-8 sm:w-12 h-[1px] bg-[#bfc7c0] mx-1.5 sm:mx-2"></div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Hero */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl sm:text-[25px] font-semibold text-[#24302a] mb-1.5">
+            Vendor Qualification &amp; Onboarding
+          </h1>
+          <p className="font-sans text-[13px] leading-relaxed text-[#68736d] max-w-[650px] mx-auto">
+            Submit the essential evidence for qualification. SIRABA ORGANIC verifies the information internally and may request additional evidence only where required.
+          </p>
+        </div>
+
+        {/* 3 Pillars */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 my-5 mb-6 font-sans">
+          <div className="bg-white border border-[#d9ddd9] rounded-lg p-3 text-center">
+            <strong className="block text-[12px] tracking-[0.5px] text-[#24302a]">01 — CERTIFIED™</strong>
+            <span className="text-[10px] text-[#68736d]">Organic certification</span>
+          </div>
+          <div className="bg-white border border-[#d9ddd9] rounded-lg p-3 text-center">
+            <strong className="block text-[12px] tracking-[0.5px] text-[#24302a]">02 — VERIFIED™</strong>
+            <span className="text-[10px] text-[#68736d]">Evidence &amp; compliance</span>
+          </div>
+          <div className="bg-white border border-[#d9ddd9] rounded-lg p-3 text-center">
+            <strong className="block text-[12px] tracking-[0.5px] text-[#24302a]">03 — QUALIFIED™</strong>
+            <span className="text-[10px] text-[#68736d]">Marketplace qualification</span>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg font-sans flex items-center gap-2">
+            <AlertCircle size={16} /> {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg font-sans flex items-center gap-2">
+            <Check size={16} /> {success}
+          </div>
+        )}
+
+        {/* SECTION 1: Business & Food Safety */}
+        <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 1</div>
+            <h2 className="text-lg font-semibold text-[#24302a] margin-0">Business &amp; Food Safety</h2>
+            <div className="font-sans text-[11px] text-[#68736d] mt-1">
+              Provide the core business and regulatory documents applicable to your operation.
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-sans">
+              {/* Is business legally registered */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
+                  Is your business legally registered? <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {["yes", "no", "other"].map((val) => (
+                    <label
+                      key={val}
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
+                        isBusinessRegistered === val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
                       }`}
-                  >
-                    {currentStep > step.id ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      <step.icon className="w-5 h-5" />
+                    >
+                      <input
+                        type="radio"
+                        name="registered"
+                        value={val}
+                        checked={isBusinessRegistered === val}
+                        onChange={(e) => setIsBusinessRegistered(e.target.value)}
+                        className="accent-[#6d8a72]"
+                      />
+                      {val === "yes" ? "Yes" : val === "no" ? "No" : "Other / Applicable Structure"}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Upload 1: Business / Legal Identity Document */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">
+                  Business / Legal Identity Document <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="text-[10px] text-[#7b837e] mb-2 leading-relaxed">
+                  Registration, incorporation, proprietorship, partnership, FPO/cooperative or equivalent.
+                </div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload document</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.business_legal_identity && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.business_legal_identity.name || "Uploaded"}
+                      </div>
                     )}
                   </div>
-                  <span
-                    className={`text-xs mt-2 text-center hidden sm:block font-medium ${currentStep === step.id
-                      ? "text-accent"
-                      : "text-text-secondary"
-                      }`}
-                  >
-                    {step.title}
-                  </span>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.business_legal_identity ? "Uploading..." : uploadedDocs.business_legal_identity ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[0], e.target.files[0])}
+                    />
+                  </label>
                 </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-3 rounded ${currentStep > step.id ? "bg-secondary" : "bg-secondary/10"
-                      }`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
+              </div>
 
-      {/* Content */}
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        <div className="bg-surface rounded-sm shadow-lg p-8 border border-secondary/10">
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-sm flex items-center gap-2">
-              <X className="w-5 h-5" />
-              {error}
+              {/* Upload 2: FSSAI Licence */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">
+                  FSSAI Licence / Registration <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="text-[10px] text-[#7b837e] mb-2 leading-relaxed">
+                  Required for applicable food businesses.
+                </div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload FSSAI document</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.fssai_license && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.fssai_license.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.fssai_license ? "Uploading..." : uploadedDocs.fssai_license ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[1], e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Is GST applicable? */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
+                  Is GST Registration applicable? <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs mb-2">
+                  {[
+                    { val: "yes", label: "Yes" },
+                    { val: "no", label: "No" },
+                    { val: "na", label: "Not Applicable" },
+                  ].map((item) => (
+                    <label
+                      key={item.val}
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
+                        gstApplicable === item.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="gst"
+                        value={item.val}
+                        checked={gstApplicable === item.val}
+                        onChange={(e) => setGstApplicable(e.target.value)}
+                        className="accent-[#6d8a72]"
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+
+                {/* Conditional Upload 3: GST Certificate */}
+                {gstApplicable === "yes" && (
+                  <div className="mt-2 pt-2 border-t border-slate-200">
+                    <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[12px] font-bold text-[#24302a] font-serif">GST Certificate <span className="text-[#a04b42]">*</span></div>
+                        <div className="text-[10px] text-[#7b837e] mt-0.5">Upload only if applicable • Max 5MB</div>
+                        {uploadedDocs.gst_certificate && (
+                          <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                            ✓ {uploadedDocs.gst_certificate.name || "Uploaded"}
+                          </div>
+                        )}
+                      </div>
+                      <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                        {uploadingState.gst_certificate ? "Uploading..." : uploadedDocs.gst_certificate ? "Replace" : "Upload"}
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.webp"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[2], e.target.files[0])}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* PAN / Authorized Signatory Details */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">
+                  PAN / Authorized Signatory Details <span className="text-[#6e806f] font-normal">• Form Data</span>
+                </div>
+                <div className="text-[10px] text-[#7b837e] mb-2 leading-relaxed">
+                  Enter details in the application rather than uploading duplicate evidence where already captured.
+                </div>
+                <input
+                  type="text"
+                  placeholder="PAN Number / Authorized Signatory Name"
+                  value={authorizedSignatoryName}
+                  onChange={(e) => setAuthorizedSignatoryName(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
             </div>
-          )}
-          {renderStep()}
+          </div>
+        </section>
+
+        {/* SECTION 2: Organic Certification */}
+        <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 2</div>
+            <h2 className="text-lg font-semibold text-[#24302a]">Organic Certification</h2>
+            <div className="font-sans text-[11px] text-[#68736d] mt-1">
+              <b>Required:</b> Submit one valid recognized organic certification applicable to the product and market.
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 font-sans space-y-4">
+            {/* Route Selection */}
+            <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+              <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
+                Which organic certification route applies to your product? <span className="text-[#a04b42]">*</span>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {[
+                  { val: "npop", label: "NPOP / India Organic" },
+                  { val: "pgs", label: "PGS-India, where applicable" },
+                  { val: "usda", label: "USDA Organic" },
+                  { val: "eu", label: "EU Organic" },
+                  { val: "other", label: "Other recognized certification" },
+                ].map((route) => (
+                  <label
+                    key={route.val}
+                    className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
+                      certificationRoute === route.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="organicRoute"
+                      value={route.val}
+                      checked={certificationRoute === route.val}
+                      onChange={(e) => setCertificationRoute(e.target.value)}
+                      className="accent-[#6d8a72]"
+                    />
+                    {route.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Cert Metadata + Upload Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Certification Body <span className="text-[#a04b42]">*</span></div>
+                <input
+                  type="text"
+                  placeholder="Enter certification body (e.g. OneCert, Control Union)"
+                  value={certificationBody}
+                  onChange={(e) => setCertificationBody(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Certificate Number <span className="text-[#a04b42]">*</span></div>
+                <input
+                  type="text"
+                  placeholder="Enter certificate number"
+                  value={certificateNumber}
+                  onChange={(e) => setCertificateNumber(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Certificate Valid Until <span className="text-[#a04b42]">*</span></div>
+                <input
+                  type="date"
+                  value={certificateValidUntil}
+                  onChange={(e) => setCertificateValidUntil(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              {/* Upload 4: Organic Certificate */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Organic Certificate <span className="text-[#a04b42]">*</span></div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload certificate</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.organic_certificate && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.organic_certificate.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.organic_certificate ? "Uploading..." : uploadedDocs.organic_certificate ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[3], e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#f7f8f6] border-l-4 border-[#b99a57] p-3 text-[11px] text-[#5f6862] leading-relaxed rounded-r-md">
+              <b>No duplicate upload:</b> You do not need to upload a separate Product Scope Certificate if the submitted certification already establishes that the representative product is covered. SIRABA may request scope/supporting documentation only where product coverage is unclear or additional verification is required.
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: Representative Product */}
+        <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 3</div>
+            <h2 className="text-lg font-semibold text-[#24302a]">Representative Product</h2>
+            <div className="font-sans text-[11px] text-[#68736d] mt-1">
+              Submit <b>one</b> representative product for initial vendor qualification. Your complete catalogue can be added after vendor approval.
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 font-sans space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Product Name <span className="text-[#a04b42]">*</span></div>
+                <input
+                  type="text"
+                  placeholder="e.g., Certified Organic Cow Ghee"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Product Category <span className="text-[#a04b42]">*</span></div>
+                <select
+                  value={productCategory}
+                  onChange={(e) => setProductCategory(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                >
+                  <option value="Organic Dairy">Organic Dairy</option>
+                  <option value="Organic Oils & Fats">Organic Oils &amp; Fats</option>
+                  <option value="Organic Spices">Organic Spices</option>
+                  <option value="Organic Grains & Pulses">Organic Grains &amp; Pulses</option>
+                  <option value="Organic Foods">Organic Foods</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
+                  Is this product covered by your submitted organic certification? <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {[
+                    { val: "yes", label: "Yes" },
+                    { val: "no", label: "No" },
+                    { val: "unsure", label: "Not Sure" },
+                  ].map((item) => (
+                    <label
+                      key={item.val}
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
+                        certificationCoverage === item.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="coverage"
+                        value={item.val}
+                        checked={certificationCoverage === item.val}
+                        onChange={(e) => setCertificationCoverage(e.target.value)}
+                        className="accent-[#6d8a72]"
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Upload 5: Product Spec (Optional) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">Product Specification / Ingredients <span className="text-[#6e806f] font-normal">• Where Applicable</span></div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3 mt-1.5">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload document</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">Optional at initial qualification • Max 5MB</div>
+                    {uploadedDocs.product_specification && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.product_specification.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.product_specification ? "Uploading..." : uploadedDocs.product_specification ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[4], e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Upload 6: Product Label / Packaging (Required) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">Product Label / Packaging <span className="text-[#a04b42]">*</span></div>
+                <div className="text-[10px] text-[#7b837e] mb-1.5">Upload the current label/packaging showing applicable declarations.</div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload label</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.product_label_packaging && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.product_label_packaging.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.product_label_packaging ? "Uploading..." : uploadedDocs.product_label_packaging ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[5], e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Upload 7: Representative Product Image (Required) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Representative Product Image <span className="text-[#a04b42]">*</span></div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload image</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.representative_product_image && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.representative_product_image.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.representative_product_image ? "Uploading..." : uploadedDocs.representative_product_image ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[6], e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#f7f8f6] border-l-4 border-[#b99a57] p-3 text-[11px] text-[#5f6862] leading-relaxed rounded-r-md">
+              <b>Important:</b> You are not required to submit your complete product catalogue during vendor onboarding. Once your vendor application is approved, you can add eligible products through the Product Listing section.
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 4: Quality & Traceability */}
+        <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 4</div>
+            <h2 className="text-lg font-semibold text-[#24302a]">Quality &amp; Traceability</h2>
+            <div className="font-sans text-[11px] text-[#68736d] mt-1">
+              Keep the evidence simple at onboarding. SIRABA may request additional supporting records based on product risk and verification findings.
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 font-sans space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Upload 8: CoA (Optional) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">
+                  Accredited Laboratory Report / CoA <span className="text-[#6e806f] font-normal">• Recommended</span>
+                </div>
+                <div className="text-[10px] text-[#7b837e] mb-1.5">
+                  NABL-accredited or appropriately accredited international laboratory, where available.
+                </div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload report / CoA</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.laboratory_report_coa && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.laboratory_report_coa.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.laboratory_report_coa ? "Uploading..." : uploadedDocs.laboratory_report_coa ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[7], e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Traceability declaration 1 */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
+                  Do you maintain product traceability records? <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="flex gap-3 text-xs mb-2">
+                  {["yes", "no"].map((v) => (
+                    <label key={v} className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-700">
+                      <input
+                        type="radio"
+                        name="trace"
+                        value={v}
+                        checked={maintainsTraceabilityRecords === v}
+                        onChange={(e) => setMaintainsTraceabilityRecords(e.target.value)}
+                        className="accent-[#6d8a72]"
+                      />
+                      {v === "yes" ? "Yes" : "No"}
+                    </label>
+                  ))}
+                </div>
+                <div className="text-[10px] text-[#7b837e] leading-relaxed">
+                  Records may include source, procurement, production, batch, storage and dispatch information.
+                </div>
+              </div>
+
+              {/* Traceability declaration 2 */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
+                  Do you maintain records that can support batch/source verification if requested by SIRABA? <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="flex gap-4 text-xs">
+                  {["yes", "no"].map((v) => (
+                    <label key={v} className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-700">
+                      <input
+                        type="radio"
+                        name="evidence"
+                        value={v}
+                        checked={canProvideBatchSourceEvidence === v}
+                        onChange={(e) => setCanProvideBatchSourceEvidence(e.target.value)}
+                        className="accent-[#6d8a72]"
+                      />
+                      {v === "yes" ? "Yes" : "No"}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#f7f8f6] border-l-4 border-[#b99a57] p-3 text-[11px] text-[#5f6862] leading-relaxed rounded-r-md">
+              <b>No full traceability file required at onboarding.</b> SIRABA does not require vendors to upload every source-farm, procurement, supply-chain or batch record at the initial application stage. Relevant evidence may be requested during verification or product review.
+            </div>
+          </div>
+        </section>
+
+        {/* Summary Box */}
+        <div className="mt-5 border border-[#cfd5d0] rounded-xl p-4 sm:p-5 bg-white shadow-sm font-sans">
+          <h3 className="text-sm font-bold text-[#24302a] font-serif mb-2">
+            Initial Submission — Checklist Summary
+          </h3>
+          <ul className="pl-5 text-xs leading-relaxed text-[#59635d] list-disc space-y-1">
+            <li className={uploadedDocs.business_legal_identity ? "text-emerald-800 font-medium" : ""}>
+              Business / Legal Identity document {uploadedDocs.business_legal_identity ? "✓" : "(Required)"}
+            </li>
+            <li className={uploadedDocs.fssai_license ? "text-emerald-800 font-medium" : ""}>
+              FSSAI Licence / Registration {uploadedDocs.fssai_license ? "✓" : "(Required)"}
+            </li>
+            <li className={gstApplicable !== "yes" || uploadedDocs.gst_certificate ? "text-emerald-800 font-medium" : ""}>
+              GST Certificate {gstApplicable === "yes" ? (uploadedDocs.gst_certificate ? "✓" : "(Required when applicable)") : "(Not Applicable)"}
+            </li>
+            <li className={uploadedDocs.organic_certificate ? "text-emerald-800 font-medium" : ""}>
+              One valid recognized Organic Certificate {uploadedDocs.organic_certificate ? "✓" : "(Required)"}
+            </li>
+            <li className={uploadedDocs.product_label_packaging && uploadedDocs.representative_product_image ? "text-emerald-800 font-medium" : ""}>
+              Representative Product (Label + Product Image) {uploadedDocs.product_label_packaging && uploadedDocs.representative_product_image ? "✓" : "(Required)"}
+            </li>
+            <li>Traceability &amp; Verification declarations</li>
+            <li>Laboratory Report / CoA — recommended, not mandatory</li>
+          </ul>
+        </div>
+
+        {/* Actions Bar */}
+        <div className="flex justify-between items-center mt-6 font-sans">
+          <button
+            onClick={() => handleSaveStep(activeStep)}
+            disabled={loading}
+            className="border border-[#455249] rounded-lg px-4 py-2.5 text-xs text-[#24302a] bg-white hover:bg-slate-50 transition-colors font-medium cursor-pointer"
+          >
+            ← Save Progress
+          </button>
+
+          <button
+            onClick={handleFinalSubmit}
+            disabled={loading}
+            className="bg-[#6d8a72] border border-[#6d8a72] text-white rounded-lg px-6 py-2.5 text-xs font-bold hover:bg-[#5c7760] transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+          >
+            {loading ? "Submitting..." : "Review & Submit →"}
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-[10px] text-[#7b837e] mt-7 leading-relaxed font-sans">
+          <b>SIRABA ORGANIC™ — Certified • Verified • Qualified</b><br />
+          Your application is subject to SIRABA ORGANIC's verification and marketplace qualification process.<br />
+          Additional evidence may be requested where required by product, certification, regulation or verification findings.
         </div>
       </div>
     </div>

@@ -202,12 +202,24 @@ router.put(
       doc.reviewedAt = new Date();
       if (rejectionReason) doc.rejectionReason = rejectionReason;
 
-      if (doc.type === "npop_certificate" && status === "approved") {
-        if (!vendor.certifications.includes("NPOP")) {
-          vendor.certifications.push("NPOP");
+      if ((doc.type === "organic_certificate" || doc.type === "npop_certificate" || doc.type === "organic_certification") && status === "approved") {
+        const route = (vendor.organicCertification?.certificationRoute || "npop").toLowerCase();
+        let certName = "NPOP";
+        if (route.includes("usda")) certName = "USDA Organic";
+        else if (route.includes("eu")) certName = "EU Organic";
+        else if (route.includes("npop")) certName = "NPOP";
+        else certName = "NPOP";
+
+        if (!vendor.certifications.includes(certName)) {
+          vendor.certifications.push(certName);
         }
-      } else if (doc.type === "npop_certificate" && status !== "approved") {
-        vendor.certifications = vendor.certifications.filter(c => c !== "NPOP");
+      } else if ((doc.type === "organic_certificate" || doc.type === "npop_certificate" || doc.type === "organic_certification") && status !== "approved") {
+        const route = (vendor.organicCertification?.certificationRoute || "npop").toLowerCase();
+        let certName = "NPOP";
+        if (route.includes("usda")) certName = "USDA Organic";
+        else if (route.includes("eu")) certName = "EU Organic";
+        
+        vendor.certifications = vendor.certifications.filter(c => c !== certName);
       }
 
       const allDocsApproved = vendor.complianceDocuments.length > 0 && vendor.complianceDocuments.every(d => d.status === "approved");

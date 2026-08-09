@@ -65,6 +65,8 @@ import ImageUploadField from "../../components/ImageUploadField";
 import Logo from "../../assets/SIRABALOGO.png";
 import NotificationDropdown from "../../components/vendor/NotificationDropdown";
 import client from "../../api/client";
+import { getDocumentViewUrl } from "../../utils/documentViewer";
+import VendorContactUpdateModal from "../../components/vendor/VendorContactUpdateModal";
 
 // Sidebar Component
 const VendorSidebar = ({
@@ -362,7 +364,13 @@ const StatCard = ({
 );
 
 // Vendor Info Content - Display all vendor onboarding details
-const VendorInfoContent = ({ vendor }) => {
+const VendorInfoContent = ({ vendor, updateProfile, getProfile }) => {
+  const [updateModal, setUpdateModal] = useState({
+    isOpen: false,
+    type: "email",
+    currentValue: "",
+  });
+
   if (!vendor) {
     return (
       <div className="text-center py-12">
@@ -401,8 +409,28 @@ const VendorInfoContent = ({ vendor }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InfoField label="Business Name" value={vendor.businessName} />
           <InfoField label="Shop Name" value={vendor.shopName} />
-          <InfoField label="Email" value={vendor.email} />
-          <InfoField label="Phone" value={vendor.phone} />
+          <InfoField
+            label="Email"
+            value={vendor.email}
+            onEdit={() =>
+              setUpdateModal({
+                isOpen: true,
+                type: "email",
+                currentValue: vendor.email,
+              })
+            }
+          />
+          <InfoField
+            label="Phone"
+            value={vendor.phone}
+            onEdit={() =>
+              setUpdateModal({
+                isOpen: true,
+                type: "phone",
+                currentValue: vendor.phone,
+              })
+            }
+          />
           <InfoField
             label="Business Description"
             value={vendor.businessDescription}
@@ -555,16 +583,40 @@ const VendorInfoContent = ({ vendor }) => {
           </div>
         </div>
       )}
+
+      <VendorContactUpdateModal
+        isOpen={updateModal.isOpen}
+        type={updateModal.type}
+        currentValue={updateModal.currentValue}
+        onClose={() =>
+          setUpdateModal({ isOpen: false, type: "email", currentValue: "" })
+        }
+        onUpdateSuccess={() => {
+          if (getProfile) getProfile();
+        }}
+        updateProfile={updateProfile}
+      />
     </div>
   );
 };
 
 // Helper component for displaying info fields
-const InfoField = ({ label, value, fullWidth = false }) => (
+const InfoField = ({ label, value, fullWidth = false, onEdit, editLabel = "Change" }) => (
   <div className={`space-y-2 ${fullWidth ? "md:col-span-2" : ""}`}>
-    <label className="text-xs text-text-secondary uppercase tracking-wider font-semibold">
-      {label}
-    </label>
+    <div className="flex items-center justify-between">
+      <label className="text-xs text-text-secondary uppercase tracking-wider font-semibold">
+        {label}
+      </label>
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-bold text-accent hover:text-primary transition-colors flex items-center gap-1 uppercase tracking-wider"
+        >
+          <Edit2 size={12} /> {editLabel}
+        </button>
+      )}
+    </div>
     <p className="text-primary font-medium text-sm">
       {value || (
         <span className="text-text-secondary italic">Not provided</span>
@@ -2071,7 +2123,7 @@ const ComplianceContent = ({
 
             <div className="flex gap-4 mt-6 pt-4 border-t border-secondary/5 flex-wrap">
               <a
-                href={doc.fileUrl}
+                href={getDocumentViewUrl(doc.fileUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-accent text-xs font-bold uppercase tracking-wider hover:text-primary transition-colors hover:underline"
@@ -2264,6 +2316,11 @@ const ComplianceContent = ({
 const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [updateModal, setUpdateModal] = useState({
+    isOpen: false,
+    type: "email",
+    currentValue: "",
+  });
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -2276,7 +2333,9 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await updateProfile(profileData);
+    // Exclude direct email and phone from plain profile update so OTP process is enforced
+    const { email, phone, ...restProfile } = profileData;
+    await updateProfile(restProfile);
     setLoading(false);
     alert("Profile updated successfully!");
   };
@@ -2327,21 +2386,55 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Email & Phone Contact Update Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary/5 p-6 rounded-sm border border-secondary/10">
           <div>
-            <label className="block text-sm font-medium mb-2 text-text-secondary uppercase tracking-wide">
-              Phone
+            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">
+              Email Address
             </label>
-            <input
-              type="tel"
-              value={profileData.phone || ""}
-              onChange={(e) =>
-                setProfileData({ ...profileData, phone: e.target.value })
+            <p className="text-sm font-medium text-primary mb-3">
+              {profileData.email || "Not provided"}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setUpdateModal({
+                  isOpen: true,
+                  type: "email",
+                  currentValue: profileData.email,
+                })
               }
-              className="w-full px-4 py-3 border border-secondary/20 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent bg-background/50 transition-all font-light"
-            />
+              className="px-4 py-2 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Update Email (OTP)
+            </button>
           </div>
+
           <div>
+            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">
+              Phone Number
+            </label>
+            <p className="text-sm font-medium text-primary mb-3">
+              {profileData.phone || "Not provided"}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setUpdateModal({
+                  isOpen: true,
+                  type: "phone",
+                  currentValue: profileData.phone,
+                })
+              }
+              className="px-4 py-2 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Update Phone (OTP)
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium mb-2 text-text-secondary uppercase tracking-wide">
               Website
             </label>
@@ -2484,6 +2577,20 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
           {loading ? "Saving..." : "Save Changes"}
         </button>
       </form>
+
+      <VendorContactUpdateModal
+        isOpen={updateModal.isOpen}
+        type={updateModal.type}
+        currentValue={updateModal.currentValue}
+        onClose={() =>
+          setUpdateModal({ isOpen: false, type: "email", currentValue: "" })
+        }
+        onUpdateSuccess={async () => {
+          const freshData = await getProfile();
+          if (freshData) setProfileData(freshData);
+        }}
+        updateProfile={updateProfile}
+      />
     </div>
   );
 };
@@ -4275,7 +4382,19 @@ const VendorDashboard = () => {
   }, [vendor]);
 
   if (!vendor) {
-    return <Navigate to="/vendor" />;
+    return <Navigate to="/vendor/login" />;
+  }
+
+  if (!vendor.onboardingComplete) {
+    return <Navigate to="/vendor/onboarding" />;
+  }
+
+  if (vendor.status === "under_review" || vendor.status === "pending") {
+    return <Navigate to="/vendor/under-review" />;
+  }
+
+  if (vendor.status === "rejected" || vendor.status === "subadmin_rejected") {
+    return <Navigate to="/vendor/rejected" />;
   }
 
   return (
@@ -4352,7 +4471,13 @@ const VendorDashboard = () => {
           {activeTab === "dashboard" && (
             <DashboardContent dashboardData={dashboardData} vendor={vendor} />
           )}
-          {activeTab === "vendor-info" && <VendorInfoContent vendor={vendor} />}
+          {activeTab === "vendor-info" && (
+            <VendorInfoContent
+              vendor={vendor}
+              updateProfile={updateProfile}
+              getProfile={getProfile}
+            />
+          )}
           {activeTab === "products" && (
             <ProductsContent
               vendorProducts={vendorProducts}

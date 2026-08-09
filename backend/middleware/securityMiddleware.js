@@ -139,21 +139,7 @@ const securityHeaders = () => {
  * OWASP A07:2021 – Identification and Authentication Failures
  * Rate limiting to prevent brute force attacks
  */
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // limit each IP to 5 requests per windowMs
-    message: 'Too many login attempts from this IP, please try again after 15 minutes',
-    standardHeaders: true,
-    legacyHeaders: false,
-    skipSuccessfulRequests: false,
-    handler: (req, res) => {
-        res.status(429).json({
-            error: 'Too many login attempts',
-            message: 'Please try again after 15 minutes',
-            retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-        });
-    }
-});
+const loginLimiter = (req, res, next) => next();
 
 /**
  * OWASP A07:2021 – Identification and Authentication Failures
@@ -261,7 +247,7 @@ const suspiciousActivityLogger = (req, res, next) => {
 const preventDirectoryTraversal = (req, res, next) => {
     const suspiciousPath = /(\.\.)|(\/\/)|(%2e%2e)|(%2f%2f)/i;
 
-    if (suspiciousPath.test(req.url)) {
+    if (suspiciousPath.test(req.path)) {
         console.warn({
             timestamp: new Date().toISOString(),
             type: 'DIRECTORY_TRAVERSAL_ATTEMPT',

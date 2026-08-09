@@ -184,47 +184,19 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
             });
         }
 
-        // Check if account is locked
-        if (user.accountLockUntil && user.accountLockUntil > Date.now()) {
-            const lockTimeRemaining = Math.ceil((user.accountLockUntil - Date.now()) / 60000);
-            securityLogger.logFailedAuth(email, ip, 'Account locked');
-            return res.status(423).json({
-                message: `Account is locked due to too many failed login attempts. Please try again in ${lockTimeRemaining} minutes.`,
-                code: 'ACCOUNT_LOCKED',
-                retryAfter: lockTimeRemaining
-            });
+        // Reset any legacy account lock
+        if (user.accountLockUntil) {
+            user.accountLockUntil = null;
+            user.failedLoginAttempts = 0;
+            await user.save();
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
-            // Increment failed login attempts
-            user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-
-            // Lock account if max attempts exceeded
-            if (user.failedLoginAttempts >= MAX_LOGIN_ATTEMPTS) {
-                user.accountLockUntil = Date.now() + LOCK_TIME;
-                await user.save();
-
-                securityLogger.logSuspiciousActivity(
-                    'ACCOUNT_LOCKED',
-                    { email, attempts: user.failedLoginAttempts },
-                    ip,
-                    req.get('user-agent')
-                );
-
-                return res.status(423).json({
-                    message: `Account locked due to ${MAX_LOGIN_ATTEMPTS} failed login attempts. Please try again in 15 minutes.`,
-                    code: 'ACCOUNT_LOCKED'
-                });
-            }
-
-            await user.save();
-            securityLogger.logFailedAuth(email, ip, `Invalid password (${user.failedLoginAttempts} attempts)`);
-
+            securityLogger.logFailedAuth(email, ip, 'Invalid password');
             return res.status(401).json({
-                message: 'Invalid email or password',
-                attemptsRemaining: MAX_LOGIN_ATTEMPTS - user.failedLoginAttempts
+                message: 'Invalid email or password'
             });
         }
 

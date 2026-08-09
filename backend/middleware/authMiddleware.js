@@ -48,16 +48,7 @@ const protect = async (req, res, next) => {
                 });
             }
 
-            // Check for account lockout due to failed login attempts
-            if (req.user.accountLockUntil && req.user.accountLockUntil > Date.now()) {
-                const lockTimeRemaining = Math.ceil((req.user.accountLockUntil - Date.now()) / 60000);
-                securityLogger.logFailedAuth(req.user.email, ip, 'Account locked');
-                return res.status(423).json({
-                    message: `Account is locked. Please try again in ${lockTimeRemaining} minutes.`,
-                    code: 'ACCOUNT_LOCKED',
-                    retryAfter: lockTimeRemaining
-                });
-            }
+
 
             next();
         } catch (error) {

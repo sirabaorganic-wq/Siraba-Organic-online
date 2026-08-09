@@ -27,16 +27,21 @@ const uploadToCloudinary = async (
 
     // Upload to Cloudinary
     const result = await new Promise((resolve, reject) => {
+      const uploadParams = {
+        folder: folder,
+        public_id: fileName, // Preserve extension
+        resource_type: "auto",
+        overwrite: true,
+      };
+
+      if (isImage) {
+        uploadParams.format = "webp";
+        uploadParams.quality = "auto";
+        uploadParams.fetch_format = "auto";
+      }
+
       const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: folder,
-          public_id: fileName.split(".")[0], // Remove extension
-          resource_type: isPdf ? "raw" : "auto",
-          format: isImage ? "webp" : undefined,
-          quality: isImage ? "auto" : undefined,
-          fetch_format: isImage ? "auto" : undefined,
-          overwrite: true,
-        },
+        uploadParams,
         (error, result) => {
           if (error) reject(error);
           else resolve(result);

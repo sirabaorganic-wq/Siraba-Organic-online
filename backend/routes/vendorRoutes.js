@@ -123,9 +123,15 @@ const complianceValidators = [
   body("name").trim().notEmpty().withMessage("Document name is required"),
   body("type")
     .isIn([
-      "business_license",
-      "gst_certificate",
+      "business_legal_identity",
       "fssai_license",
+      "gst_certificate",
+      "organic_certificate",
+      "product_specification",
+      "product_label_packaging",
+      "representative_product_image",
+      "laboratory_report_coa",
+      "business_license",
       "organic_certification",
       "pan_card",
       "bank_details",
@@ -489,19 +495,47 @@ router.put("/profile", protectVendor, async (req, res) => {
       vendor.logo = logo || vendor.logo;
 
       // Email change requires OTP verification
-      if (email && email !== vendor.email) {
+      if (email && email.toLowerCase().trim() !== vendor.email.toLowerCase()) {
+        const targetEmail = email.toLowerCase().trim();
+        const existingEmailVendor = await Vendor.findOne({ email: targetEmail });
+        if (existingEmailVendor && existingEmailVendor._id.toString() !== vendor._id.toString()) {
+          return res.status(400).json({ message: "Email is already in use by another vendor." });
+        }
+
         if (!emailOtp) {
           return res
             .status(400)
             .json({ message: "Email OTP is required to change email address" });
         }
         try {
-          await verifyOtpForIdentifier(email, "email", emailOtp);
+          await verifyOtpForIdentifier(targetEmail, "email", emailOtp);
         } catch (otpError) {
           return res.status(400).json({ message: otpError.message });
         }
-        vendor.email = email.toLowerCase();
+        vendor.email = targetEmail;
         vendor.isEmailVerified = true;
+      }
+
+      // Phone change requires OTP verification
+      const { phoneOtp } = req.body;
+      if (phone && phone.trim() !== (vendor.phone || "").trim()) {
+        const targetPhone = phone.trim();
+        const existingPhoneVendor = await Vendor.findOne({ phone: targetPhone });
+        if (existingPhoneVendor && existingPhoneVendor._id.toString() !== vendor._id.toString()) {
+          return res.status(400).json({ message: "Phone number is already in use by another vendor." });
+        }
+
+        if (!phoneOtp) {
+          return res
+            .status(400)
+            .json({ message: "Phone OTP is required to change phone number" });
+        }
+        try {
+          await verifyOtpForIdentifier(targetPhone, "phone", phoneOtp);
+        } catch (otpError) {
+          return res.status(400).json({ message: otpError.message });
+        }
+        vendor.phone = targetPhone;
       }
 
       if (address) {
@@ -538,17 +572,20 @@ router.put("/profile", protectVendor, async (req, res) => {
 
 // ================== ONBOARDING ROUTES ==================
 
-// @desc    Update onboarding step
+// @desc    Update onboarding step & submit application
 // @route   PUT /api/vendors/onboarding
 // @access  Private/Vendor
 router.put("/onboarding", protectVendor, async (req, res) => {
   try {
     const vendor = await Vendor.findById(req.vendor._id);
-    const { step, data } = req.body;
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const { step, data = {} } = req.body;
 
     switch (step) {
-      case 1: { // Business Details
-        // Validate PAN, GST, FSSAI formats if provided
+      case 1: { // Section 1: Business & Food Safety
         const step1Errors = validateOnboardingStep1(data || {});
         if (step1Errors.length > 0) {
           return res.status(400).json({
@@ -556,69 +593,181 @@ router.put("/onboarding", protectVendor, async (req, res) => {
             errors: step1Errors,
           });
         }
-        vendor.businessDescription = data.businessDescription;
-        vendor.website = data.website;
-        // Normalise to uppercase before saving
-        vendor.gstNumber = data.gstNumber ? data.gstNumber.trim().toUpperCase() : vendor.gstNumber;
-        vendor.panNumber = data.panNumber ? data.panNumber.trim().toUpperCase() : vendor.panNumber;
-        vendor.fssaiNumber = data.fssaiNumber ? data.fssaiNumber.trim() : vendor.fssaiNumber;
-        vendor.onboardingStep = 2;
-        break;
-      }
 
-      case 2: // Address
+        if (data.isBusinessRegistered !== undefined) vendor.isBusinessRegistered = data.isBusinessRegistered;
+        if (data.gstApplicable !== undefined) vendor.gstApplicable = data.gstApplicable;
+        if (data.authorizedSignatoryName !== undefined) vendor.authorizedSignatoryName = data.authorizedSignatoryName;
+        if (data.businessDescription !== undefined) vendor.businessDescription = data.businessDescription;
+        if (data.website !== undefined) vendor.website = data.website;
+
+        if (data.gstNumber) vendor.gstNumber = data.gstNumber.trim().toUpperCase();
+        if (data.panNumber) vendor.panNumber = data.panNumber.trim().toUpperCase();
+        if (data.fssaiNumber) vendor.fssaiNumber = data.fssaiNumber.trim();
+
+        // Address fallback if provided (legacy support)
         if (data.address) {
-          if (!data.address.city || !data.address.state) {
-            return res.status(400).json({ message: "City and State are required" });
-          }
-          if (data.address.postalCode && !POSTAL_REGEX.test(data.address.postalCode.trim())) {
-            return res.status(400).json({ message: "Postal code must be a 6-digit number" });
-          }
           vendor.address = { ...vendor.address, ...data.address };
         }
-        vendor.onboardingStep = 3;
-        break;
 
-      case 3: { // Bank Details
-        const step3Errors = validateOnboardingStep3(data.bankDetails);
-        if (step3Errors.length > 0) {
-          return res.status(400).json({
-            message: step3Errors[0].message,
-            errors: step3Errors,
-          });
-        }
-        // Normalise IFSC to uppercase
-        if (data.bankDetails.ifscCode) {
-          data.bankDetails.ifscCode = data.bankDetails.ifscCode.trim().toUpperCase();
-        }
-        vendor.bankDetails = data.bankDetails;
-        vendor.onboardingStep = 4;
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 2);
         break;
       }
 
-      case 4: // Plan Selection (handled by /subscription route but mark step complete)
-        vendor.onboardingStep = 5;
-        break;
+      case 2: { // Section 2: Organic Certification
+        if (data.organicCertification) {
+          const { certificationRoute, certificationBody, certificateNumber, certificateValidUntil } = data.organicCertification;
+          vendor.organicCertification = {
+            certificationRoute: certificationRoute || vendor.organicCertification?.certificationRoute,
+            certificationBody: certificationBody || vendor.organicCertification?.certificationBody,
+            certificateNumber: certificateNumber || vendor.organicCertification?.certificateNumber,
+            certificateValidUntil: certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
+          };
+        } else if (data.certificationRoute || data.certificationBody) {
+          vendor.organicCertification = {
+            certificationRoute: data.certificationRoute || vendor.organicCertification?.certificationRoute,
+            certificationBody: data.certificationBody || vendor.organicCertification?.certificationBody,
+            certificateNumber: data.certificateNumber || vendor.organicCertification?.certificateNumber,
+            certificateValidUntil: data.certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
+          };
+        }
 
-      case 5: // Documents Upload - Final step
+        // Legacy address handling fallback
+        if (data.address) {
+          vendor.address = { ...vendor.address, ...data.address };
+        }
+
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 3);
+        break;
+      }
+
+      case 3: { // Section 3: Representative Product (or Legacy Bank Details)
+        if (data.representativeProduct) {
+          const { productName, productCategory, certificationCoverage } = data.representativeProduct;
+          vendor.representativeProduct = {
+            productName: productName || vendor.representativeProduct?.productName,
+            productCategory: productCategory || vendor.representativeProduct?.productCategory,
+            certificationCoverage: certificationCoverage || vendor.representativeProduct?.certificationCoverage,
+          };
+        } else if (data.productName || data.productCategory) {
+          vendor.representativeProduct = {
+            productName: data.productName || vendor.representativeProduct?.productName,
+            productCategory: data.productCategory || vendor.representativeProduct?.productCategory,
+            certificationCoverage: data.certificationCoverage || vendor.representativeProduct?.certificationCoverage,
+          };
+        }
+
+        // Bank details fallback if provided
+        if (data.bankDetails) {
+          if (data.bankDetails.ifscCode) {
+            data.bankDetails.ifscCode = data.bankDetails.ifscCode.trim().toUpperCase();
+          }
+          vendor.bankDetails = { ...vendor.bankDetails, ...data.bankDetails };
+        }
+
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 4);
+        break;
+      }
+
+      case 4: { // Section 4: Quality & Traceability Declarations (or Plan Selection)
+        if (data.maintainsTraceabilityRecords !== undefined) vendor.maintainsTraceabilityRecords = data.maintainsTraceabilityRecords;
+        if (data.canProvideBatchSourceEvidence !== undefined) vendor.canProvideBatchSourceEvidence = data.canProvideBatchSourceEvidence;
+        
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 5);
+        break;
+      }
+
+      case 5: { // Section 5: Final Review & Submission Validation
+        // Update any payload data passed on step 5
+        if (data.isBusinessRegistered !== undefined) vendor.isBusinessRegistered = data.isBusinessRegistered;
+        if (data.gstApplicable !== undefined) vendor.gstApplicable = data.gstApplicable;
+        if (data.authorizedSignatoryName !== undefined) vendor.authorizedSignatoryName = data.authorizedSignatoryName;
+        if (data.panNumber) vendor.panNumber = data.panNumber.trim().toUpperCase();
+        if (data.fssaiNumber) vendor.fssaiNumber = data.fssaiNumber.trim();
+
+        if (data.organicCertification) {
+          vendor.organicCertification = { ...vendor.organicCertification, ...data.organicCertification };
+        }
+        if (data.representativeProduct) {
+          vendor.representativeProduct = { ...vendor.representativeProduct, ...data.representativeProduct };
+        }
+        if (data.maintainsTraceabilityRecords !== undefined) vendor.maintainsTraceabilityRecords = data.maintainsTraceabilityRecords;
+        if (data.canProvideBatchSourceEvidence !== undefined) vendor.canProvideBatchSourceEvidence = data.canProvideBatchSourceEvidence;
+
+        const docTypes = (vendor.complianceDocuments || []).map((d) => d.type);
+
+        // 1. Business / Legal Identity Document Check
+        const hasBusinessDoc = docTypes.includes("business_legal_identity") || docTypes.includes("business_license");
+        if (!hasBusinessDoc) {
+          return res.status(400).json({ message: "Business / Legal Identity Document is required." });
+        }
+
+        // 2. FSSAI Check
+        const hasFssaiDoc = docTypes.includes("fssai_license");
+        if (!hasFssaiDoc) {
+          return res.status(400).json({ message: "FSSAI Licence / Registration document is required." });
+        }
+
+        // 3. GST Check (Conditional)
+        const isGstApplicable = vendor.gstApplicable === "yes" || data.gstApplicable === "yes";
+        if (isGstApplicable) {
+          const hasGstDoc = docTypes.includes("gst_certificate");
+          if (!hasGstDoc) {
+            return res.status(400).json({ message: "GST Certificate is required when GST is applicable." });
+          }
+        }
+
+        // 4. Organic Certificate Check
+        const hasOrganicDoc = docTypes.includes("organic_certificate") || docTypes.includes("organic_certification") || docTypes.includes("npop_certificate");
+        if (!hasOrganicDoc) {
+          return res.status(400).json({ message: "Organic Certificate is required." });
+        }
+
+        // 5. Organic Certificate Metadata Check
+        const orgCert = vendor.organicCertification || {};
+        if (!orgCert.certificationRoute || !orgCert.certificationBody || !orgCert.certificateNumber || !orgCert.certificateValidUntil) {
+          return res.status(400).json({ message: "Organic certification route and details (Body, Number, Valid Until) are required." });
+        }
+
+        // 6. Representative Product Metadata & Label & Image Check
+        const repProd = vendor.representativeProduct || {};
+        if (!repProd.productName || !repProd.productCategory) {
+          return res.status(400).json({ message: "Representative product details (Name and Category) are required." });
+        }
+
+        const hasLabelDoc = docTypes.includes("product_label_packaging") || docTypes.includes("product_labels");
+        if (!hasLabelDoc) {
+          return res.status(400).json({ message: "Product Label / Packaging document is required." });
+        }
+
+        const hasProductImgDoc = docTypes.includes("representative_product_image") || docTypes.includes("product_images");
+        if (!hasProductImgDoc) {
+          return res.status(400).json({ message: "Representative Product Image is required." });
+        }
+
+        // All checks passed! Update vendor state
         vendor.onboardingComplete = true;
         vendor.status = "under_review";
         vendor.onboardingStep = 5;
+        vendor.onboardingSubmittedAt = new Date();
+
         break;
+      }
 
       default:
         return res.status(400).json({ message: "Invalid onboarding step" });
     }
 
     await vendor.save();
-    // Clear vendor cache when onboarding is updated
     invalidateCache.vendors();
+
     res.json({
       onboardingStep: vendor.onboardingStep,
       onboardingComplete: vendor.onboardingComplete,
       status: vendor.status,
+      message: vendor.onboardingComplete ? "Application submitted successfully! Status: Under Review." : "Onboarding step saved.",
     });
   } catch (error) {
+    console.error("Onboarding error:", error);
     res.status(500).json({ message: error.message });
   }
 });

@@ -13,6 +13,12 @@ const complianceDocSchema = mongoose.Schema({
       "pan_card",
       "bank_details",
       "other",
+      "business_legal_identity",
+      "organic_certificate",
+      "product_specification",
+      "product_label_packaging",
+      "representative_product_image",
+      "laboratory_report_coa",
       "npop_certificate",
       "nabl_certificate",
       "product_scope_certificate",
@@ -223,6 +229,29 @@ const vendorSchema = mongoose.Schema(
     gstNumber: { type: String },
     panNumber: { type: String },
     fssaiNumber: { type: String },
+    isBusinessRegistered: { type: String, enum: ["yes", "no", "other"], default: "yes" },
+    gstApplicable: { type: String, enum: ["yes", "no", "na"], default: "yes" },
+    authorizedSignatoryName: { type: String },
+
+    // Organic Certification Details (New Onboarding Prototype)
+    organicCertification: {
+      certificationRoute: { type: String }, // npop, pgs, usda, eu, other
+      certificationBody: { type: String },
+      certificateNumber: { type: String },
+      certificateValidUntil: { type: Date },
+    },
+
+    // Representative Product (New Onboarding Prototype)
+    representativeProduct: {
+      productName: { type: String },
+      productCategory: { type: String },
+      certificationCoverage: { type: String }, // yes, no, unsure
+    },
+
+    // Traceability Declarations (New Onboarding Prototype)
+    maintainsTraceabilityRecords: { type: String, enum: ["yes", "no"] },
+    canProvideBatchSourceEvidence: { type: String, enum: ["yes", "no"] },
+    onboardingSubmittedAt: { type: Date },
 
     // GST Claim Feature
     claim_gst: {

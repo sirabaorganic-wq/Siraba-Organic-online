@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIRABA ORGANIC — Vendor Onboarding Prototype</title>
+<style>
+:root{
+  --gold:#b99a57;
+  --gold-dark:#9d8043;
+  --ink:#24302a;
+  --muted:#68736d;
+  --line:#d9ddd9;
+  --soft:#f7f8f6;
+  --white:#fff;
+  --green:#6d8a72;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:#f5f6f4;color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;
+}
+.page{max-width:860px;margin:0 auto;padding:28px 22px 60px}
+.brand{text-align:center;margin-bottom:18px}
+.brand-mark{font-size:13px;letter-spacing:4px;color:var(--gold-dark);font-weight:700}
+.brand-sub{font-size:10px;letter-spacing:2px;color:#777;margin-top:3px}
+.topbar{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#777;margin-bottom:20px}
+.stepper{display:flex;align-items:center;justify-content:center;margin:12px 0 28px}
+.step{display:flex;align-items:center;gap:7px;font-size:11px;color:#8a908c}
+.dot{width:25px;height:25px;border-radius:50%;border:1px solid #c8cec9;display:grid;place-items:center;font-size:10px;background:white}
+.step.active .dot{background:var(--green);border-color:var(--green);color:white}
+.step.active{color:var(--ink);font-weight:700}
+.connector{width:52px;height:1px;background:#bfc7c0;margin:0 8px}
+.hero{text-align:center;margin-bottom:22px}
+.hero h1{font-size:25px;margin:0 0 6px;font-weight:600}
+.hero p{font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:var(--muted);max-width:650px;margin:0 auto}
+.framework{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 26px}
+.pillar{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px 14px;text-align:center}
+.pillar strong{display:block;font-size:12px;letter-spacing:.5px}
+.pillar span{font-family:Arial,sans-serif;font-size:10px;color:var(--muted)}
+.section{background:white;border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden}
+.section-head{padding:16px 18px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#fff,#fafbf9)}
+.section-kicker{font-size:9px;letter-spacing:1.6px;color:var(--gold-dark);font-weight:700;margin-bottom:4px}
+.section-title{font-size:18px;font-weight:600;margin:0}
+.section-note{font-family:Arial,sans-serif;font-size:11px;color:var(--muted);line-height:1.55;margin-top:6px}
+.body{padding:16px 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff}
+.label{font-size:12px;font-weight:700;margin-bottom:4px}
+.hint{font-family:Arial,sans-serif;font-size:10px;color:#7b837e;margin-bottom:9px;line-height:1.4}
+input[type=text],input[type=date],select{
+ width:100%;height:36px;border:1px solid #cfd5d0;border-radius:5px;padding:0 10px;font-family:Arial,sans-serif;font-size:12px;background:#fff;color:var(--ink)
+}
+.radio-row{display:flex;flex-wrap:wrap;gap:8px}
+.radio{display:flex;align-items:center;gap:6px;border:1px solid #d5dad6;border-radius:18px;padding:7px 10px;font-family:Arial,sans-serif;font-size:11px;background:#fbfcfb;cursor:pointer}
+.radio input{accent-color:var(--green)}
+.upload{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ border:1px dashed #c8cec9;border-radius:8px;padding:12px;background:#fbfcfb
+}
+.upload-copy{min-width:0}
+.upload-title{font-size:12px;font-weight:700}
+.upload-meta{font-family:Arial,sans-serif;font-size:10px;color:#7b837e;margin-top:3px}
+.upload input{display:none}
+.upload-btn{border:1px solid #4d5b52;border-radius:6px;background:white;padding:8px 12px;font-family:Arial,sans-serif;font-size:10px;cursor:pointer}
+.file-name{font-family:Arial,sans-serif;font-size:10px;color:var(--green);margin-top:5px;display:none}
+.full{grid-column:1/-1}
+.note{background:#f7f8f6;border-left:3px solid var(--gold);padding:10px 12px;font-family:Arial,sans-serif;font-size:10.5px;color:#5f6862;line-height:1.55;border-radius:4px}
+.req{color:#a04b42}
+.optional{color:#6e806f;font-weight:400}
+.conditional{display:none;margin-top:10px}
+.checkbox{display:flex;gap:8px;align-items:flex-start;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;color:#59635d}
+.checkbox input{margin-top:2px;accent-color:var(--green)}
+.summary{margin-top:18px;border:1px solid #cfd5d0;border-radius:9px;padding:15px;background:#fff}
+.summary h3{font-size:14px;margin:0 0 10px}
+.summary ul{margin:0;padding-left:18px;font-family:Arial,sans-serif;font-size:11px;line-height:1.8;color:#59635d}
+.actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+.btn{border:1px solid #455249;border-radius:7px;padding:11px 18px;font-family:Arial,sans-serif;font-size:11px;cursor:pointer;background:#fff}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.footer{text-align:center;font-family:Arial,sans-serif;font-size:10px;color:#7b837e;margin-top:26px;line-height:1.6}
+@media(max-width:700px){
+ .grid,.framework{grid-template-columns:1fr}
+ .connector{width:18px}
+ .step span{display:none}
+ .page{padding:20px 12px 40px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="brand">
+    <div class="brand-mark">SIRABA ORGANIC™</div>
+    <div class="brand-sub">CERTIFIED • VERIFIED • QUALIFIED</div>
+  </div>
+
+  <div class="topbar"><span>VENDOR ONBOARDING</span><span>Save &amp; Continue Later</span></div>
+
+  <div class="stepper">
+    <div class="step active"><div class="dot">✓</div><span>Business</span></div>
+    <div class="connector"></div>
+    <div class="step active"><div class="dot">✓</div><span>Certification</span></div>
+    <div class="connector"></div>
+    <div class="step active"><div class="dot">3</div><span>Product</span></div>
+    <div class="connector"></div>
+    <div class="step active"><div class="dot">4</div><span>Quality</span></div>
+    <div class="connector"></div>
+    <div class="step"><div class="dot">5</div><span>Submit</span></div>
+  </div>
+
+  <div class="hero">
+    <h1>Vendor Qualification &amp; Onboarding</h1>
+    <p>Submit the essential evidence for qualification. SIRABA ORGANIC verifies the information internally and may request additional evidence only where required.</p>
+  </div>
+
+  <div class="framework">
+    <div class="pillar"><strong>01 — CERTIFIED™</strong><span>Organic certification</span></div>
+    <div class="pillar"><strong>02 — VERIFIED™</strong><span>Evidence &amp; compliance</span></div>
+    <div class="pillar"><strong>03 — QUALIFIED™</strong><span>Marketplace qualification</span></div>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-kicker">SECTION 1</div>
+      <h2 class="section-title">Business &amp; Food Safety</h2>
+      <div class="section-note">Provide the core business and regulatory documents applicable to your operation.</div>
+    </div>
+    <div class="body">
+      <div class="grid">
+        <div class="field full">
+          <div class="label">Is your business legally registered? <span class="req">*</span></div>
+          <div class="radio-row">
+            <label class="radio"><input type="radio" name="registered" value="yes"> Yes</label>
+            <label class="radio"><input type="radio" name="registered" value="no"> No</label>
+            <label class="radio"><input type="radio" name="registered" value="other"> Other / Applicable Structure</label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Business / Legal Identity Document <span class="req">*</span></div>
+          <div class="hint">Registration, incorporation, proprietorship, partnership, FPO/cooperative or equivalent.</div>
+          <div class="upload">
+            <div class="upload-copy"><div class="upload-title">Upload document</div><div class="upload-meta">PDF, JPG, PNG, WEBP • Max 5MB</div><div class="file-name"></div></div>
+            <label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">FSSAI Licence / Registration <span class="req">*</span></div>
+          <div class="hint">Required for applicable food businesses.</div>
+          <div class="upload">
+            <div class="upload-copy"><div class="upload-title">Upload FSSAI document</div><div class="upload-meta">PDF, JPG, PNG, WEBP • Max 5MB</div><div class="file-name"></div></div>
+            <label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Is GST Registration applicable? <span class="req">*</span></div>
+          <div class="radio-row">
+            <label class="radio"><input type="radio" name="gst" value="yes" onchange="toggle('gstUpload',true)"> Yes</label>
+            <label class="radio"><input type="radio" name="gst" value="no" onchange="toggle('gstUpload',false)"> No</label>
+            <label class="radio"><input type="radio" name="gst" value="na" onchange="toggle('gstUpload',false)"> Not Applicable</label>
+          </div>
+          <div id="gstUpload" class="conditional">
+            <div class="upload"><div class="upload-copy"><div class="upload-title">GST Certificate</div><div class="upload-meta">Upload only if applicable • Max 5MB</div><div class="file-name"></div></div><label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label></div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">PAN / Authorized Signatory Details <span class="optional">• Form Data</span></div>
+          <div class="hint">Enter the details in the application rather than uploading duplicate evidence where already captured.</div>
+          <input type="text" placeholder="PAN / Authorized Signatory Name">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-kicker">SECTION 2</div>
+      <h2 class="section-title">Organic Certification</h2>
+      <div class="section-note"><b>Required:</b> Submit one valid recognized organic certification applicable to the product and market.</div>
+    </div>
+    <div class="body">
+      <div class="field full">
+        <div class="label">Which organic certification route applies to your product? <span class="req">*</span></div>
+        <div class="radio-row">
+          <label class="radio"><input type="radio" name="organic" value="npop"> NPOP / India Organic</label>
+          <label class="radio"><input type="radio" name="organic" value="pgs"> PGS-India, where applicable</label>
+          <label class="radio"><input type="radio" name="organic" value="usda"> USDA Organic</label>
+          <label class="radio"><input type="radio" name="organic" value="eu"> EU Organic</label>
+          <label class="radio"><input type="radio" name="organic" value="other"> Other recognized certification</label>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <div class="field">
+          <div class="label">Certification Body <span class="req">*</span></div>
+          <input type="text" placeholder="Enter certification body">
+        </div>
+        <div class="field">
+          <div class="label">Certificate Number <span class="req">*</span></div>
+          <input type="text" placeholder="Enter certificate number">
+        </div>
+        <div class="field">
+          <div class="label">Certificate Valid Until <span class="req">*</span></div>
+          <input type="date">
+        </div>
+        <div class="field">
+          <div class="label">Organic Certificate <span class="req">*</span></div>
+          <div class="upload"><div class="upload-copy"><div class="upload-title">Upload certificate</div><div class="upload-meta">PDF, JPG, PNG, WEBP • Max 5MB</div><div class="file-name"></div></div><label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label></div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px">
+        <b>No duplicate upload:</b> You do not need to upload a separate Product Scope Certificate if the submitted certification already establishes that the representative product is covered. SIRABA may request scope/supporting documentation only where product coverage is unclear or additional verification is required.
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-kicker">SECTION 3</div>
+      <h2 class="section-title">Representative Product</h2>
+      <div class="section-note">Submit <b>one</b> representative product for initial vendor qualification. Your complete catalogue can be added after vendor approval.</div>
+    </div>
+    <div class="body">
+      <div class="grid">
+        <div class="field">
+          <div class="label">Product Name <span class="req">*</span></div>
+          <input type="text" placeholder="e.g., Certified Organic Cow Ghee">
+        </div>
+        <div class="field">
+          <div class="label">Product Category <span class="req">*</span></div>
+          <select><option>Select SIRABA category</option><option>Organic Dairy</option><option>Organic Oils & Fats</option><option>Organic Spices</option><option>Organic Grains & Pulses</option><option>Organic Foods</option><option>Other</option></select>
+        </div>
+        <div class="field">
+          <div class="label">Is this product covered by your submitted organic certification? <span class="req">*</span></div>
+          <div class="radio-row">
+            <label class="radio"><input type="radio" name="covered" value="yes"> Yes</label>
+            <label class="radio"><input type="radio" name="covered" value="no"> No</label>
+            <label class="radio"><input type="radio" name="covered" value="unsure"> Not Sure</label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Product Specification / Ingredients <span class="optional">• Where Applicable</span></div>
+          <div class="upload"><div class="upload-copy"><div class="upload-title">Upload document</div><div class="upload-meta">Optional at initial qualification • Max 5MB</div><div class="file-name"></div></div><label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label></div>
+        </div>
+        <div class="field">
+          <div class="label">Product Label / Packaging <span class="req">*</span></div>
+          <div class="hint">Upload the current label/packaging showing applicable declarations.</div>
+          <div class="upload"><div class="upload-copy"><div class="upload-title">Upload label</div><div class="upload-meta">PDF, JPG, PNG, WEBP • Max 5MB</div><div class="file-name"></div></div><label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label></div>
+        </div>
+        <div class="field">
+          <div class="label">Representative Product Image <span class="req">*</span></div>
+          <div class="upload"><div class="upload-copy"><div class="upload-title">Upload image</div><div class="upload-meta">JPG, PNG, WEBP • Max 5MB</div><div class="file-name"></div></div><label class="upload-btn">Upload<input type="file" accept=".jpg,.jpeg,.png,.webp"></label></div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px">
+        <b>Important:</b> You are not required to submit your complete product catalogue during vendor onboarding. Once your vendor application is approved, you can add eligible products through the Product Listing section. Product-level verification may apply before publication.
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-kicker">SECTION 4</div>
+      <h2 class="section-title">Quality &amp; Traceability</h2>
+      <div class="section-note">Keep the evidence simple at onboarding. SIRABA may request additional supporting records based on product risk and verification findings.</div>
+    </div>
+    <div class="body">
+      <div class="grid">
+        <div class="field">
+          <div class="label">Accredited Laboratory Report / CoA <span class="optional">• Recommended</span></div>
+          <div class="hint">NABL-accredited or appropriately accredited international laboratory, where available.</div>
+          <div class="upload"><div class="upload-copy"><div class="upload-title">Upload report / CoA</div><div class="upload-meta">PDF, JPG, PNG, WEBP • Max 5MB</div><div class="file-name"></div></div><label class="upload-btn">Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"></label></div>
+        </div>
+        <div class="field">
+          <div class="label">Do you maintain product traceability records? <span class="req">*</span></div>
+          <div class="radio-row">
+            <label class="radio"><input type="radio" name="trace" value="yes"> Yes</label>
+            <label class="radio"><input type="radio" name="trace" value="no"> No</label>
+          </div>
+          <div class="hint" style="margin-top:8px">Records may include source, procurement, production, batch, storage and dispatch information.</div>
+        </div>
+        <div class="field full">
+          <div class="label">Do you maintain records that can support batch/source verification if requested by SIRABA? <span class="req">*</span></div>
+          <div class="radio-row">
+            <label class="radio"><input type="radio" name="evidence" value="yes"> Yes</label>
+            <label class="radio"><input type="radio" name="evidence" value="no"> No</label>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px">
+        <b>No full traceability file required at onboarding.</b> SIRABA does not require vendors to upload every source-farm, procurement, supply-chain or batch record at the initial application stage. Relevant evidence may be requested during verification or product review.
+      </div>
+    </div>
+  </section>
+
+  <div class="summary">
+    <h3>Initial Submission — What You Need</h3>
+    <ul>
+      <li>Business / Legal Identity document</li>
+      <li>FSSAI Licence / Registration, where applicable</li>
+      <li>GST Certificate, where applicable</li>
+      <li>One valid recognized Organic Certificate</li>
+      <li>One Representative Product</li>
+      <li>Product Label / Packaging + Product Image</li>
+      <li>Traceability declaration</li>
+      <li>Laboratory Report / CoA — recommended, not universally mandatory</li>
+    </ul>
+  </div>
+
+  <div class="actions">
+    <button class="btn">← Save &amp; Continue Later</button>
+    <button class="btn primary" onclick="alert('Prototype only — connect this button to your onboarding submission workflow.')">Review &amp; Submit →</button>
+  </div>
+
+  <div class="footer">
+    <b>SIRABA ORGANIC™ — Certified • Verified • Qualified</b><br>
+    Your application is subject to SIRABA ORGANIC's verification and marketplace qualification process.<br>
+    Additional evidence may be requested where required by product, certification, regulation or verification findings.
+  </div>
+</div>
+
+<script>
+function toggle(id,show){document.getElementById(id).style.display=show?'block':'none'}
+document.querySelectorAll('input[type=file]').forEach(input=>{
+  input.addEventListener('change',()=>{
+    const box=input.closest('.upload');
+    const name=box.querySelector('.file-name');
+    if(input.files.length){name.textContent='✓ '+input.files[0].name;name.style.display='block'}
+    else{name.style.display='none'}
+  });
+});
+</script>
+</body>
+</html>

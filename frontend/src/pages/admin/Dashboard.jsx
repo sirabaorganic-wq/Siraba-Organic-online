@@ -5,6 +5,7 @@ import { useOrders } from "../../context/OrderContext";
 import { useSocket } from "../../context/SocketContext";
 import { useCurrency } from "../../context/CurrencyContext";
 import { Navigate, useNavigate } from "react-router-dom";
+import { getDocumentViewUrl } from "../../utils/documentViewer";
 import {
   Users,
   ShoppingBag,
@@ -4352,7 +4353,7 @@ const AdminDashboard = () => {
                   </div>
                   <div className="flex gap-2">
                     <a
-                      href={doc.fileUrl}
+                      href={getDocumentViewUrl(doc.fileUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 border border-secondary/20 rounded-sm hover:bg-secondary/5"
