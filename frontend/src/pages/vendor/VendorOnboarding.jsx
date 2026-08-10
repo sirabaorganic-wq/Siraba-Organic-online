@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useVendor } from "../../context/VendorContext";
 import { useNavigate, Link } from "react-router-dom";
-import { Upload, Check, AlertCircle, LogOut, ArrowRight, Save } from "lucide-react";
+import { Upload, Check, AlertCircle, LogOut, ArrowRight, Save, Trash2, Eye } from "lucide-react";
 import Logo from "../../assets/SIRABALOGO.png";
 import client from "../../api/client";
+import { getDocumentViewUrl } from "../../utils/documentViewer";
 
 const ACTIVE_DOCUMENTS = [
   {
@@ -34,13 +35,31 @@ const ACTIVE_DOCUMENTS = [
     required: false, // conditional
   },
   {
-    type: "organic_certificate",
-    title: "Organic Certificate",
-    hint: "PDF, JPG, PNG, WEBP • Max 5MB",
+    type: "npop_certificate",
+    title: "NPOP / India Organic Certificate",
+    hint: "Mandatory • PDF, JPG, PNG, WEBP • Max 5MB",
     accept: ".pdf,.jpg,.jpeg,.png,.webp",
     mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
     maxSize: 5 * 1024 * 1024,
     required: true,
+  },
+  {
+    type: "usda_organic_certificate",
+    title: "USDA Organic Certificate",
+    hint: "Mandatory • PDF, JPG, PNG, WEBP • Max 5MB",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
+    required: true,
+  },
+  {
+    type: "other_organic_certificate",
+    title: "Other Organic Certificate (EU, PGS-India, etc.)",
+    hint: "Optional • PDF, JPG, PNG, WEBP • Max 5MB",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
+    required: false,
   },
   {
     type: "product_specification",
@@ -81,7 +100,7 @@ const ACTIVE_DOCUMENTS = [
 ];
 
 const VendorOnboarding = () => {
-  const { vendor, updateOnboarding, addComplianceDoc, logout, refreshVendorStatus } = useVendor();
+  const { vendor, updateOnboarding, addComplianceDoc, deleteComplianceDoc, logout, refreshVendorStatus } = useVendor();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
@@ -99,13 +118,140 @@ const VendorOnboarding = () => {
 
   // Certification Details
   const [certificationRoute, setCertificationRoute] = useState(vendor?.organicCertification?.certificationRoute || "npop");
-  const [certificationBody, setCertificationBody] = useState(vendor?.organicCertification?.certificationBody || "");
-  const [certificateNumber, setCertificateNumber] = useState(vendor?.organicCertification?.certificateNumber || "");
-  const [certificateValidUntil, setCertificateValidUntil] = useState(
-    vendor?.organicCertification?.certificateValidUntil
-      ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
-      : ""
+  
+  // Certifications By Route map state
+  const [certificationsByRoute, setCertificationsByRoute] = useState(() => {
+    const initialMap = {
+      npop: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+      usda: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+      pgs: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+      eu: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+      other: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+    };
+
+    const savedByRoute = vendor?.organicCertification?.certificationsByRoute || {};
+    Object.keys(initialMap).forEach((routeKey) => {
+      if (savedByRoute[routeKey]) {
+        initialMap[routeKey] = {
+          certificationBody: savedByRoute[routeKey].certificationBody || "",
+          certificateNumber: savedByRoute[routeKey].certificateNumber || "",
+          certificateValidUntil: savedByRoute[routeKey].certificateValidUntil
+            ? new Date(savedByRoute[routeKey].certificateValidUntil).toISOString().split("T")[0]
+            : "",
+        };
+      }
+    });
+
+    const currentRoute = vendor?.organicCertification?.certificationRoute || "npop";
+    if (vendor?.organicCertification?.certificationBody && !initialMap[currentRoute]?.certificationBody) {
+      initialMap[currentRoute] = {
+        certificationBody: vendor.organicCertification.certificationBody || "",
+        certificateNumber: vendor.organicCertification.certificateNumber || "",
+        certificateValidUntil: vendor.organicCertification.certificateValidUntil
+          ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
+          : "",
+      };
+    }
+
+    return initialMap;
+  });
+
+  const activeRouteData = certificationsByRoute[certificationRoute] || {
+    certificationBody: "",
+    certificateNumber: "",
+    certificateValidUntil: "",
+  };
+
+  const [certificationBody, setCertificationBody] = useState(
+    activeRouteData.certificationBody || vendor?.organicCertification?.certificationBody || ""
   );
+  const [certificateNumber, setCertificateNumber] = useState(
+    activeRouteData.certificateNumber || vendor?.organicCertification?.certificateNumber || ""
+  );
+  const [certificateValidUntil, setCertificateValidUntil] = useState(
+    activeRouteData.certificateValidUntil ||
+      (vendor?.organicCertification?.certificateValidUntil
+        ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
+        : "")
+  );
+
+  const handleCertInputChange = (field, value) => {
+    if (field === "certificationBody") setCertificationBody(value);
+    if (field === "certificateNumber") setCertificateNumber(value);
+    if (field === "certificateValidUntil") setCertificateValidUntil(value);
+
+    setCertificationsByRoute((prev) => ({
+      ...prev,
+      [certificationRoute]: {
+        ...prev[certificationRoute],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleRouteSwitch = (newRoute) => {
+    // Save current input values into map
+    const updatedMap = {
+      ...certificationsByRoute,
+      [certificationRoute]: {
+        certificationBody,
+        certificateNumber,
+        certificateValidUntil,
+      },
+    };
+    setCertificationsByRoute(updatedMap);
+    setCertificationRoute(newRoute);
+
+    // Load values for newRoute
+    const targetData = updatedMap[newRoute] || { certificationBody: "", certificateNumber: "", certificateValidUntil: "" };
+    setCertificationBody(targetData.certificationBody || "");
+    setCertificateNumber(targetData.certificateNumber || "");
+    setCertificateValidUntil(targetData.certificateValidUntil || "");
+  };
+
+  const handleSaveRouteDetails = async (routeToSave = certificationRoute) => {
+    const updatedMap = {
+      ...certificationsByRoute,
+      [routeToSave]: {
+        certificationBody,
+        certificateNumber,
+        certificateValidUntil,
+      },
+    };
+    setCertificationsByRoute(updatedMap);
+
+    const routeLabel =
+      routeToSave === "npop"
+        ? "NPOP / India Organic"
+        : routeToSave === "usda"
+        ? "USDA Organic"
+        : routeToSave === "pgs"
+        ? "PGS-India"
+        : routeToSave === "eu"
+        ? "EU Organic"
+        : "Other";
+
+    try {
+      const res = await updateOnboarding(2, {
+        organicCertification: {
+          certificationRoute: routeToSave,
+          certificationBody,
+          certificateNumber,
+          certificateValidUntil,
+          certificationsByRoute: updatedMap,
+        },
+      });
+
+      if (res.success) {
+        setSuccess(`Saved details for ${routeLabel} certification!`);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(res.message || "Failed to save certification details.");
+      }
+    } catch (err) {
+      setError("Failed to save certification details.");
+    }
+  };
 
   // Representative Product
   const [productName, setProductName] = useState(vendor?.representativeProduct?.productName || "");
@@ -133,17 +279,108 @@ const VendorOnboarding = () => {
       // Populate compliance docs already uploaded
       if (vendor.complianceDocuments && vendor.complianceDocuments.length > 0) {
         const docMap = {};
+        const otherDocs = [];
         vendor.complianceDocuments.forEach((doc) => {
-          docMap[doc.type] = {
-            url: doc.fileUrl,
-            name: doc.name,
-            id: doc._id,
-          };
+          if (doc.type === "other_organic_certificate" || doc.type.startsWith("other_organic_certificate")) {
+            otherDocs.push({
+              url: doc.fileUrl,
+              name: doc.name,
+              id: doc._id,
+              type: doc.type,
+            });
+          } else {
+            docMap[doc.type] = {
+              url: doc.fileUrl,
+              name: doc.name,
+              id: doc._id,
+            };
+          }
         });
+        docMap.other_organic_certificates = otherDocs;
         setUploadedDocs(docMap);
       }
     }
   }, [vendor, navigate]);
+
+  const handleOtherCertFileUpload = async (file) => {
+    if (!file) return;
+
+    const currentList = uploadedDocs.other_organic_certificates || [];
+    if (currentList.length >= 5) {
+      setError("Maximum limit of 5 files reached for Other Organic Certificates.");
+      return;
+    }
+
+    const docDef = ACTIVE_DOCUMENTS.find((d) => d.type === "other_organic_certificate");
+    if (file.size > (docDef?.maxSize || 5 * 1024 * 1024)) {
+      setError(`File size exceeds maximum allowed (5MB) for ${file.name}`);
+      return;
+    }
+
+    setUploadingState((prev) => ({ ...prev, other_organic_certificate: true }));
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", `vendors/${vendor?._id || "vendor"}/compliance`);
+      formData.append("publicId", `other-organic-${Date.now()}`);
+
+      const { data } = await client.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const docName = `Other Organic Certificate #${currentList.length + 1} (${file.name})`;
+      const saveRes = await addComplianceDoc({
+        name: docName,
+        type: "other_organic_certificate",
+        fileUrl: data.url,
+      });
+
+      if (saveRes.success) {
+        setUploadedDocs((prev) => ({
+          ...prev,
+          other_organic_certificates: [
+            ...(prev.other_organic_certificates || []),
+            {
+              url: data.url,
+              name: docName,
+              id: saveRes.doc?._id || `temp-${Date.now()}`,
+            },
+          ],
+        }));
+        setSuccess("Other Organic Certificate uploaded successfully.");
+        setTimeout(() => setSuccess(""), 3000);
+        refreshVendorStatus();
+      } else {
+        setError(saveRes.message || "Failed to save document record.");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError(err.response?.data?.message || "Error uploading document");
+    } finally {
+      setUploadingState((prev) => ({ ...prev, other_organic_certificate: false }));
+    }
+  };
+
+  const handleDeleteOtherCertDoc = async (docId) => {
+    try {
+      const res = await deleteComplianceDoc(docId);
+      if (res.success) {
+        setUploadedDocs((prev) => ({
+          ...prev,
+          other_organic_certificates: (prev.other_organic_certificates || []).filter((d) => d.id !== docId),
+        }));
+        setSuccess("Document deleted.");
+        setTimeout(() => setSuccess(""), 2000);
+        refreshVendorStatus();
+      } else {
+        setError(res.message || "Failed to delete document.");
+      }
+    } catch (err) {
+      setError("Failed to delete document.");
+    }
+  };
 
   const handleFileUpload = async (docDef, file) => {
     if (!file) return;
@@ -214,6 +451,14 @@ const VendorOnboarding = () => {
         certificationBody,
         certificateNumber,
         certificateValidUntil,
+        certificationsByRoute: {
+          ...certificationsByRoute,
+          [certificationRoute]: {
+            certificationBody,
+            certificateNumber,
+            certificateValidUntil,
+          },
+        },
       };
     } else if (stepNum === 3) {
       stepPayload.representativeProduct = {
@@ -257,6 +502,14 @@ const VendorOnboarding = () => {
         certificationBody,
         certificateNumber,
         certificateValidUntil,
+        certificationsByRoute: {
+          ...certificationsByRoute,
+          [certificationRoute]: {
+            certificationBody,
+            certificateNumber,
+            certificateValidUntil,
+          },
+        },
       },
       representativeProduct: {
         productName,
@@ -583,8 +836,11 @@ const VendorOnboarding = () => {
           <div className="p-4 sm:p-5 font-sans space-y-4">
             {/* Route Selection */}
             <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
-              <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
-                Which organic certification route applies to your product? <span className="text-[#a04b42]">*</span>
+              <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif flex items-center justify-between">
+                <span>Which organic certification route applies to your product? <span className="text-[#a04b42]">*</span></span>
+                <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full font-sans font-bold border border-emerald-200">
+                  Select &amp; Fill for each certification
+                </span>
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
                 {[
@@ -593,86 +849,243 @@ const VendorOnboarding = () => {
                   { val: "usda", label: "USDA Organic" },
                   { val: "eu", label: "EU Organic" },
                   { val: "other", label: "Other recognized certification" },
-                ].map((route) => (
-                  <label
-                    key={route.val}
-                    className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
-                      certificationRoute === route.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="organicRoute"
-                      value={route.val}
-                      checked={certificationRoute === route.val}
-                      onChange={(e) => setCertificationRoute(e.target.value)}
-                      className="accent-[#6d8a72]"
-                    />
-                    {route.label}
-                  </label>
-                ))}
+                ].map((route) => {
+                  const hasData = certificationsByRoute[route.val]?.certificationBody && certificationsByRoute[route.val]?.certificateNumber;
+                  return (
+                    <label
+                      key={route.val}
+                      onClick={() => handleRouteSwitch(route.val)}
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] transition-all ${
+                        certificationRoute === route.val
+                          ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold shadow-sm"
+                          : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="organicRoute"
+                        value={route.val}
+                        checked={certificationRoute === route.val}
+                        onChange={() => {}}
+                        className="accent-[#6d8a72]"
+                      />
+                      {route.label}
+                      {hasData && <span className="text-[9px] text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.2 rounded-full">✓ Saved</span>}
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Cert Metadata + Upload Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Certification Body <span className="text-[#a04b42]">*</span></div>
-                <input
-                  type="text"
-                  placeholder="Enter certification body (e.g. OneCert, Control Union)"
-                  value={certificationBody}
-                  onChange={(e) => setCertificationBody(e.target.value)}
-                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
-                />
+            {/* Saved Routes Status Overview */}
+            <div className="bg-[#f8f9f7] border border-[#d9ddd9] rounded-lg p-3 text-xs">
+              <div className="text-[11px] font-bold text-[#24302a] mb-1 font-serif flex items-center justify-between">
+                <span>Certification Details Summary (Saved per route):</span>
+                <span className="text-[10px] text-slate-500 font-sans font-normal">Switch tabs to view/edit</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                <div className={`p-2 rounded border ${certificationsByRoute.npop?.certificationBody ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
+                  <strong className="block text-[11px]">NPOP / India Organic:</strong>
+                  {certificationsByRoute.npop?.certificationBody ? (
+                    <span>✓ Body: <b>{certificationsByRoute.npop.certificationBody}</b> | No: <b>{certificationsByRoute.npop.certificateNumber}</b></span>
+                  ) : (
+                    <em>Details pending - Select NPOP above to enter details</em>
+                  )}
+                </div>
+                <div className={`p-2 rounded border ${certificationsByRoute.usda?.certificationBody ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
+                  <strong className="block text-[11px]">USDA Organic:</strong>
+                  {certificationsByRoute.usda?.certificationBody ? (
+                    <span>✓ Body: <b>{certificationsByRoute.usda.certificationBody}</b> | No: <b>{certificationsByRoute.usda.certificateNumber}</b></span>
+                  ) : (
+                    <em>Details pending - Select USDA Organic above to enter details</em>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Active Route Header & Form inputs */}
+            <div className="border border-[#6d8a72] rounded-lg p-3 bg-gradient-to-br from-white to-[#f7f9f7] shadow-sm">
+              <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-emerald-100">
+                <div className="text-[12px] font-bold text-[#24302a] font-serif flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#6d8a72]"></span>
+                  Active Route Details: <span className="text-emerald-900 font-extrabold uppercase">
+                    {certificationRoute === "npop" ? "NPOP / India Organic" : certificationRoute === "usda" ? "USDA Organic" : certificationRoute === "pgs" ? "PGS-India" : certificationRoute === "eu" ? "EU Organic" : "Other"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSaveRouteDetails(certificationRoute)}
+                  className="bg-[#6d8a72] hover:bg-[#5a745f] text-white text-[11px] font-bold px-3 py-1.5 rounded-md transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
+                >
+                  ✓ Save Details for {certificationRoute.toUpperCase()}
+                </button>
               </div>
 
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Certificate Number <span className="text-[#a04b42]">*</span></div>
-                <input
-                  type="text"
-                  placeholder="Enter certificate number"
-                  value={certificateNumber}
-                  onChange={(e) => setCertificateNumber(e.target.value)}
-                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-white p-2.5 rounded border border-[#cfd5d0]">
+                  <div className="text-[11px] font-bold text-[#24302a] mb-1 font-serif">Certification Body <span className="text-[#a04b42]">*</span></div>
+                  <input
+                    type="text"
+                    placeholder="e.g. OneCert, Control Union"
+                    value={certificationBody}
+                    onChange={(e) => handleCertInputChange("certificationBody", e.target.value)}
+                    className="w-full h-8 border border-[#cfd5d0] rounded px-2 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                  />
+                </div>
 
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Certificate Valid Until <span className="text-[#a04b42]">*</span></div>
-                <input
-                  type="date"
-                  value={certificateValidUntil}
-                  onChange={(e) => setCertificateValidUntil(e.target.value)}
-                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
-                />
-              </div>
+                <div className="bg-white p-2.5 rounded border border-[#cfd5d0]">
+                  <div className="text-[11px] font-bold text-[#24302a] mb-1 font-serif">Certificate Number <span className="text-[#a04b42]">*</span></div>
+                  <input
+                    type="text"
+                    placeholder="Enter certificate number"
+                    value={certificateNumber}
+                    onChange={(e) => handleCertInputChange("certificateNumber", e.target.value)}
+                    className="w-full h-8 border border-[#cfd5d0] rounded px-2 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                  />
+                </div>
 
-              {/* Upload 4: Organic Certificate */}
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">Organic Certificate <span className="text-[#a04b42]">*</span></div>
+                <div className="bg-white p-2.5 rounded border border-[#cfd5d0]">
+                  <div className="text-[11px] font-bold text-[#24302a] mb-1 font-serif">Certificate Valid Until <span className="text-[#a04b42]">*</span></div>
+                  <input
+                    type="date"
+                    value={certificateValidUntil}
+                    onChange={(e) => handleCertInputChange("certificateValidUntil", e.target.value)}
+                    className="w-full h-8 border border-[#cfd5d0] rounded px-2 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                  />
+                </div>
+              </div>
+            </div>
+
+              {/* Upload 4a: NPOP Certificate (Mandatory) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
+                  NPOP / India Organic Certificate <span className="text-[#a04b42]">* Mandatory</span>
+                </div>
                 <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload certificate</div>
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload NPOP Certificate</div>
                     <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
-                    {uploadedDocs.organic_certificate && (
+                    {uploadedDocs.npop_certificate && (
                       <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
-                        ✓ {uploadedDocs.organic_certificate.name || "Uploaded"}
+                        ✓ {uploadedDocs.npop_certificate.name || "Uploaded"}
                       </div>
                     )}
                   </div>
                   <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
-                    {uploadingState.organic_certificate ? "Uploading..." : uploadedDocs.organic_certificate ? "Replace" : "Upload"}
+                    {uploadingState.npop_certificate ? "Uploading..." : uploadedDocs.npop_certificate ? "Replace" : "Upload"}
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.webp"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[3], e.target.files[0])}
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "npop_certificate"), e.target.files[0])}
                     />
                   </label>
                 </div>
               </div>
-            </div>
+
+              {/* Upload 4b: USDA Organic Certificate (Mandatory) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
+                  USDA Organic Certificate <span className="text-[#a04b42]">* Mandatory</span>
+                </div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload USDA Certificate</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.usda_organic_certificate && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                        ✓ {uploadedDocs.usda_organic_certificate.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.usda_organic_certificate ? "Uploading..." : uploadedDocs.usda_organic_certificate ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "usda_organic_certificate"), e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Upload 4c: Other Organic Certificate (Optional - Up to 5 files) */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-[12px] font-bold text-[#24302a] font-serif">
+                    Other Organic Certificates (EU, PGS-India, etc.) <span className="text-[#6e806f] font-normal">• Optional (Up to 5 files)</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#6d8a72] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    {(uploadedDocs.other_organic_certificates || []).length} / 5 files uploaded
+                  </span>
+                </div>
+
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb]">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload Additional Certificates</div>
+                      <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB per file (Upload up to 5 certificates)</div>
+                    </div>
+                    {(uploadedDocs.other_organic_certificates || []).length < 5 ? (
+                      <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                        {uploadingState.other_organic_certificate ? "Uploading..." : "+ Add Certificate File"}
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files[0]) {
+                              handleOtherCertFileUpload(e.target.files[0]);
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </label>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
+                        Limit Reached (5/5)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Uploaded files list */}
+                  {(uploadedDocs.other_organic_certificates || []).length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-slate-200 space-y-1.5">
+                      <div className="text-[10px] font-bold text-[#24302a] uppercase tracking-wider">Uploaded Documents:</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {uploadedDocs.other_organic_certificates.map((doc, idx) => (
+                          <div key={doc.id || idx} className="flex items-center justify-between bg-white border border-[#d5dad6] rounded p-2 text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                              <span className="text-emerald-700 font-bold">✓</span>
+                              <span className="truncate text-[11px] text-slate-800 font-medium">{doc.name || `Certificate ${idx + 1}`}</span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <a
+                                href={getDocumentViewUrl(doc.url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded"
+                                title="View document"
+                              >
+                                <Eye size={13} />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteOtherCertDoc(doc.id)}
+                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
+                                title="Delete document"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
             <div className="bg-[#f7f8f6] border-l-4 border-[#b99a57] p-3 text-[11px] text-[#5f6862] leading-relaxed rounded-r-md">
               <b>No duplicate upload:</b> You do not need to upload a separate Product Scope Certificate if the submitted certification already establishes that the representative product is covered. SIRABA may request scope/supporting documentation only where product coverage is unclear or additional verification is required.
@@ -768,7 +1181,7 @@ const VendorOnboarding = () => {
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.webp"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[4], e.target.files[0])}
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "product_specification"), e.target.files[0])}
                     />
                   </label>
                 </div>
@@ -794,7 +1207,7 @@ const VendorOnboarding = () => {
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.webp"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[5], e.target.files[0])}
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "product_label_packaging"), e.target.files[0])}
                     />
                   </label>
                 </div>
@@ -819,7 +1232,7 @@ const VendorOnboarding = () => {
                       type="file"
                       accept=".jpg,.jpeg,.png,.webp"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[6], e.target.files[0])}
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "representative_product_image"), e.target.files[0])}
                     />
                   </label>
                 </div>
@@ -868,7 +1281,7 @@ const VendorOnboarding = () => {
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.webp"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[7], e.target.files[0])}
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "laboratory_report_coa"), e.target.files[0])}
                     />
                   </label>
                 </div>
@@ -943,8 +1356,14 @@ const VendorOnboarding = () => {
             <li className={gstApplicable !== "yes" || uploadedDocs.gst_certificate ? "text-emerald-800 font-medium" : ""}>
               GST Certificate {gstApplicable === "yes" ? (uploadedDocs.gst_certificate ? "✓" : "(Required when applicable)") : "(Not Applicable)"}
             </li>
-            <li className={uploadedDocs.organic_certificate ? "text-emerald-800 font-medium" : ""}>
-              One valid recognized Organic Certificate {uploadedDocs.organic_certificate ? "✓" : "(Required)"}
+            <li className={uploadedDocs.npop_certificate ? "text-emerald-800 font-medium" : ""}>
+              NPOP / India Organic Certificate {uploadedDocs.npop_certificate ? "✓" : "(Required)"}
+            </li>
+            <li className={uploadedDocs.usda_organic_certificate ? "text-emerald-800 font-medium" : ""}>
+              USDA Organic Certificate {uploadedDocs.usda_organic_certificate ? "✓" : "(Required)"}
+            </li>
+            <li className={uploadedDocs.other_organic_certificate ? "text-emerald-800 font-medium" : ""}>
+              Other Organic Certificate {uploadedDocs.other_organic_certificate ? "✓" : "(Optional)"}
             </li>
             <li className={uploadedDocs.product_label_packaging && uploadedDocs.representative_product_image ? "text-emerald-800 font-medium" : ""}>
               Representative Product (Label + Product Image) {uploadedDocs.product_label_packaging && uploadedDocs.representative_product_image ? "✓" : "(Required)"}

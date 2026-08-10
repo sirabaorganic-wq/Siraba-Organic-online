@@ -137,6 +137,8 @@ const complianceValidators = [
       "bank_details",
       "other",
       "npop_certificate",
+      "usda_organic_certificate",
+      "other_organic_certificate",
       "nabl_certificate",
       "product_scope_certificate",
       "usda_organic_certificate",
@@ -615,12 +617,15 @@ router.put("/onboarding", protectVendor, async (req, res) => {
 
       case 2: { // Section 2: Organic Certification
         if (data.organicCertification) {
-          const { certificationRoute, certificationBody, certificateNumber, certificateValidUntil } = data.organicCertification;
+          const { certificationRoute, certificationBody, certificateNumber, certificateValidUntil, certificationsByRoute } = data.organicCertification;
           vendor.organicCertification = {
             certificationRoute: certificationRoute || vendor.organicCertification?.certificationRoute,
             certificationBody: certificationBody || vendor.organicCertification?.certificationBody,
             certificateNumber: certificateNumber || vendor.organicCertification?.certificateNumber,
             certificateValidUntil: certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
+            certificationsByRoute: certificationsByRoute
+              ? { ...vendor.organicCertification?.certificationsByRoute, ...certificationsByRoute }
+              : vendor.organicCertification?.certificationsByRoute || {},
           };
         } else if (data.certificationRoute || data.certificationBody) {
           vendor.organicCertification = {
@@ -628,6 +633,7 @@ router.put("/onboarding", protectVendor, async (req, res) => {
             certificationBody: data.certificationBody || vendor.organicCertification?.certificationBody,
             certificateNumber: data.certificateNumber || vendor.organicCertification?.certificateNumber,
             certificateValidUntil: data.certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
+            certificationsByRoute: vendor.organicCertification?.certificationsByRoute || {},
           };
         }
 
@@ -716,10 +722,16 @@ router.put("/onboarding", protectVendor, async (req, res) => {
           }
         }
 
-        // 4. Organic Certificate Check
-        const hasOrganicDoc = docTypes.includes("organic_certificate") || docTypes.includes("organic_certification") || docTypes.includes("npop_certificate");
-        if (!hasOrganicDoc) {
-          return res.status(400).json({ message: "Organic Certificate is required." });
+        // 4. NPOP Certificate Check (Mandatory)
+        const hasNpopDoc = docTypes.includes("npop_certificate") || docTypes.includes("organic_certificate");
+        if (!hasNpopDoc) {
+          return res.status(400).json({ message: "NPOP / India Organic Certificate is required." });
+        }
+
+        // 5. USDA Organic Certificate Check (Mandatory)
+        const hasUsdaDoc = docTypes.includes("usda_organic_certificate");
+        if (!hasUsdaDoc) {
+          return res.status(400).json({ message: "USDA Organic Certificate is required." });
         }
 
         // 5. Organic Certificate Metadata Check

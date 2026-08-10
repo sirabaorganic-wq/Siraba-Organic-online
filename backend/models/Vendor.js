@@ -23,6 +23,7 @@ const complianceDocSchema = mongoose.Schema({
       "nabl_certificate",
       "product_scope_certificate",
       "usda_organic_certificate",
+      "other_organic_certificate",
       "eu_organic_certificate",
       "jas_organic_certificate",
       "india_organic_certificate",
@@ -239,6 +240,33 @@ const vendorSchema = mongoose.Schema(
       certificationBody: { type: String },
       certificateNumber: { type: String },
       certificateValidUntil: { type: Date },
+      certificationsByRoute: {
+        npop: {
+          certificationBody: { type: String },
+          certificateNumber: { type: String },
+          certificateValidUntil: { type: Date },
+        },
+        usda: {
+          certificationBody: { type: String },
+          certificateNumber: { type: String },
+          certificateValidUntil: { type: Date },
+        },
+        pgs: {
+          certificationBody: { type: String },
+          certificateNumber: { type: String },
+          certificateValidUntil: { type: Date },
+        },
+        eu: {
+          certificationBody: { type: String },
+          certificateNumber: { type: String },
+          certificateValidUntil: { type: Date },
+        },
+        other: {
+          certificationBody: { type: String },
+          certificateNumber: { type: String },
+          certificateValidUntil: { type: Date },
+        },
+      },
     },
 
     // Representative Product (New Onboarding Prototype)

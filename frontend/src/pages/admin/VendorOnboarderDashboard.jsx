@@ -285,12 +285,31 @@ const VendorOnboarderDashboard = () => {
                       {selectedVendor.organicCertification && (
                         <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
                           <span className="text-slate-500 block font-bold mb-1">Organic Certification Details:</span>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-700">
-                            <div><strong>Route:</strong> {selectedVendor.organicCertification.certificationRoute?.toUpperCase()}</div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-700 mb-2">
+                            <div><strong>Primary Route:</strong> {selectedVendor.organicCertification.certificationRoute?.toUpperCase()}</div>
                             <div><strong>Body:</strong> {selectedVendor.organicCertification.certificationBody || "N/A"}</div>
                             <div><strong>Number:</strong> {selectedVendor.organicCertification.certificateNumber || "N/A"}</div>
                             <div><strong>Valid Until:</strong> {selectedVendor.organicCertification.certificateValidUntil ? new Date(selectedVendor.organicCertification.certificateValidUntil).toLocaleDateString() : "N/A"}</div>
                           </div>
+
+                          {selectedVendor.organicCertification.certificationsByRoute && (
+                            <div className="bg-slate-50 p-2.5 rounded border border-slate-200 mt-2 space-y-1.5 text-xs">
+                              <span className="font-bold text-slate-700 block text-[11px] uppercase tracking-wider">All Saved Route Certifications:</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {Object.entries(selectedVendor.organicCertification.certificationsByRoute).map(([routeKey, rData]) => {
+                                  if (!rData?.certificationBody && !rData?.certificateNumber) return null;
+                                  return (
+                                    <div key={routeKey} className="bg-white p-2 rounded border border-slate-200 text-[11px]">
+                                      <strong className="text-emerald-800 uppercase block font-bold">{routeKey === "npop" ? "NPOP / India Organic" : routeKey === "usda" ? "USDA Organic" : routeKey}:</strong>
+                                      <div><strong>Body:</strong> {rData.certificationBody || "N/A"}</div>
+                                      <div><strong>Cert #:</strong> {rData.certificateNumber || "N/A"}</div>
+                                      <div><strong>Valid Until:</strong> {rData.certificateValidUntil ? new Date(rData.certificateValidUntil).toLocaleDateString() : "N/A"}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
