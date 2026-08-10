@@ -113,6 +113,7 @@ const AdminDashboard = () => {
   const [vendorFilter, setVendorFilter] = useState("");
   const [vendorSearch, setVendorSearch] = useState("");
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const [selectedVendorIds, setSelectedVendorIds] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [activeVendorModalTab, setActiveVendorModalTab] = useState("details");
   const [adminVendorProducts, setAdminVendorProducts] = useState([]);
@@ -3384,6 +3385,76 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteVendor = async (vendorId, businessName) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete vendor "${businessName}"?\n\nThis will permanently remove all vendor data (profile, products, orders, messages, and certificates) and allow this vendor to re-register.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { data } = await client.delete(`/admin/vendors/${vendorId}`);
+      alert(data.message || `Vendor "${businessName}" deleted successfully.`);
+      if (selectedVendor && selectedVendor._id === vendorId) {
+        setSelectedVendor(null);
+      }
+      // Refresh vendors list
+      const params = new URLSearchParams();
+      if (vendorFilter) params.append("status", vendorFilter);
+      const res = await client.get(`/admin/vendors?${params.toString()}`);
+      setVendors(res.data.vendors);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to delete vendor");
+    }
+  };
+
+  const handleBulkDeleteVendors = async () => {
+    if (selectedVendorIds.length === 0) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to permanently delete ${selectedVendorIds.length} selected vendor(s)?\n\nThis action cannot be undone and will delete all associated products, orders, and certificates for these vendors, allowing them to re-register.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { data } = await client.post("/admin/vendors/bulk-delete", {
+        vendorIds: selectedVendorIds,
+      });
+      alert(data.message || `Deleted ${selectedVendorIds.length} vendor(s) successfully.`);
+      setSelectedVendorIds([]);
+      if (selectedVendor && selectedVendorIds.includes(selectedVendor._id)) {
+        setSelectedVendor(null);
+      }
+      // Refresh vendors list
+      const params = new URLSearchParams();
+      if (vendorFilter) params.append("status", vendorFilter);
+      const res = await client.get(`/admin/vendors?${params.toString()}`);
+      setVendors(res.data.vendors);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to bulk delete vendors");
+    }
+  };
+
+  const handleSelectAllVendors = (e) => {
+    if (e.target.checked) {
+      setSelectedVendorIds(vendors.map((v) => v._id));
+    } else {
+      setSelectedVendorIds([]);
+    }
+  };
+
+  const handleSelectOneVendor = (vendorId) => {
+    setSelectedVendorIds((prev) =>
+      prev.includes(vendorId)
+        ? prev.filter((id) => id !== vendorId)
+        : [...prev, vendorId]
+    );
+  };
+
   // Handle compliance document approval/rejection
   const handleComplianceDocApproval = async (
     vendorId,
@@ -3531,12 +3602,50 @@ const AdminDashboard = () => {
           />
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedVendorIds.length > 0 && (
+          <div className="bg-red-50 border border-red-200 p-4 rounded-sm flex items-center justify-between animate-fade-in shadow-sm">
+            <span className="text-sm font-bold text-red-700 flex items-center gap-2">
+              <span className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                {selectedVendorIds.length}
+              </span>
+              vendor(s) selected for deletion
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBulkDeleteVendors}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-sm text-xs font-bold uppercase flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+              >
+                <Trash2 size={16} /> Delete Selected ({selectedVendorIds.length})
+              </button>
+              <button
+                onClick={() => setSelectedVendorIds([])}
+                className="px-3 py-2 border border-red-300 hover:bg-red-100 text-red-700 rounded-sm text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Deselect All
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Vendors Table */}
         <div className="bg-surface rounded-sm border border-secondary/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary/5 border-b">
                 <tr>
+                  <th className="px-4 py-4 text-center w-12">
+                    <input
+                      type="checkbox"
+                      checked={
+                        vendors.length > 0 &&
+                        selectedVendorIds.length === vendors.length
+                      }
+                      onChange={handleSelectAllVendors}
+                      className="w-4 h-4 text-primary rounded border-secondary/30 focus:ring-accent cursor-pointer"
+                      title="Select All Vendors"
+                    />
+                  </th>
                   <th className="text-left px-6 py-4 text-sm font-medium text-text-secondary">
                     Business
                   </th>
@@ -3562,7 +3671,22 @@ const AdminDashboard = () => {
               </thead>
               <tbody className="divide-y divide-secondary/10">
                 {vendors.map((vendor) => (
-                  <tr key={vendor._id} className="hover:bg-secondary/5">
+                  <tr
+                    key={vendor._id}
+                    className={`hover:bg-secondary/5 transition-colors ${
+                      selectedVendorIds.includes(vendor._id)
+                        ? "bg-red-50/40"
+                        : ""
+                    }`}
+                  >
+                    <td className="px-4 py-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedVendorIds.includes(vendor._id)}
+                        onChange={() => handleSelectOneVendor(vendor._id)}
+                        className="w-4 h-4 text-primary rounded border-secondary/30 focus:ring-accent cursor-pointer"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -3652,6 +3776,15 @@ const AdminDashboard = () => {
                             <Ban size={16} />
                           </button>
                         )}
+                        <button
+                          onClick={() =>
+                            handleDeleteVendor(vendor._id, vendor.businessName)
+                          }
+                          className="p-2 hover:bg-red-50 rounded-sm text-red-600"
+                          title="Delete Vendor"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -3958,6 +4091,17 @@ const AdminDashboard = () => {
                         <Ban size={16} /> Suspend Vendor
                       </button>
                     )}
+                    <button
+                      onClick={() =>
+                        handleDeleteVendor(
+                          selectedVendor._id,
+                          selectedVendor.businessName,
+                        )
+                      }
+                      className="flex-1 py-2 bg-red-600 text-white rounded-sm hover:bg-red-700 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={16} /> Delete Vendor
+                    </button>
                     <button
                       onClick={() => setSelectedVendor(null)}
                       className="flex-1 py-2 border border-secondary/20 rounded-sm hover:bg-secondary/5"

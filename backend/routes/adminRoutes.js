@@ -5,6 +5,11 @@ const VendorOrder = require("../models/VendorOrder");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const VendorMessage = require("../models/VendorMessage");
+const VendorTransfer = require("../models/VendorTransfer");
+const Notification = require("../models/Notification");
+const OTP = require("../models/OTP");
+const Review = require("../models/Review");
 const { protect, admin, adminOrVendorOnboarder } = require("../middleware/authMiddleware");
 const RefundLog = require("../models/RefundLog");
 const { invalidateCache } = require("../config/cache");
@@ -43,6 +48,76 @@ router.get("/vendors", protect, adminOrVendorOnboarder, async (req, res) => {
       total,
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Bulk delete vendors and all associated data completely
+// @route   POST /api/admin/vendors/bulk-delete
+// @access  Private/Admin
+router.post("/vendors/bulk-delete", protect, admin, async (req, res) => {
+  try {
+    const { vendorIds } = req.body;
+
+    if (!Array.isArray(vendorIds) || vendorIds.length === 0) {
+      return res.status(400).json({ message: "No vendor IDs provided for deletion" });
+    }
+
+    const vendors = await Vendor.find({ _id: { $in: vendorIds } });
+    if (vendors.length === 0) {
+      return res.status(404).json({ message: "No matching vendors found" });
+    }
+
+    const actualVendorIds = vendors.map((v) => v._id);
+    const vendorEmails = vendors
+      .map((v) => (v.email ? v.email.toLowerCase() : ""))
+      .filter(Boolean);
+
+    // 1. Find products belonging to these vendors
+    const vendorProducts = await Product.find({ vendor: { $in: actualVendorIds } }).select("_id");
+    const productIds = vendorProducts.map((p) => p._id);
+
+    // 2. Delete reviews on vendor products
+    if (productIds.length > 0) {
+      await Review.deleteMany({ product: { $in: productIds } });
+    }
+
+    // 3. Delete products
+    await Product.deleteMany({ vendor: { $in: actualVendorIds } });
+
+    // 4. Delete vendor orders
+    await VendorOrder.deleteMany({ vendor: { $in: actualVendorIds } });
+
+    // 5. Delete vendor messages
+    await VendorMessage.deleteMany({ vendor: { $in: actualVendorIds } });
+
+    // 6. Delete vendor transfers
+    await VendorTransfer.deleteMany({ vendor: { $in: actualVendorIds } });
+
+    // 7. Delete notifications
+    await Notification.deleteMany({ recipient: { $in: actualVendorIds }, recipientModel: "Vendor" });
+
+    // 8. Delete pending OTPs for vendor emails
+    if (vendorEmails.length > 0) {
+      await OTP.deleteMany({ identifier: { $in: vendorEmails } });
+    }
+
+    // 9. Delete Vendor documents
+    await Vendor.deleteMany({ _id: { $in: actualVendorIds } });
+
+    // 10. Invalidate cache
+    invalidateCache.vendors();
+    if (invalidateCache.products) {
+      invalidateCache.products();
+    }
+
+    res.json({
+      message: `Successfully deleted ${actualVendorIds.length} vendor(s) and all associated data. They can now re-register.`,
+      count: actualVendorIds.length,
+      deletedVendorIds: actualVendorIds,
+    });
+  } catch (error) {
+    console.error("Error bulk deleting vendors:", error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -376,6 +451,68 @@ router.put("/vendors/:id/certifications", protect, admin, async (req, res) => {
       message: `Vendor certifications ${verified ? "verified" : "updated"} successfully`,
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Delete vendor and all associated data completely
+// @route   DELETE /api/admin/vendors/:id
+// @access  Private/Admin
+router.delete("/vendors/:id", protect, admin, async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const vendorId = vendor._id;
+    const vendorEmail = vendor.email ? vendor.email.toLowerCase() : "";
+
+    // 1. Find all products belonging to this vendor
+    const vendorProducts = await Product.find({ vendor: vendorId }).select("_id");
+    const productIds = vendorProducts.map((p) => p._id);
+
+    // 2. Delete reviews associated with vendor's products
+    if (productIds.length > 0) {
+      await Review.deleteMany({ product: { $in: productIds } });
+    }
+
+    // 3. Delete products created by this vendor
+    await Product.deleteMany({ vendor: vendorId });
+
+    // 4. Delete vendor orders
+    await VendorOrder.deleteMany({ vendor: vendorId });
+
+    // 5. Delete vendor messages
+    await VendorMessage.deleteMany({ vendor: vendorId });
+
+    // 6. Delete vendor transfers
+    await VendorTransfer.deleteMany({ vendor: vendorId });
+
+    // 7. Delete notifications addressed to this vendor
+    await Notification.deleteMany({ recipient: vendorId, recipientModel: "Vendor" });
+
+    // 8. Delete pending OTPs for the vendor email
+    if (vendorEmail) {
+      await OTP.deleteMany({ identifier: vendorEmail });
+    }
+
+    // 9. Delete the Vendor record itself
+    await Vendor.deleteOne({ _id: vendorId });
+
+    // 10. Invalidate cache
+    invalidateCache.vendors();
+    if (invalidateCache.products) {
+      invalidateCache.products();
+    }
+
+    res.json({
+      message: "Vendor and all associated data deleted successfully. The vendor can now re-register.",
+      vendorId,
+    });
+  } catch (error) {
+    console.error("Error deleting vendor:", error);
     res.status(500).json({ message: error.message });
   }
 });
