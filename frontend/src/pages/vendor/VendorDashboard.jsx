@@ -2320,6 +2320,8 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
     type: "email",
     currentValue: "",
   });
+  const [bankModalOpen, setBankModalOpen] = useState(false);
+  const [pickupModalOpen, setPickupModalOpen] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -2328,6 +2330,11 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
     };
     loadProfile();
   }, []);
+
+  const refreshData = async () => {
+    const fresh = await getProfile();
+    if (fresh) setProfileData(fresh);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -2344,7 +2351,7 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-6 font-sans">
       <h2 className="text-2xl font-heading font-medium text-primary">
         Account Settings
       </h2>
@@ -2428,6 +2435,66 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
               className="px-4 py-2 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
             >
               <Edit2 size={12} /> Update Phone (OTP)
+            </button>
+          </div>
+        </div>
+
+        {/* Bank & Payout Details Card */}
+        <div className="bg-secondary/5 p-6 rounded-sm border border-secondary/10 space-y-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">
+                Bank &amp; Payout Account
+              </label>
+              <p className="text-base font-bold text-primary">
+                {profileData.bankDetails?.bankName || "No Bank Configured"}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Account Holder: <span className="font-medium text-primary">{profileData.bankDetails?.accountHolderName || "N/A"}</span>
+              </p>
+              <p className="text-xs text-text-secondary font-mono">
+                Account Number: {profileData.bankDetails?.accountNumber ? `••••••••${profileData.bankDetails.accountNumber.slice(-4)}` : "Not provided"} | IFSC: {profileData.bankDetails?.ifscCode || "N/A"}
+              </p>
+              <p className="text-[11px] text-text-secondary uppercase tracking-wider mt-1">
+                Type: {profileData.bankDetails?.accountType || "current"} account {profileData.bankDetails?.branchName ? `(${profileData.bankDetails.branchName})` : ""}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBankModalOpen(true)}
+              className="px-4 py-2 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Edit Bank Details (OTP)
+            </button>
+          </div>
+        </div>
+
+        {/* Warehouse & Pickup Address Card */}
+        <div className="bg-secondary/5 p-6 rounded-sm border border-secondary/10 space-y-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">
+                Warehouse &amp; Shiprocket Pickup Location
+              </label>
+              <p className="text-base font-bold text-primary">
+                {profileData.pickupAddress?.facilityName || profileData.businessName || "Default Warehouse"}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Contact: <span className="font-medium text-primary">{profileData.pickupAddress?.contactPerson || profileData.contactPerson || "N/A"}</span> ({profileData.pickupAddress?.phone || profileData.phone || "N/A"})
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Address: {[profileData.pickupAddress?.addressLine1, profileData.pickupAddress?.addressLine2, profileData.pickupAddress?.city, profileData.pickupAddress?.state].filter(Boolean).join(", ")} {profileData.pickupAddress?.pincode ? `- ${profileData.pickupAddress.pincode}` : ""}
+              </p>
+              <p className="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block font-mono mt-1 font-semibold">
+                Shiprocket Pickup Code: {profileData.pickupAddress?.shiprocketLocationName || profileData.shiprocket_pickup_code || "Primary"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPickupModalOpen(true)}
+              className="px-4 py-2 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Edit Pickup Address (OTP)
             </button>
           </div>
         </div>
@@ -2590,6 +2657,288 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
         }}
         updateProfile={updateProfile}
       />
+
+      <VendorBankEditModal
+        isOpen={bankModalOpen}
+        initialData={profileData.bankDetails}
+        onClose={() => setBankModalOpen(false)}
+        onSuccess={refreshData}
+      />
+
+      <VendorPickupEditModal
+        isOpen={pickupModalOpen}
+        initialData={profileData.pickupAddress}
+        onClose={() => setPickupModalOpen(false)}
+        onSuccess={refreshData}
+      />
+    </div>
+  );
+};
+
+// Helper Modal for Updating Bank Details with OTP
+const VendorBankEditModal = ({ isOpen, initialData, onClose, onSuccess }) => {
+  const [bankData, setBankData] = useState({
+    accountHolderName: initialData?.accountHolderName || "",
+    bankName: initialData?.bankName || "",
+    accountNumber: initialData?.accountNumber || "",
+    confirmAccountNumber: initialData?.accountNumber || "",
+    ifscCode: initialData?.ifscCode || "",
+    branchName: initialData?.branchName || "",
+    accountType: initialData?.accountType || "current",
+    upiId: initialData?.upiId || "",
+  });
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSendOtp = async () => {
+    setError("");
+    if (!bankData.accountNumber || !bankData.ifscCode || !bankData.accountHolderName) {
+      setError("Account holder name, account number, and IFSC code are required.");
+      return;
+    }
+    if (bankData.accountNumber !== bankData.confirmAccountNumber) {
+      setError("Account numbers do not match.");
+      return;
+    }
+    setSendingOtp(true);
+    try {
+      await client.post("/vendors/request-sensitive-otp", { context: "Bank Details Update" });
+      setOtpSent(true);
+      setSuccess("OTP sent to your registered email address.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP email.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!otpSent) {
+      return handleSendOtp();
+    }
+    if (!otp.trim()) {
+      setError("Please enter the 6-digit OTP received on email.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await client.put("/vendors/bank-details", { bankDetails: bankData, otp });
+      setSuccess("Bank details updated successfully!");
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update bank details. Invalid OTP.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-surface rounded-sm p-6 max-w-lg w-full shadow-2xl border border-secondary/10 font-sans max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 border-b border-secondary/10 pb-3">
+          <h3 className="text-xl font-heading font-medium text-primary">Update Bank &amp; Payout Details</h3>
+          <button onClick={onClose} className="text-text-secondary hover:text-primary"><X size={20} /></button>
+        </div>
+
+        {error && <div className="p-3 mb-3 bg-red-50 text-red-700 text-xs rounded border border-red-200">{error}</div>}
+        {success && <div className="p-3 mb-3 bg-green-50 text-green-700 text-xs rounded border border-green-200">{success}</div>}
+
+        <form onSubmit={handleSave} className="space-y-3 text-xs">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Account Holder Name *</label>
+              <input type="text" value={bankData.accountHolderName} onChange={(e) => setBankData({ ...bankData, accountHolderName: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Bank Name *</label>
+              <input type="text" value={bankData.bankName} onChange={(e) => setBankData({ ...bankData, bankName: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Account Number *</label>
+              <input type="text" value={bankData.accountNumber} onChange={(e) => setBankData({ ...bankData, accountNumber: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary font-mono" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Confirm Account Number *</label>
+              <input type="text" value={bankData.confirmAccountNumber} onChange={(e) => setBankData({ ...bankData, confirmAccountNumber: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary font-mono" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">IFSC Code *</label>
+              <input type="text" value={bankData.ifscCode} onChange={(e) => setBankData({ ...bankData, ifscCode: e.target.value.toUpperCase() })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary font-mono uppercase" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Branch Name</label>
+              <input type="text" value={bankData.branchName} onChange={(e) => setBankData({ ...bankData, branchName: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Account Type *</label>
+              <select value={bankData.accountType} onChange={(e) => setBankData({ ...bankData, accountType: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary">
+                <option value="current">Current Account</option>
+                <option value="savings">Savings Account</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">UPI ID (Optional)</label>
+              <input type="text" value={bankData.upiId} onChange={(e) => setBankData({ ...bankData, upiId: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" />
+            </div>
+          </div>
+
+          {!otpSent ? (
+            <button type="button" onClick={handleSendOtp} disabled={sendingOtp} className="w-full mt-4 py-3 bg-accent text-primary font-bold uppercase tracking-wider rounded shadow-sm hover:bg-primary hover:text-white transition">
+              {sendingOtp ? "Sending Email OTP..." : "Send Email Verification OTP"}
+            </button>
+          ) : (
+            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded space-y-2">
+              <label className="block text-xs font-bold text-primary">Enter Email OTP Sent To Vendor Email *</label>
+              <input type="text" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter 6-digit OTP" className="w-full h-10 border text-center font-mono text-base tracking-widest rounded bg-white" required />
+              <button type="submit" disabled={submitting} className="w-full py-3 bg-green-600 text-white font-bold uppercase tracking-wider rounded shadow-sm hover:bg-green-700 transition">
+                {submitting ? "Verifying..." : "Verify OTP & Save Bank Details"}
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Helper Modal for Updating Warehouse & Pickup Address with OTP
+const VendorPickupEditModal = ({ isOpen, initialData, onClose, onSuccess }) => {
+  const [pickupData, setPickupData] = useState({
+    facilityName: initialData?.facilityName || "",
+    contactPerson: initialData?.contactPerson || "",
+    phone: initialData?.phone || "",
+    addressLine1: initialData?.addressLine1 || "",
+    addressLine2: initialData?.addressLine2 || "",
+    city: initialData?.city || "",
+    state: initialData?.state || "",
+    pincode: initialData?.pincode || "",
+    country: initialData?.country || "India",
+  });
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSendOtp = async () => {
+    setError("");
+    if (!pickupData.facilityName || !pickupData.addressLine1 || !pickupData.pincode) {
+      setError("Facility name, address line 1, and 6-digit Pincode are required.");
+      return;
+    }
+    setSendingOtp(true);
+    try {
+      await client.post("/vendors/request-sensitive-otp", { context: "Warehouse Pickup Address Update" });
+      setOtpSent(true);
+      setSuccess("OTP sent to your registered email address.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP email.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!otpSent) {
+      return handleSendOtp();
+    }
+    if (!otp.trim()) {
+      setError("Please enter the 6-digit OTP received on email.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await client.put("/vendors/pickup-address", { pickupAddress: pickupData, otp });
+      setSuccess("Pickup address updated successfully!");
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update pickup address. Invalid OTP.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-surface rounded-sm p-6 max-w-lg w-full shadow-2xl border border-secondary/10 font-sans max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 border-b border-secondary/10 pb-3">
+          <h3 className="text-xl font-heading font-medium text-primary">Update Warehouse &amp; Pickup Address</h3>
+          <button onClick={onClose} className="text-text-secondary hover:text-primary"><X size={20} /></button>
+        </div>
+
+        {error && <div className="p-3 mb-3 bg-red-50 text-red-700 text-xs rounded border border-red-200">{error}</div>}
+        {success && <div className="p-3 mb-3 bg-green-50 text-green-700 text-xs rounded border border-green-200">{success}</div>}
+
+        <form onSubmit={handleSave} className="space-y-3 text-xs">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Facility / Warehouse Name *</label>
+              <input type="text" value={pickupData.facilityName} onChange={(e) => setPickupData({ ...pickupData, facilityName: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Dispatch Contact Person *</label>
+              <input type="text" value={pickupData.contactPerson} onChange={(e) => setPickupData({ ...pickupData, contactPerson: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Dispatch Contact Phone *</label>
+              <input type="text" value={pickupData.phone} onChange={(e) => setPickupData({ ...pickupData, phone: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">Pincode *</label>
+              <input type="text" maxLength={6} value={pickupData.pincode} onChange={(e) => setPickupData({ ...pickupData, pincode: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary font-mono" required />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-[#24302a] font-bold mb-1">Address Line 1 *</label>
+              <input type="text" value={pickupData.addressLine1} onChange={(e) => setPickupData({ ...pickupData, addressLine1: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-[#24302a] font-bold mb-1">Address Line 2 (Landmark)</label>
+              <input type="text" value={pickupData.addressLine2} onChange={(e) => setPickupData({ ...pickupData, addressLine2: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">City *</label>
+              <input type="text" value={pickupData.city} onChange={(e) => setPickupData({ ...pickupData, city: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+            <div>
+              <label className="block text-[#24302a] font-bold mb-1">State *</label>
+              <input type="text" value={pickupData.state} onChange={(e) => setPickupData({ ...pickupData, state: e.target.value })} className="w-full h-9 border px-2.5 rounded bg-background/50 text-primary" required />
+            </div>
+          </div>
+
+          {!otpSent ? (
+            <button type="button" onClick={handleSendOtp} disabled={sendingOtp} className="w-full mt-4 py-3 bg-accent text-primary font-bold uppercase tracking-wider rounded shadow-sm hover:bg-primary hover:text-white transition">
+              {sendingOtp ? "Sending Email OTP..." : "Send Email Verification OTP"}
+            </button>
+          ) : (
+            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded space-y-2">
+              <label className="block text-xs font-bold text-primary">Enter Email OTP Sent To Vendor Email *</label>
+              <input type="text" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter 6-digit OTP" className="w-full h-10 border text-center font-mono text-base tracking-widest rounded bg-white" required />
+              <button type="submit" disabled={submitting} className="w-full py-3 bg-green-600 text-white font-bold uppercase tracking-wider rounded shadow-sm hover:bg-green-700 transition">
+                {submitting ? "Verifying..." : "Verify OTP & Save Pickup Address"}
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 };

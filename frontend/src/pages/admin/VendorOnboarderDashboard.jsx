@@ -324,6 +324,32 @@ const VendorOnboarderDashboard = () => {
                         </div>
                       )}
 
+                      {selectedVendor.bankDetails && (
+                        <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
+                          <span className="text-slate-500 block font-bold mb-1">Bank &amp; Payout Details:</span>
+                          <div className="grid grid-cols-3 gap-2 text-slate-700 text-xs">
+                            <div><strong>Account Holder:</strong> {selectedVendor.bankDetails.accountHolderName || "N/A"}</div>
+                            <div><strong>Bank:</strong> {selectedVendor.bankDetails.bankName || "N/A"}</div>
+                            <div><strong>Account Number:</strong> {selectedVendor.bankDetails.accountNumber || "N/A"}</div>
+                            <div><strong>IFSC Code:</strong> {selectedVendor.bankDetails.ifscCode || "N/A"}</div>
+                            <div><strong>Branch:</strong> {selectedVendor.bankDetails.branchName || "N/A"}</div>
+                            <div><strong>Account Type:</strong> {(selectedVendor.bankDetails.accountType || "current").toUpperCase()}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedVendor.pickupAddress && (
+                        <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
+                          <span className="text-slate-500 block font-bold mb-1">Warehouse &amp; Pickup Address:</span>
+                          <div className="grid grid-cols-2 gap-2 text-slate-700 text-xs">
+                            <div><strong>Facility Name:</strong> {selectedVendor.pickupAddress.facilityName || "N/A"}</div>
+                            <div><strong>Contact Person:</strong> {selectedVendor.pickupAddress.contactPerson || "N/A"} ({selectedVendor.pickupAddress.phone || "N/A"})</div>
+                            <div className="col-span-2"><strong>Address:</strong> {[selectedVendor.pickupAddress.addressLine1, selectedVendor.pickupAddress.addressLine2, selectedVendor.pickupAddress.city, selectedVendor.pickupAddress.state].filter(Boolean).join(", ")} - {selectedVendor.pickupAddress.pincode || ""}</div>
+                            <div><strong>Shiprocket Pickup Location:</strong> {selectedVendor.pickupAddress.shiprocketLocationName || selectedVendor.shiprocket_pickup_code || "Primary"}</div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="md:col-span-2 border-t border-slate-200 pt-2 mt-2">
                         <span className="text-slate-500 block font-bold mb-1">Quality &amp; Traceability Declarations:</span>
                         <div className="grid grid-cols-2 gap-2 text-slate-700">

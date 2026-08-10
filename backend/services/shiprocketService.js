@@ -94,7 +94,11 @@ class ShiprocketService {
     const payload = {
       order_id: vendorOrder._id.toString(), 
       order_date: new Date(vendorOrder.createdAt).toISOString().split('T')[0],
-      pickup_location: vendor.shiprocket_pickup_code || 'Primary',
+      pickup_location:
+        vendor.pickupAddress?.shiprocketLocationName ||
+        vendor.shiprocket_pickup_code ||
+        vendor.pickupAddress?.facilityName ||
+        'Primary',
       billing_customer_name: vendorOrder.shippingAddress.name || 'Customer',
       billing_last_name: '',
       billing_address: vendorOrder.shippingAddress.address,

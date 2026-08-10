@@ -572,6 +572,138 @@ router.put("/profile", protectVendor, async (req, res) => {
   }
 });
 
+// @desc    Request OTP for sensitive field edits (Bank details / Pickup Address)
+// @route   POST /api/vendors/request-sensitive-otp
+// @access  Private/Vendor
+router.post("/request-sensitive-otp", protectVendor, async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.vendor._id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const { context = "sensitive update" } = req.body;
+    const otp = generateOTP();
+
+    await createOrReplaceOtp(vendor.email, "email", otp);
+    await sendOTPEmail(vendor.email, otp, context);
+
+    res.json({
+      message: `Verification OTP has been sent to your registered email address (${vendor.email}).`,
+    });
+  } catch (error) {
+    console.error("Sensitive OTP error:", error);
+    res.status(500).json({ message: "Failed to send verification OTP" });
+  }
+});
+
+// @desc    Update bank details with OTP verification
+// @route   PUT /api/vendors/bank-details
+// @access  Private/Vendor
+router.put("/bank-details", protectVendor, async (req, res) => {
+  try {
+    const { bankDetails, otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({ message: "Email verification OTP is required to update bank details." });
+    }
+
+    const vendor = await Vendor.findById(req.vendor._id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    // Verify OTP sent to vendor email
+    try {
+      await verifyOtpForIdentifier(vendor.email, "email", otp);
+    } catch (otpError) {
+      return res.status(400).json({ message: otpError.message });
+    }
+
+    if (!bankDetails || (!bankDetails.accountNumber && !bankDetails.ifscCode)) {
+      return res.status(400).json({ message: "Account number and IFSC code are required." });
+    }
+
+    vendor.bankDetails = {
+      accountHolderName: bankDetails.accountHolderName || vendor.bankDetails?.accountHolderName,
+      accountNumber: bankDetails.accountNumber || vendor.bankDetails?.accountNumber,
+      bankName: bankDetails.bankName || vendor.bankDetails?.bankName,
+      ifscCode: bankDetails.ifscCode ? bankDetails.ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
+      branchName: bankDetails.branchName || vendor.bankDetails?.branchName,
+      accountType: bankDetails.accountType || vendor.bankDetails?.accountType || "current",
+      upiId: bankDetails.upiId || vendor.bankDetails?.upiId,
+    };
+
+    await vendor.save();
+    invalidateCache.vendors();
+
+    res.json({
+      message: "Bank details updated successfully!",
+      bankDetails: vendor.bankDetails,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Update pickup / warehouse address with OTP verification
+// @route   PUT /api/vendors/pickup-address
+// @access  Private/Vendor
+router.put("/pickup-address", protectVendor, async (req, res) => {
+  try {
+    const { pickupAddress, otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({ message: "Email verification OTP is required to update pickup address." });
+    }
+
+    const vendor = await Vendor.findById(req.vendor._id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    // Verify OTP sent to vendor email
+    try {
+      await verifyOtpForIdentifier(vendor.email, "email", otp);
+    } catch (otpError) {
+      return res.status(400).json({ message: otpError.message });
+    }
+
+    if (!pickupAddress || !pickupAddress.pincode || !pickupAddress.addressLine1) {
+      return res.status(400).json({ message: "Address line 1 and 6-digit Pincode are required." });
+    }
+
+    const locName =
+      pickupAddress.shiprocketLocationName ||
+      pickupAddress.facilityName ||
+      `VEND_${(pickupAddress.facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`;
+
+    vendor.pickupAddress = {
+      facilityName: pickupAddress.facilityName || vendor.pickupAddress?.facilityName,
+      contactPerson: pickupAddress.contactPerson || vendor.pickupAddress?.contactPerson,
+      phone: pickupAddress.phone || vendor.pickupAddress?.phone,
+      addressLine1: pickupAddress.addressLine1 || vendor.pickupAddress?.addressLine1,
+      addressLine2: pickupAddress.addressLine2 || vendor.pickupAddress?.addressLine2,
+      city: pickupAddress.city || vendor.pickupAddress?.city,
+      state: pickupAddress.state || vendor.pickupAddress?.state,
+      pincode: pickupAddress.pincode || vendor.pickupAddress?.pincode,
+      country: pickupAddress.country || vendor.pickupAddress?.country || "India",
+      shiprocketLocationName: locName,
+    };
+    vendor.shiprocket_pickup_code = locName;
+
+    await vendor.save();
+    invalidateCache.vendors();
+
+    res.json({
+      message: "Warehouse & Pickup address updated successfully!",
+      pickupAddress: vendor.pickupAddress,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ================== ONBOARDING ROUTES ==================
 
 // @desc    Update onboarding step & submit application
@@ -615,7 +747,73 @@ router.put("/onboarding", protectVendor, async (req, res) => {
         break;
       }
 
-      case 2: { // Section 2: Organic Certification
+      case 2: { // Section 2: Bank & Payout Details
+        if (data.bankDetails) {
+          const { accountHolderName, accountNumber, bankName, ifscCode, branchName, accountType, upiId } = data.bankDetails;
+          vendor.bankDetails = {
+            accountHolderName: accountHolderName || vendor.bankDetails?.accountHolderName,
+            accountNumber: accountNumber || vendor.bankDetails?.accountNumber,
+            bankName: bankName || vendor.bankDetails?.bankName,
+            ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
+            branchName: branchName || vendor.bankDetails?.branchName,
+            accountType: accountType || vendor.bankDetails?.accountType || "current",
+            upiId: upiId || vendor.bankDetails?.upiId,
+          };
+        } else if (data.accountNumber || data.ifscCode) {
+          vendor.bankDetails = {
+            accountHolderName: data.accountHolderName || vendor.bankDetails?.accountHolderName,
+            accountNumber: data.accountNumber || vendor.bankDetails?.accountNumber,
+            bankName: data.bankName || vendor.bankDetails?.bankName,
+            ifscCode: data.ifscCode ? data.ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
+            branchName: data.branchName || vendor.bankDetails?.branchName,
+            accountType: data.accountType || vendor.bankDetails?.accountType || "current",
+            upiId: data.upiId || vendor.bankDetails?.upiId,
+          };
+        }
+
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 3);
+        break;
+      }
+
+      case 3: { // Section 3: Warehouse & Pickup Address
+        if (data.pickupAddress) {
+          const { facilityName, contactPerson, phone, addressLine1, addressLine2, city, state, pincode, country, shiprocketLocationName } = data.pickupAddress;
+          const locName = shiprocketLocationName || facilityName || `VEND_${(facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`;
+          vendor.pickupAddress = {
+            facilityName: facilityName || vendor.pickupAddress?.facilityName,
+            contactPerson: contactPerson || vendor.pickupAddress?.contactPerson,
+            phone: phone || vendor.pickupAddress?.phone,
+            addressLine1: addressLine1 || vendor.pickupAddress?.addressLine1,
+            addressLine2: addressLine2 || vendor.pickupAddress?.addressLine2,
+            city: city || vendor.pickupAddress?.city,
+            state: state || vendor.pickupAddress?.state,
+            pincode: pincode || vendor.pickupAddress?.pincode,
+            country: country || vendor.pickupAddress?.country || "India",
+            shiprocketLocationName: locName,
+          };
+          vendor.shiprocket_pickup_code = locName;
+        } else if (data.facilityName || data.pincode) {
+          const locName = data.shiprocketLocationName || data.facilityName || vendor.pickupAddress?.shiprocketLocationName;
+          vendor.pickupAddress = {
+            facilityName: data.facilityName || vendor.pickupAddress?.facilityName,
+            contactPerson: data.contactPerson || vendor.pickupAddress?.contactPerson,
+            phone: data.phone || vendor.pickupAddress?.phone,
+            addressLine1: data.addressLine1 || vendor.pickupAddress?.addressLine1,
+            addressLine2: data.addressLine2 || vendor.pickupAddress?.addressLine2,
+            city: data.city || vendor.pickupAddress?.city,
+            state: data.state || vendor.pickupAddress?.state,
+            pincode: data.pincode || vendor.pickupAddress?.pincode,
+            country: data.country || vendor.pickupAddress?.country || "India",
+            shiprocketLocationName: locName,
+          };
+          if (locName) vendor.shiprocket_pickup_code = locName;
+        }
+
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 4);
+        break;
+      }
+
+      case 4: { // Section 4: Organic Certification
         if (data.organicCertification) {
           const { certificationRoute, certificationBody, certificateNumber, certificateValidUntil, certificationsByRoute } = data.organicCertification;
           vendor.organicCertification = {
@@ -637,16 +835,11 @@ router.put("/onboarding", protectVendor, async (req, res) => {
           };
         }
 
-        // Legacy address handling fallback
-        if (data.address) {
-          vendor.address = { ...vendor.address, ...data.address };
-        }
-
-        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 3);
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 5);
         break;
       }
 
-      case 3: { // Section 3: Representative Product (or Legacy Bank Details)
+      case 5: { // Section 5: Representative Product
         if (data.representativeProduct) {
           const { productName, productCategory, certificationCoverage } = data.representativeProduct;
           vendor.representativeProduct = {
@@ -662,34 +855,32 @@ router.put("/onboarding", protectVendor, async (req, res) => {
           };
         }
 
-        // Bank details fallback if provided
-        if (data.bankDetails) {
-          if (data.bankDetails.ifscCode) {
-            data.bankDetails.ifscCode = data.bankDetails.ifscCode.trim().toUpperCase();
-          }
-          vendor.bankDetails = { ...vendor.bankDetails, ...data.bankDetails };
-        }
-
-        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 4);
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 6);
         break;
       }
 
-      case 4: { // Section 4: Quality & Traceability Declarations (or Plan Selection)
+      case 6: { // Section 6: Quality & Traceability Declarations
         if (data.maintainsTraceabilityRecords !== undefined) vendor.maintainsTraceabilityRecords = data.maintainsTraceabilityRecords;
         if (data.canProvideBatchSourceEvidence !== undefined) vendor.canProvideBatchSourceEvidence = data.canProvideBatchSourceEvidence;
         
-        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 5);
+        vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 7);
         break;
       }
 
-      case 5: { // Section 5: Final Review & Submission Validation
-        // Update any payload data passed on step 5
+      case 7: { // Section 7: Final Review & Submission Validation
+        // Update any payload data passed on step 7
         if (data.isBusinessRegistered !== undefined) vendor.isBusinessRegistered = data.isBusinessRegistered;
         if (data.gstApplicable !== undefined) vendor.gstApplicable = data.gstApplicable;
         if (data.authorizedSignatoryName !== undefined) vendor.authorizedSignatoryName = data.authorizedSignatoryName;
         if (data.panNumber) vendor.panNumber = data.panNumber.trim().toUpperCase();
         if (data.fssaiNumber) vendor.fssaiNumber = data.fssaiNumber.trim();
 
+        if (data.bankDetails) {
+          vendor.bankDetails = { ...vendor.bankDetails, ...data.bankDetails };
+        }
+        if (data.pickupAddress) {
+          vendor.pickupAddress = { ...vendor.pickupAddress, ...data.pickupAddress };
+        }
         if (data.organicCertification) {
           vendor.organicCertification = { ...vendor.organicCertification, ...data.organicCertification };
         }
@@ -759,7 +950,7 @@ router.put("/onboarding", protectVendor, async (req, res) => {
         // All checks passed! Update vendor state
         vendor.onboardingComplete = true;
         vendor.status = "under_review";
-        vendor.onboardingStep = 5;
+        vendor.onboardingStep = 7;
         vendor.onboardingSubmittedAt = new Date();
 
         break;
@@ -2146,6 +2337,8 @@ router.get("/dashboard", protectVendor, approvedVendor, async (req, res) => {
         metrics: vendor.metrics || {},
         commissionRate: vendor.commissionRate,
         wallet: vendor.wallet || { balance: 0 },
+        bankDetails: vendor.bankDetails,
+        pickupAddress: vendor.pickupAddress,
       },
     });
   } catch (error) {

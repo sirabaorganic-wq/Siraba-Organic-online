@@ -35,6 +35,15 @@ const ACTIVE_DOCUMENTS = [
     required: false, // conditional
   },
   {
+    type: "cancelled_cheque",
+    title: "Cancelled Cheque / Bank Passbook",
+    hint: "Mandatory • Clear photo or PDF showing Account Holder Name, Account Number, and IFSC Code • Max 5MB",
+    accept: ".pdf,.jpg,.jpeg,.png,.webp",
+    mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
+    maxSize: 5 * 1024 * 1024,
+    required: true,
+  },
+  {
     type: "npop_certificate",
     title: "NPOP / India Organic Certificate",
     hint: "Mandatory • PDF, JPG, PNG, WEBP • Max 5MB",
@@ -106,7 +115,7 @@ const VendorOnboarding = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [activeStep, setActiveStep] = useState(1); // 1: Business, 2: Certification, 3: Product, 4: Quality, 5: Submit
+  const [activeStep, setActiveStep] = useState(1); // 1: Business, 2: Bank, 3: Pickup Address, 4: Cert, 5: Product, 6: Quality, 7: Submit
 
   // Form State matching Prototype
   const [isBusinessRegistered, setIsBusinessRegistered] = useState(vendor?.isBusinessRegistered || "yes");
@@ -115,6 +124,27 @@ const VendorOnboarding = () => {
   const [panNumber, setPanNumber] = useState(vendor?.panNumber || "");
   const [fssaiNumber, setFssaiNumber] = useState(vendor?.fssaiNumber || "");
   const [gstNumber, setGstNumber] = useState(vendor?.gstNumber || "");
+
+  // Bank & Payout Details (NEW)
+  const [accountHolderName, setAccountHolderName] = useState(vendor?.bankDetails?.accountHolderName || vendor?.businessName || "");
+  const [accountNumber, setAccountNumber] = useState(vendor?.bankDetails?.accountNumber || "");
+  const [confirmAccountNumber, setConfirmAccountNumber] = useState(vendor?.bankDetails?.accountNumber || "");
+  const [bankName, setBankName] = useState(vendor?.bankDetails?.bankName || "");
+  const [ifscCode, setIfscCode] = useState(vendor?.bankDetails?.ifscCode || "");
+  const [branchName, setBranchName] = useState(vendor?.bankDetails?.branchName || "");
+  const [accountType, setAccountType] = useState(vendor?.bankDetails?.accountType || "current");
+  const [upiId, setUpiId] = useState(vendor?.bankDetails?.upiId || "");
+
+  // Warehouse & Pickup Address (NEW)
+  const [facilityName, setFacilityName] = useState(vendor?.pickupAddress?.facilityName || vendor?.businessName || "");
+  const [pickupContactPerson, setPickupContactPerson] = useState(vendor?.pickupAddress?.contactPerson || vendor?.contactPerson || "");
+  const [pickupPhone, setPickupPhone] = useState(vendor?.pickupAddress?.phone || vendor?.phone || "");
+  const [pickupAddressLine1, setPickupAddressLine1] = useState(vendor?.pickupAddress?.addressLine1 || vendor?.address?.street || "");
+  const [pickupAddressLine2, setPickupAddressLine2] = useState(vendor?.pickupAddress?.addressLine2 || "");
+  const [pickupCity, setPickupCity] = useState(vendor?.pickupAddress?.city || vendor?.address?.city || "");
+  const [pickupState, setPickupState] = useState(vendor?.pickupAddress?.state || vendor?.address?.state || "");
+  const [pickupPincode, setPickupPincode] = useState(vendor?.pickupAddress?.pincode || vendor?.address?.postalCode || "");
+  const [pickupCountry, setPickupCountry] = useState(vendor?.pickupAddress?.country || "India");
 
   // Certification Details
   const [certificationRoute, setCertificationRoute] = useState(vendor?.organicCertification?.certificationRoute || "npop");
@@ -299,6 +329,10 @@ const VendorOnboarding = () => {
         docMap.other_organic_certificates = otherDocs;
         setUploadedDocs(docMap);
       }
+
+      if (vendor.onboardingStep && vendor.onboardingStep >= 1 && vendor.onboardingStep <= 7) {
+        setActiveStep(vendor.onboardingStep);
+      }
     }
   }, [vendor, navigate]);
 
@@ -446,6 +480,33 @@ const VendorOnboarding = () => {
       stepPayload.fssaiNumber = fssaiNumber;
       stepPayload.gstNumber = gstNumber;
     } else if (stepNum === 2) {
+      if (accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber) {
+        setError("Account numbers do not match.");
+        setLoading(false);
+        return;
+      }
+      stepPayload.bankDetails = {
+        accountHolderName,
+        accountNumber,
+        bankName,
+        ifscCode,
+        branchName,
+        accountType,
+        upiId,
+      };
+    } else if (stepNum === 3) {
+      stepPayload.pickupAddress = {
+        facilityName,
+        contactPerson: pickupContactPerson,
+        phone: pickupPhone,
+        addressLine1: pickupAddressLine1,
+        addressLine2: pickupAddressLine2,
+        city: pickupCity,
+        state: pickupState,
+        pincode: pickupPincode,
+        country: pickupCountry,
+      };
+    } else if (stepNum === 4) {
       stepPayload.organicCertification = {
         certificationRoute,
         certificationBody,
@@ -460,13 +521,13 @@ const VendorOnboarding = () => {
           },
         },
       };
-    } else if (stepNum === 3) {
+    } else if (stepNum === 5) {
       stepPayload.representativeProduct = {
         productName,
         productCategory,
         certificationCoverage,
       };
-    } else if (stepNum === 4) {
+    } else if (stepNum === 6) {
       stepPayload.maintainsTraceabilityRecords = maintainsTraceabilityRecords;
       stepPayload.canProvideBatchSourceEvidence = canProvideBatchSourceEvidence;
     }
@@ -474,8 +535,11 @@ const VendorOnboarding = () => {
     try {
       const res = await updateOnboarding(stepNum, stepPayload);
       if (res.success) {
-        setSuccess("Information saved.");
-        setTimeout(() => setSuccess(""), 2000);
+        setSuccess(`Step ${stepNum} saved successfully! Moving to next step...`);
+        const nextStep = Math.min(stepNum + 1, 7);
+        setActiveStep(nextStep);
+        if (refreshVendorStatus) await refreshVendorStatus();
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         setError(res.message);
       }
@@ -486,9 +550,44 @@ const VendorOnboarding = () => {
     }
   };
 
+  // Step Completion Determination
+  const isStepComplete = (stepNum) => {
+    const dbStep = vendor?.onboardingStep || 1;
+    if (dbStep > stepNum) return true;
+
+    if (stepNum === 1) {
+      return Boolean(uploadedDocs.business_legal_identity || uploadedDocs.fssai_license || vendor?.panNumber || authorizedSignatoryName);
+    }
+    if (stepNum === 2) {
+      return Boolean(accountNumber || vendor?.bankDetails?.accountNumber);
+    }
+    if (stepNum === 3) {
+      return Boolean(pickupAddressLine1 || vendor?.pickupAddress?.addressLine1);
+    }
+    if (stepNum === 4) {
+      return Boolean(uploadedDocs.npop_certificate || uploadedDocs.usda_organic_certificate || certificateNumber || vendor?.organicCertification?.certificateNumber);
+    }
+    if (stepNum === 5) {
+      return Boolean(uploadedDocs.representative_product_image || productName || vendor?.representativeProduct?.productName);
+    }
+    if (stepNum === 6) {
+      return Boolean(maintainsTraceabilityRecords && canProvideBatchSourceEvidence);
+    }
+    if (stepNum === 7) {
+      return Boolean(vendor?.onboardingComplete);
+    }
+    return false;
+  };
+
   const handleFinalSubmit = async () => {
     setLoading(true);
     setError("");
+
+    if (accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber) {
+      setError("Account numbers do not match.");
+      setLoading(false);
+      return;
+    }
 
     const fullPayload = {
       isBusinessRegistered,
@@ -497,6 +596,26 @@ const VendorOnboarding = () => {
       panNumber,
       fssaiNumber,
       gstNumber,
+      bankDetails: {
+        accountHolderName,
+        accountNumber,
+        bankName,
+        ifscCode,
+        branchName,
+        accountType,
+        upiId,
+      },
+      pickupAddress: {
+        facilityName,
+        contactPerson: pickupContactPerson,
+        phone: pickupPhone,
+        addressLine1: pickupAddressLine1,
+        addressLine2: pickupAddressLine2,
+        city: pickupCity,
+        state: pickupState,
+        pincode: pickupPincode,
+        country: pickupCountry,
+      },
       organicCertification: {
         certificationRoute,
         certificationBody,
@@ -521,7 +640,7 @@ const VendorOnboarding = () => {
     };
 
     try {
-      const res = await updateOnboarding(5, fullPayload);
+      const res = await updateOnboarding(7, fullPayload);
       if (res.success) {
         await refreshVendorStatus();
         navigate("/vendor/under-review");
@@ -572,41 +691,56 @@ const VendorOnboarding = () => {
         </div>
 
         {/* Stepper */}
-        <div className="flex items-center justify-center my-3 mb-7 font-sans">
+        <div className="flex items-center justify-center my-3 mb-7 font-sans overflow-x-auto py-2">
           {[
-            { num: 1, name: "Business" },
-            { num: 2, name: "Certification" },
-            { num: 3, name: "Product" },
-            { num: 4, name: "Quality" },
-            { num: 5, name: "Submit" },
-          ].map((st, idx, arr) => (
-            <React.Fragment key={st.num}>
-              <div
-                onClick={() => setActiveStep(st.num)}
-                className={`flex items-center gap-1.5 text-[11px] cursor-pointer ${
-                  activeStep === st.num
-                    ? "font-bold text-[#24302a]"
-                    : "text-[#8a908c]"
-                }`}
-              >
+            { num: 1, name: "Business Legal" },
+            { num: 2, name: "Bank Details" },
+            { num: 3, name: "Pickup Address" },
+            { num: 4, name: "Certification" },
+            { num: 5, name: "Product Info" },
+            { num: 6, name: "Quality" },
+            { num: 7, name: "Submit" },
+          ].map((st, idx, arr) => {
+            const completed = isStepComplete(st.num);
+            const active = activeStep === st.num;
+            const connectorDone = isStepComplete(st.num) || (vendor?.onboardingStep || 1) > st.num;
+
+            return (
+              <React.Fragment key={st.num}>
                 <div
-                  className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] ${
-                    activeStep > st.num
-                      ? "bg-[#6d8a72] border-[#6d8a72] text-white"
-                      : activeStep === st.num
-                      ? "bg-[#6d8a72] border-[#6d8a72] text-white"
-                      : "bg-white border-[#c8cec9] text-[#24302a]"
+                  onClick={() => setActiveStep(st.num)}
+                  className={`flex items-center gap-1.5 text-[11px] cursor-pointer whitespace-nowrap transition-all ${
+                    active
+                      ? "font-bold text-[#24302a]"
+                      : completed
+                      ? "font-semibold text-emerald-800"
+                      : "text-[#8a908c]"
                   }`}
+                  title={`Step ${st.num}: ${st.name} ${completed ? "(Completed)" : ""}`}
                 >
-                  {activeStep > st.num ? "✓" : st.num}
+                  <div
+                    className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold transition-all ${
+                      completed
+                        ? "bg-[#6d8a72] border-[#6d8a72] text-white shadow-sm"
+                        : active
+                        ? "bg-[#24302a] border-[#24302a] text-white shadow-sm ring-2 ring-[#6d8a72]/30"
+                        : "bg-white border-[#c8cec9] text-[#24302a]"
+                    }`}
+                  >
+                    {completed ? "✓" : st.num}
+                  </div>
+                  <span className="hidden md:inline">{st.name}</span>
                 </div>
-                <span className="hidden sm:inline">{st.name}</span>
-              </div>
-              {idx < arr.length - 1 && (
-                <div className="w-8 sm:w-12 h-[1px] bg-[#bfc7c0] mx-1.5 sm:mx-2"></div>
-              )}
-            </React.Fragment>
-          ))}
+                {idx < arr.length - 1 && (
+                  <div
+                    className={`w-4 md:w-8 h-[2px] mx-1 transition-all ${
+                      connectorDone ? "bg-[#6d8a72]" : "bg-[#bfc7c0]"
+                    }`}
+                  ></div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
 
         {/* Hero */}
@@ -748,24 +882,18 @@ const VendorOnboarding = () => {
 
               {/* Is GST applicable? */}
               <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1.5 font-serif">
-                  Is GST Registration applicable? <span className="text-[#a04b42]">*</span>
+                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
+                  Is GST Registration applicable to your business? <span className="text-[#a04b42]">*</span>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs mb-2">
+                <div className="flex gap-3 text-xs mb-2">
                   {[
                     { val: "yes", label: "Yes" },
-                    { val: "no", label: "No" },
-                    { val: "na", label: "Not Applicable" },
+                    { val: "no", label: "No / Exempt" },
                   ].map((item) => (
-                    <label
-                      key={item.val}
-                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
-                        gstApplicable === item.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
-                      }`}
-                    >
+                    <label key={item.val} className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-700">
                       <input
                         type="radio"
-                        name="gst"
+                        name="gstApp"
                         value={item.val}
                         checked={gstApplicable === item.val}
                         onChange={(e) => setGstApplicable(e.target.value)}
@@ -775,33 +903,42 @@ const VendorOnboarding = () => {
                     </label>
                   ))}
                 </div>
-
-                {/* Conditional Upload 3: GST Certificate */}
-                {gstApplicable === "yes" && (
-                  <div className="mt-2 pt-2 border-t border-slate-200">
-                    <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-[12px] font-bold text-[#24302a] font-serif">GST Certificate <span className="text-[#a04b42]">*</span></div>
-                        <div className="text-[10px] text-[#7b837e] mt-0.5">Upload only if applicable • Max 5MB</div>
-                        {uploadedDocs.gst_certificate && (
-                          <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
-                            ✓ {uploadedDocs.gst_certificate.name || "Uploaded"}
-                          </div>
-                        )}
-                      </div>
-                      <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
-                        {uploadingState.gst_certificate ? "Uploading..." : uploadedDocs.gst_certificate ? "Replace" : "Upload"}
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png,.webp"
-                          className="hidden"
-                          onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[2], e.target.files[0])}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                )}
+                <div className="text-[10px] text-[#7b837e] leading-relaxed">
+                  If exempt under applicable turnover thresholds or exempt goods categories, select No.
+                </div>
               </div>
+
+              {/* Upload 3: GST Certificate (Conditional) */}
+              {gstApplicable === "yes" && (
+                <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
+                  <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">
+                    GST Certificate <span className="text-[#a04b42]">*</span>
+                  </div>
+                  <div className="text-[10px] text-[#7b837e] mb-2 leading-relaxed">
+                    Upload your valid GST Certificate document.
+                  </div>
+                  <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload GST document</div>
+                      <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                      {uploadedDocs.gst_certificate && (
+                        <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                          ✓ {uploadedDocs.gst_certificate.name || "Uploaded"}
+                        </div>
+                      )}
+                    </div>
+                    <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                      {uploadingState.gst_certificate ? "Uploading..." : uploadedDocs.gst_certificate ? "Replace" : "Upload"}
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS[2], e.target.files[0])}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {/* PAN / Authorized Signatory Details */}
               <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white">
@@ -823,10 +960,283 @@ const VendorOnboarding = () => {
           </div>
         </section>
 
-        {/* SECTION 2: Organic Certification */}
+        {/* SECTION 2: Bank & Account Details (NEW) */}
         <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
           <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
             <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 2</div>
+            <h2 className="text-lg font-semibold text-[#24302a]">Bank &amp; Payout Details</h2>
+            <div className="font-sans text-[11px] text-[#68736d] mt-1">
+              Provide your official business bank account details for payouts, settlements, and tax invoices.
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 space-y-4 font-sans">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Account Holder Name <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Siraba Organics Pvt Ltd"
+                  value={accountHolderName}
+                  onChange={(e) => setAccountHolderName(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Bank Name <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. HDFC Bank / ICICI Bank"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Account Number <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter Bank Account Number"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Re-enter Account Number <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Confirm Bank Account Number"
+                  value={confirmAccountNumber}
+                  onChange={(e) => setConfirmAccountNumber(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono"
+                />
+                {accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber && (
+                  <span className="text-[10px] text-red-600 font-bold mt-0.5 block">Account numbers do not match</span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  IFSC Code <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. HDFC0001234"
+                  value={ifscCode}
+                  onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Branch Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. MG Road Branch"
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Account Type <span className="text-[#a04b42]">*</span>
+                </label>
+                <select
+                  value={accountType}
+                  onChange={(e) => setAccountType(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                >
+                  <option value="current">Current Account</option>
+                  <option value="savings">Savings Account</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  UPI ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. business@upi"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              {/* Mandatory Cancelled Cheque / Passbook Upload */}
+              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+                <div className="text-[12px] font-bold text-[#24302a] mb-0.5 font-serif">
+                  Cancelled Cheque / Bank Passbook / Statement <span className="text-[#a04b42]">*</span>
+                </div>
+                <div className="text-[10px] text-[#7b837e] mb-2 leading-relaxed">
+                  Upload a clear image or PDF of a cancelled cheque or bank passbook showing Account Holder Name, Account Number, and IFSC Code for verification.
+                </div>
+                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload Cancelled Cheque / Bank Document</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                    {uploadedDocs.cancelled_cheque && (
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate flex items-center gap-1">
+                        ✓ {uploadedDocs.cancelled_cheque.name || "Uploaded"}
+                      </div>
+                    )}
+                  </div>
+                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                    {uploadingState.cancelled_cheque ? "Uploading..." : uploadedDocs.cancelled_cheque ? "Replace" : "Upload"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "cancelled_cheque"), e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: Warehouse & Pickup Address (NEW) */}
+        <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 3</div>
+            <h2 className="text-lg font-semibold text-[#24302a]">Warehouse &amp; Pickup Address</h2>
+            <div className="font-sans text-[11px] text-[#68736d] mt-1">
+              Shiprocket courier partners will pick up customer orders directly from this location.
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 space-y-4 font-sans">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Warehouse / Facility Name <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Main Farm Facility / Central Warehouse"
+                  value={facilityName}
+                  onChange={(e) => setFacilityName(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Dispatch Contact Person <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contact person for courier pickup"
+                  value={pickupContactPerson}
+                  onChange={(e) => setPickupContactPerson(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Dispatch Contact Phone <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="10-digit mobile number"
+                  value={pickupPhone}
+                  onChange={(e) => setPickupPhone(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Pincode <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="6-digit Pincode"
+                  value={pickupPincode}
+                  onChange={(e) => setPickupPincode(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Address Line 1 <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Building/Plot No, Street Name, Industrial Area"
+                  value={pickupAddressLine1}
+                  onChange={(e) => setPickupAddressLine1(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-[#ffffff] text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  Address Line 2 (Landmark)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Landmark, Area, Village/Tehsil"
+                  value={pickupAddressLine2}
+                  onChange={(e) => setPickupAddressLine2(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  City / District <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="City Name"
+                  value={pickupCity}
+                  onChange={(e) => setPickupCity(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#24302a] mb-1 font-serif">
+                  State <span className="text-[#a04b42]">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="State Name"
+                  value={pickupState}
+                  onChange={(e) => setPickupState(e.target.value)}
+                  className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 4: Organic Certification */}
+        <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 4</div>
             <h2 className="text-lg font-semibold text-[#24302a]">Organic Certification</h2>
             <div className="font-sans text-[11px] text-[#68736d] mt-1">
               <b>Required:</b> Submit one valid recognized organic certification applicable to the product and market.
@@ -1093,10 +1503,10 @@ const VendorOnboarding = () => {
           </div>
         </section>
 
-        {/* SECTION 3: Representative Product */}
+        {/* SECTION 5: Representative Product */}
         <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
           <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
-            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 3</div>
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 5</div>
             <h2 className="text-lg font-semibold text-[#24302a]">Representative Product</h2>
             <div className="font-sans text-[11px] text-[#68736d] mt-1">
               Submit <b>one</b> representative product for initial vendor qualification. Your complete catalogue can be added after vendor approval.
@@ -1245,10 +1655,10 @@ const VendorOnboarding = () => {
           </div>
         </section>
 
-        {/* SECTION 4: Quality & Traceability */}
+        {/* SECTION 6: Quality & Traceability */}
         <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
           <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
-            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 4</div>
+            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 6</div>
             <h2 className="text-lg font-semibold text-[#24302a]">Quality &amp; Traceability</h2>
             <div className="font-sans text-[11px] text-[#68736d] mt-1">
               Keep the evidence simple at onboarding. SIRABA may request additional supporting records based on product risk and verification findings.

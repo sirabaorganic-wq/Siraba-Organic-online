@@ -174,7 +174,22 @@ const bankDetailsSchema = mongoose.Schema({
   bankName: { type: String },
   ifscCode: { type: String },
   branchName: { type: String },
+  accountType: { type: String, enum: ["savings", "current"], default: "current" },
   upiId: { type: String },
+});
+
+// Pickup / Warehouse Address Schema
+const pickupAddressSchema = mongoose.Schema({
+  facilityName: { type: String },
+  contactPerson: { type: String },
+  phone: { type: String },
+  addressLine1: { type: String },
+  addressLine2: { type: String },
+  city: { type: String },
+  state: { type: String },
+  pincode: { type: String },
+  country: { type: String, default: "India" },
+  shiprocketLocationName: { type: String },
 });
 
 // Vendor Schema
@@ -300,13 +315,16 @@ const vendorSchema = mongoose.Schema(
     // Bank Details
     bankDetails: bankDetailsSchema,
 
+    // Pickup / Warehouse Address for Shipping & Fulfillment
+    pickupAddress: pickupAddressSchema,
+
     // Vendor Status
     status: {
       type: String,
       enum: ["pending", "under_review", "subadmin_approved", "subadmin_rejected", "approved", "suspended", "rejected"],
       default: "pending",
     },
-    onboardingStep: { type: Number, default: 1 }, // Track onboarding progress (1-5)
+    onboardingStep: { type: Number, default: 1 }, // Track onboarding progress (1-7)
     onboardingComplete: { type: Boolean, default: false },
 
     // Performance Metrics
