@@ -114,6 +114,9 @@ const AdminDashboard = () => {
   const [vendorSearch, setVendorSearch] = useState("");
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [selectedVendorIds, setSelectedVendorIds] = useState([]);
+  const [editingCommissionVendor, setEditingCommissionVendor] = useState(null);
+  const [newCommissionRate, setNewCommissionRate] = useState("");
+  const [commissionSaving, setCommissionSaving] = useState(false);
   const [payouts, setPayouts] = useState([]);
   const [activeVendorModalTab, setActiveVendorModalTab] = useState("details");
   const [adminVendorProducts, setAdminVendorProducts] = useState([]);
@@ -582,7 +585,42 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- Coupon Handlers ---
+  const handleUpdateCommission = async (vendorId, customRate = null) => {
+    const rateToSave = customRate !== null ? customRate : newCommissionRate;
+    if (rateToSave === "" || isNaN(rateToSave) || Number(rateToSave) < 0 || Number(rateToSave) > 100) {
+      alert("Please enter a valid commission percentage between 0 and 100.");
+      return;
+    }
+    setCommissionSaving(true);
+    try {
+      const { data } = await client.put(`/admin/vendors/${vendorId}/commission`, {
+        commissionRate: Number(rateToSave),
+      });
+
+      setVendors((prevVendors) =>
+        prevVendors.map((v) =>
+          v._id === vendorId ? { ...v, commissionRate: data.commissionRate } : v
+        )
+      );
+
+      if (selectedVendor && selectedVendor._id === vendorId) {
+        setSelectedVendor((prev) => ({
+          ...prev,
+          commissionRate: data.commissionRate,
+        }));
+      }
+
+      setEditingCommissionVendor(null);
+      setNewCommissionRate("");
+      alert(`Commission rate updated to ${data.commissionRate}%`);
+    } catch (error) {
+      console.error("Failed to update commission rate", error);
+      alert(error.response?.data?.message || "Failed to update commission rate");
+    } finally {
+      setCommissionSaving(false);
+    }
+  };
+
   const handleOpenCouponModal = (user = null) => {
     setSelectedUser(user);
     setCouponData({
@@ -1139,8 +1177,8 @@ const AdminDashboard = () => {
             <button
               onClick={() => setDateFilter("all")}
               className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${dateFilter === "all"
-                  ? "bg-white shadow-sm text-primary"
-                  : "text-text-secondary hover:text-primary"
+                ? "bg-white shadow-sm text-primary"
+                : "text-text-secondary hover:text-primary"
                 }`}
             >
               All Orders
@@ -1148,8 +1186,8 @@ const AdminDashboard = () => {
             <button
               onClick={() => setDateFilter("today")}
               className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${dateFilter === "today"
-                  ? "bg-white shadow-sm text-primary"
-                  : "text-text-secondary hover:text-primary"
+                ? "bg-white shadow-sm text-primary"
+                : "text-text-secondary hover:text-primary"
                 }`}
             >
               Today
@@ -1360,18 +1398,18 @@ const AdminDashboard = () => {
                                     >
                                       <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${isComplete
-                                            ? "bg-primary text-white"
-                                            : isCurrent
-                                              ? "bg-primary text-white ring-4 ring-primary/20"
-                                              : "bg-white border-2 border-secondary/20 text-text-secondary"
+                                          ? "bg-primary text-white"
+                                          : isCurrent
+                                            ? "bg-primary text-white ring-4 ring-primary/20"
+                                            : "bg-white border-2 border-secondary/20 text-text-secondary"
                                           }`}
                                       >
                                         <StepIcon size={18} />
                                       </div>
                                       <p
                                         className={`text-xs font-medium text-center ${isComplete || isCurrent
-                                            ? "text-primary font-bold"
-                                            : "text-text-secondary"
+                                          ? "text-primary font-bold"
+                                          : "text-text-secondary"
                                           }`}
                                       >
                                         {stepInfo.label}
@@ -1700,8 +1738,8 @@ const AdminDashboard = () => {
                 <td className="px-6 py-4 text-text-secondary">{sub.email}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full ${sub.role === "vendor_onboarder"
-                      ? "bg-purple-50 text-purple-700 border border-purple-100"
-                      : "bg-blue-50 text-blue-700 border border-blue-100"
+                    ? "bg-purple-50 text-purple-700 border border-purple-100"
+                    : "bg-blue-50 text-blue-700 border border-blue-100"
                     }`}>
                     {sub.role === "vendor_onboarder" ? "Vendor Onboarder" : "Blog Creator"}
                   </span>
@@ -2498,8 +2536,8 @@ const AdminDashboard = () => {
                     key={filter.key}
                     onClick={() => setMessageFilter(filter.key)}
                     className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors relative ${messageFilter === filter.key
-                        ? "bg-white shadow-sm text-primary"
-                        : "text-text-secondary hover:text-primary"
+                      ? "bg-white shadow-sm text-primary"
+                      : "text-text-secondary hover:text-primary"
                       }`}
                   >
                     {filter.label}
@@ -2524,8 +2562,8 @@ const AdminDashboard = () => {
                     key={filter.key}
                     onClick={() => setMessageDateFilter(filter.key)}
                     className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${messageDateFilter === filter.key
-                        ? "bg-white shadow-sm text-primary"
-                        : "text-text-secondary hover:text-primary"
+                      ? "bg-white shadow-sm text-primary"
+                      : "text-text-secondary hover:text-primary"
                       }`}
                   >
                     {filter.label}
@@ -2828,8 +2866,8 @@ const AdminDashboard = () => {
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-sm text-xs font-bold uppercase ${new Date(coupon.expiryDate) < new Date()
-                        ? "bg-red-50 text-red-500"
-                        : "bg-green-50 text-green-500"
+                      ? "bg-red-50 text-red-500"
+                      : "bg-green-50 text-green-500"
                       }`}
                   >
                     {new Date(coupon.expiryDate) < new Date()
@@ -3238,7 +3276,7 @@ const AdminDashboard = () => {
                     stroke="#1a4d2e"
                     strokeWidth="12"
                     strokeDasharray={`${((analyticsData.completedOrders || 0) /
-                        (analyticsData.totalOrders || 1)) *
+                      (analyticsData.totalOrders || 1)) *
                       251
                       } 251`}
                     className="transition-all duration-1000 ease-out"
@@ -3653,6 +3691,9 @@ const AdminDashboard = () => {
                     Plan
                   </th>
                   <th className="text-left px-6 py-4 text-sm font-medium text-text-secondary">
+                    Commission
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-text-secondary">
                     Products
                   </th>
                   <th className="text-left px-6 py-4 text-sm font-medium text-text-secondary">
@@ -3673,11 +3714,10 @@ const AdminDashboard = () => {
                 {vendors.map((vendor) => (
                   <tr
                     key={vendor._id}
-                    className={`hover:bg-secondary/5 transition-colors ${
-                      selectedVendorIds.includes(vendor._id)
+                    className={`hover:bg-secondary/5 transition-colors ${selectedVendorIds.includes(vendor._id)
                         ? "bg-red-50/40"
                         : ""
-                    }`}
+                      }`}
                   >
                     <td className="px-4 py-4 text-center">
                       <input
@@ -3715,6 +3755,25 @@ const AdminDashboard = () => {
                         {vendor.subscription?.plan || "Starter"}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-primary text-sm">
+                          {vendor.commissionRate !== undefined ? vendor.commissionRate : 10}%
+                        </span>
+                        <button
+                          onClick={() => {
+                            setEditingCommissionVendor(vendor);
+                            setNewCommissionRate(
+                              vendor.commissionRate !== undefined ? vendor.commissionRate : 10
+                            );
+                          }}
+                          className="p-1 hover:bg-secondary/10 rounded text-text-secondary hover:text-accent transition-colors"
+                          title="Edit Commission Rate"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm font-bold text-primary">
                       {vendor.metrics?.totalProducts ||
                         vendor.inventory?.length ||
@@ -3729,14 +3788,14 @@ const AdminDashboard = () => {
                     <td className="px-6 py-4">
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${vendor.status === "approved"
-                            ? "bg-green-100 text-green-700"
-                            : vendor.status === "pending"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : vendor.status === "under_review"
-                                ? "bg-blue-100 text-blue-700"
-                                : vendor.status === "suspended"
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-red-100 text-red-700"
+                          ? "bg-green-100 text-green-700"
+                          : vendor.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : vendor.status === "under_review"
+                              ? "bg-blue-100 text-blue-700"
+                              : vendor.status === "suspended"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-red-100 text-red-700"
                           }`}
                       >
                         {vendor.status?.replace("_", " ")}
@@ -3753,6 +3812,18 @@ const AdminDashboard = () => {
                           title="View Details"
                         >
                           <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingCommissionVendor(vendor);
+                            setNewCommissionRate(
+                              vendor.commissionRate !== undefined ? vendor.commissionRate : 10
+                            );
+                          }}
+                          className="p-2 hover:bg-secondary/10 rounded-sm text-text-secondary hover:text-accent"
+                          title="Edit Commission Rate"
+                        >
+                          <TicketPercent size={16} />
                         </button>
                         {vendor.status !== "approved" && (
                           <button
@@ -3855,8 +3926,8 @@ const AdminDashboard = () => {
               <div className="flex border-b border-secondary/20 mb-6">
                 <button
                   className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeVendorModalTab === "details"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-text-secondary hover:text-primary"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-text-secondary hover:text-primary"
                     }`}
                   onClick={() => setActiveVendorModalTab("details")}
                 >
@@ -3864,8 +3935,8 @@ const AdminDashboard = () => {
                 </button>
                 <button
                   className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeVendorModalTab === "products"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-text-secondary hover:text-primary"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-text-secondary hover:text-primary"
                     }`}
                   onClick={() => {
                     setActiveVendorModalTab("products");
@@ -3876,8 +3947,8 @@ const AdminDashboard = () => {
                 </button>
                 <button
                   className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeVendorModalTab === "messages"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-text-secondary hover:text-primary"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-text-secondary hover:text-primary"
                     }`}
                   onClick={() => {
                     setActiveVendorModalTab("messages");
@@ -3947,9 +4018,24 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Commission Setting - ADDED SUBSCRIPTION DISPLAY */}
+                  {/* Commission Setting - ADDED SUBSCRIPTION & CUSTOM EDIT */}
                   <div className="p-4 border border-secondary/20 rounded-sm">
-                    <h4 className="font-medium mb-3">Plan & Commission</h4>
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium">Plan & Commission</h4>
+                      <button
+                        onClick={() => {
+                          setEditingCommissionVendor(selectedVendor);
+                          setNewCommissionRate(
+                            selectedVendor.commissionRate !== undefined
+                              ? selectedVendor.commissionRate
+                              : 10
+                          );
+                        }}
+                        className="text-xs font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Edit2 size={13} /> Edit Commission Rate
+                      </button>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-text-secondary mb-1">
@@ -3973,8 +4059,13 @@ const AdminDashboard = () => {
                         <p className="text-xs text-text-secondary mb-1">
                           Commission Rate
                         </p>
-                        <p className="text-lg font-bold text-primary">
-                          {selectedVendor.commissionRate}%
+                        <p className="text-lg font-bold text-primary flex items-center gap-2">
+                          {selectedVendor.commissionRate !== undefined
+                            ? selectedVendor.commissionRate
+                            : 10}%
+                          <span className="text-xs font-normal text-text-secondary">
+                            (Customizable)
+                          </span>
                         </p>
                       </div>
                     </div>
@@ -4002,24 +4093,20 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() =>
-                                  setPdfViewerModal({
-                                    isOpen: true,
-                                    url: doc.fileUrl,
-                                    name: doc.name,
-                                  })
-                                }
+                              <a
+                                href={getDocumentViewUrl(doc.fileUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-accent text-xs font-bold uppercase px-2 py-1 hover:text-primary transition-colors underline"
                               >
                                 View
-                              </button>
+                              </a>
                               <span
                                 className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${doc.status === "approved"
-                                    ? "bg-green-100 text-green-700"
-                                    : doc.status === "rejected"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-yellow-100 text-yellow-700"
+                                  ? "bg-green-100 text-green-700"
+                                  : doc.status === "rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
                                   }`}
                               >
                                 {doc.status}
@@ -4246,21 +4333,21 @@ const AdminDashboard = () => {
                         <div
                           key={msg._id}
                           className={`flex ${msg.sender === "admin"
-                              ? "justify-end"
-                              : "justify-start"
+                            ? "justify-end"
+                            : "justify-start"
                             }`}
                         >
                           <div
                             className={`max-w-[70%] p-3 rounded-lg ${msg.sender === "admin"
-                                ? "bg-primary text-white rounded-br-none"
-                                : "bg-white border border-secondary/20 rounded-bl-none"
+                              ? "bg-primary text-white rounded-br-none"
+                              : "bg-white border border-secondary/20 rounded-bl-none"
                               }`}
                           >
                             <p className="text-sm">{msg.message}</p>
                             <p
                               className={`text-[10px] mt-1 ${msg.sender === "admin"
-                                  ? "text-white/70"
-                                  : "text-text-secondary"
+                                ? "text-white/70"
+                                : "text-text-secondary"
                                 }`}
                             >
                               <span className="uppercase font-bold mr-1 text-[8px] opacity-70">
@@ -4746,10 +4833,10 @@ const AdminDashboard = () => {
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${log.initiatedBy === "Admin"
-                        ? "bg-purple-100 text-purple-700"
-                        : log.initiatedBy === "Vendor"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-yellow-100 text-yellow-700"
+                      ? "bg-purple-100 text-purple-700"
+                      : log.initiatedBy === "Vendor"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-yellow-100 text-yellow-700"
                       }`}
                   >
                     {log.initiatedBy}
@@ -5081,8 +5168,8 @@ const AdminDashboard = () => {
               key={stat.label}
               onClick={() => setReturnsFilter(stat.label.toLowerCase())}
               className={`bg-surface p-4 rounded-sm shadow-sm border border-secondary/10 cursor-pointer hover:shadow-md transition-shadow ${returnsFilter === stat.label.toLowerCase()
-                  ? `ring-2 ring-${stat.color}-400`
-                  : ""
+                ? `ring-2 ring-${stat.color}-400`
+                : ""
                 }`}
             >
               <p className="text-2xl font-bold text-primary">{stat.value}</p>
@@ -5312,14 +5399,14 @@ const AdminDashboard = () => {
                         }}
                         disabled={selectedReturn.status === status}
                         className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors ${selectedReturn.status === status
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : status === "Approved"
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : status === "Rejected"
-                                ? "bg-red-100 text-red-700 hover:bg-red-200"
-                                : status === "Refunded"
-                                  ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : status === "Approved"
+                            ? "bg-green-100 text-green-700 hover:bg-green-200"
+                            : status === "Rejected"
+                              ? "bg-red-100 text-red-700 hover:bg-red-200"
+                              : status === "Refunded"
+                                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                                : "bg-blue-100 text-blue-700 hover:bg-blue-200"
                           }`}
                       >
                         {status}
@@ -5889,53 +5976,6 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* PDF Viewer Modal */}
-      {pdfViewerModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface w-full max-w-4xl rounded-sm shadow-xl overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b border-secondary/10 bg-surface">
-              <h2 className="font-medium text-primary">
-                {pdfViewerModal.name}
-              </h2>
-              <button
-                onClick={() =>
-                  setPdfViewerModal({ isOpen: false, url: "", name: "" })
-                }
-                className="text-text-secondary hover:text-red-500 transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="flex-1 bg-black/10 min-h-[600px]">
-              <iframe
-                src={`${pdfViewerModal.url}?fl_attachment`}
-                title={pdfViewerModal.name}
-                className="w-full h-[600px] border-0"
-                style={{ display: "block" }}
-              />
-            </div>
-            <div className="p-4 border-t border-secondary/10 flex gap-3">
-              <a
-                href={pdfViewerModal.url}
-                download={pdfViewerModal.name}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2 bg-primary text-surface font-bold uppercase tracking-wider rounded-sm hover:bg-accent hover:text-primary text-center transition-colors"
-              >
-                Download
-              </a>
-              <button
-                onClick={() =>
-                  setPdfViewerModal({ isOpen: false, url: "", name: "" })
-                }
-                className="flex-1 py-2 border border-secondary/20 rounded-sm hover:bg-secondary/5 font-medium"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Create Sub-Admin Modal */}
       {showSubadminModal && (
@@ -6058,6 +6098,78 @@ const AdminDashboard = () => {
                   className="flex-1 bg-primary text-surface py-3 font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all duration-300 rounded-sm shadow"
                 >
                   Reset Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Vendor Commission Modal */}
+      {editingCommissionVendor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-surface w-full max-w-md rounded-sm shadow-xl p-6 border border-secondary/10 animate-fade-in">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-primary">
+                Edit Vendor Commission Rate
+              </h3>
+              <button
+                onClick={() => setEditingCommissionVendor(null)}
+                className="text-text-secondary hover:text-red-500 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="mb-4 p-3 bg-secondary/5 rounded-sm text-xs">
+              <p className="text-text-secondary mb-1">
+                Vendor: <strong className="text-primary">{editingCommissionVendor.businessName}</strong>
+              </p>
+              <p className="text-text-secondary">
+                Email: <span className="font-mono text-primary">{editingCommissionVendor.email}</span>
+              </p>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateCommission(editingCommissionVendor._id);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">
+                  Commission Rate (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    required
+                    value={newCommissionRate}
+                    onChange={(e) => setNewCommissionRate(e.target.value)}
+                    className="w-full bg-background border border-secondary/20 p-3 rounded-sm focus:border-accent outline-none text-sm font-bold text-primary pr-8"
+                    placeholder="e.g. 10"
+                  />
+                  <span className="absolute right-3 top-3 text-text-secondary font-bold">%</span>
+                </div>
+                <p className="text-[11px] text-text-secondary mt-1">
+                  Default plan rate: {editingCommissionVendor.subscription?.plan === 'enterprise' ? '5%' : editingCommissionVendor.subscription?.plan === 'professional' ? '10%' : '15%'}
+                </p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingCommissionVendor(null)}
+                  className="px-4 py-2 border border-secondary/20 rounded-sm text-xs font-bold text-text-secondary uppercase hover:bg-secondary/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={commissionSaving}
+                  className="px-4 py-2 bg-primary hover:bg-accent text-surface hover:text-primary rounded-sm text-xs font-bold uppercase transition-colors"
+                >
+                  {commissionSaving ? "Saving..." : "Save Commission Rate"}
                 </button>
               </div>
             </form>

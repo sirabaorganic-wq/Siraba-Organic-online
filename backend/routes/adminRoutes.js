@@ -330,11 +330,20 @@ router.put("/vendors/:id/commission", protect, admin, async (req, res) => {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
-    if (commissionRate !== undefined) vendor.commissionRate = commissionRate;
+    if (commissionRate !== undefined && commissionRate !== null && commissionRate !== "") {
+      const rateNum = Number(commissionRate);
+      if (isNaN(rateNum) || rateNum < 0 || rateNum > 100) {
+        return res.status(400).json({ message: "Commission rate must be a number between 0 and 100" });
+      }
+      vendor.commissionRate = rateNum;
+    }
+
     if (pricingTier) vendor.pricingTier = pricingTier;
 
     await vendor.save();
     res.json({
+      message: "Vendor commission rate updated successfully",
+      vendorId: vendor._id,
       commissionRate: vendor.commissionRate,
       pricingTier: vendor.pricingTier,
     });

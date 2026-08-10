@@ -110,17 +110,58 @@ router.get("/view-doc", async (req, res) => {
     }
 
     const decodedUrl = decodeURIComponent(rawUrl);
-
-    // Fetch the remote file
     const axios = require("axios");
-    const response = await axios.get(decodedUrl, {
+
+    const fetchOpts = {
       responseType: "arraybuffer",
       timeout: 15000,
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "*/*",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "*/*",
       },
-    });
+    };
+
+    let response;
+    try {
+      response = await axios.get(decodedUrl, fetchOpts);
+    } catch (fetchErr) {
+      // Cloudinary returns 401 for PDFs uploaded as image resource_type
+      if (
+        fetchErr.response?.status === 401 &&
+        decodedUrl.includes("cloudinary.com")
+      ) {
+        const candidateUrls = [];
+        if (decodedUrl.endsWith(".pdf.pdf")) {
+          candidateUrls.push(decodedUrl.replace(/\.pdf\.pdf$/i, ".pdf.png"));
+          candidateUrls.push(decodedUrl.replace(/\.pdf\.pdf$/i, ".png"));
+          candidateUrls.push(decodedUrl.replace(/\.pdf\.pdf$/i, ".pdf.jpg"));
+          candidateUrls.push(decodedUrl.replace(/\.pdf\.pdf$/i, ".jpg"));
+        } else if (decodedUrl.endsWith(".pdf")) {
+          candidateUrls.push(decodedUrl.replace(/\.pdf$/i, ".png"));
+          candidateUrls.push(decodedUrl.replace(/\.pdf$/i, ".pdf.png"));
+          candidateUrls.push(decodedUrl.replace(/\.pdf$/i, ".jpg"));
+          candidateUrls.push(decodedUrl.replace(/\.pdf$/i, ".pdf.jpg"));
+        }
+
+        let fallbackSuccess = false;
+        for (const candUrl of candidateUrls) {
+          try {
+            response = await axios.get(candUrl, fetchOpts);
+            fallbackSuccess = true;
+            break;
+          } catch (e) {
+            // try next candidate
+          }
+        }
+
+        if (!fallbackSuccess) {
+          throw fetchErr;
+        }
+      } else {
+        throw fetchErr;
+      }
+    }
 
     const buffer = Buffer.from(response.data);
     let mimeType = "application/pdf"; // default fallback
@@ -132,21 +173,31 @@ router.get("/view-doc", async (req, res) => {
       mimeType = "image/jpeg";
     } else if (buffer.slice(0, 4).toString("hex") === "89504e47") {
       mimeType = "image/png";
-    } else if (buffer.slice(0, 4).toString() === "RIFF" && buffer.slice(8, 12).toString() === "WEBP") {
+    } else if (
+      buffer.slice(0, 4).toString() === "RIFF" &&
+      buffer.slice(8, 12).toString() === "WEBP"
+    ) {
       mimeType = "image/webp";
-    } else if (response.headers["content-type"] && response.headers["content-type"] !== "application/octet-stream") {
+    } else if (
+      response.headers["content-type"] &&
+      response.headers["content-type"] !== "application/octet-stream"
+    ) {
       mimeType = response.headers["content-type"];
     }
 
-    const ext = mimeType.includes("pdf") ? "pdf" : mimeType.includes("png") ? "png" : mimeType.includes("webp") ? "webp" : "jpg";
+    const ext = mimeType.includes("pdf")
+      ? "pdf"
+      : mimeType.includes("png")
+        ? "png"
+        : mimeType.includes("webp")
+          ? "webp"
+          : "jpg";
+
     res.setHeader("Content-Type", mimeType);
     res.setHeader("Content-Disposition", `inline; filename="document.${ext}"`);
     return res.send(buffer);
   } catch (error) {
     console.error("View document error:", error.message);
-    if (req.query.url) {
-      return res.redirect(req.query.url);
-    }
     return res.status(500).json({ message: "Failed to load document" });
   }
 });

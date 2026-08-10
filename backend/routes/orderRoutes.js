@@ -195,9 +195,10 @@ router.post("/", protect, async (req, res) => {
     const vendorOrders = [];
     for (const [vendorId, vendorData] of vendorItemsMap) {
       const vendor = await Vendor.findById(vendorId);
-      const commissionRate = getCommissionRate(
-        vendor?.subscription?.plan || "starter",
-      );
+      const commissionRate =
+        vendor?.commissionRate !== undefined && vendor?.commissionRate !== null
+          ? vendor.commissionRate
+          : getCommissionRate(vendor?.subscription?.plan || "starter");
       const commission = (vendorData.subtotal * commissionRate) / 100;
       const netAmount = vendorData.subtotal - commission;
 

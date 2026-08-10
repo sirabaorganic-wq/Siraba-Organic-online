@@ -188,15 +188,16 @@ const VendorSubscription = () => {
                 </div>
 
                 <div className="bg-background p-5 rounded-sm border border-secondary/10 md:min-w-[320px]">
-                    <h3 className="text-sm font-bold text-primary mb-2 uppercase tracking-wide">Your Commission Rate: {currentSubscription?.commissionRate}%</h3>
+                    <h3 className="text-sm font-bold text-primary mb-2 uppercase tracking-wide">
+                      Your Active Commission Rate: {currentSubscription?.commissionRate !== undefined ? currentSubscription.commissionRate : 10}%
+                    </h3>
                     <p className="text-xs text-text-secondary mb-4 font-light">
-                        For every ₹100 sale, Siraba takes ₹{currentSubscription?.commissionRate} as platform fee.
-                        Upgrade your plan to reduce commission rates!
+                        For every ₹100 sale, Siraba takes ₹{currentSubscription?.commissionRate !== undefined ? currentSubscription.commissionRate : 10} as platform fee.
                     </p>
                     <div className="w-full bg-secondary/20 rounded-full h-2 mb-2">
                         <div
                             className="bg-accent h-2 rounded-full transition-all"
-                            style={{ width: `${100 - (currentSubscription?.commissionRate * 5)}%` }}
+                            style={{ width: `${Math.max(0, 100 - ((currentSubscription?.commissionRate !== undefined ? currentSubscription.commissionRate : 10) * 5))}%` }}
                         ></div>
                     </div>
                     <div className="flex justify-between text-xs text-text-secondary">

@@ -93,7 +93,7 @@ const generateVendorInvoiceHTML = async (vendorOrder, vendor) => {
 
         // Vendor Specific
         isVendorInvoice: true,
-        commissionRate: vendor.subscription?.plan?.commission || vendor.commissionRate || 0,
+        commissionRate: vendor.commissionRate !== undefined && vendor.commissionRate !== null ? vendor.commissionRate : (vendor.subscription?.plan?.commission || 0),
 
         // GST Information (conditional)
         showGST: gstSettings.gst_enabled,

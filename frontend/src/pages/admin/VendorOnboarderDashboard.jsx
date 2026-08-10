@@ -362,7 +362,7 @@ const VendorOnboarderDashboard = () => {
                               <a
                                 href={getDocumentViewUrl(doc.fileUrl)}
                                 target="_blank"
-                                rel="noreferrer"
+                                rel="noopener noreferrer"
                                 className="p-2 border border-secondary/20 hover:border-primary text-text-secondary hover:text-primary rounded-sm transition-colors"
                                 title="View Document"
                               >

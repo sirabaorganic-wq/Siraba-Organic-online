@@ -633,7 +633,11 @@ const DashboardContent = ({ dashboardData, vendor }) => {
   const ordersByStatus = dashboardData?.ordersByStatus || {};
   const vendorWallet = dashboardData?.vendor?.wallet || {};
   const commissionRate =
-    vendor?.commissionRate || dashboardData?.vendor?.commissionRate || 15;
+    vendor?.commissionRate !== undefined
+      ? vendor.commissionRate
+      : dashboardData?.vendor?.commissionRate !== undefined
+      ? dashboardData.vendor.commissionRate
+      : 10;
 
   return (
     <div className="space-y-6">
@@ -646,11 +650,11 @@ const DashboardContent = ({ dashboardData, vendor }) => {
           </div>
           <div>
             <p className="font-heading font-medium text-xl">
-              Your Commission Rate
+              Your Active Commission Rate
             </p>
             <p className="text-surface/80 text-sm font-light mt-1">
-              Platform fee on each sale (
-              <span className="font-medium text-accent">
+              Platform fee on each order sale (
+              <span className="font-medium text-accent capitalize">
                 {vendor?.subscription?.plan || "Starter"}
               </span>{" "}
               plan)
@@ -659,14 +663,9 @@ const DashboardContent = ({ dashboardData, vendor }) => {
         </div>
         <div className="text-right relative z-10">
           <p className="text-4xl font-heading font-bold">{commissionRate}%</p>
-          {commissionRate > 5 && (
-            <Link
-              to="#"
-              className="text-xs text-accent hover:text-surface transition-colors mt-2 inline-block font-bold uppercase tracking-wider"
-            >
-              Upgrade to reduce commission →
-            </Link>
-          )}
+          <span className="text-[11px] text-surface/70 block mt-1">
+            Deducted automatically
+          </span>
         </div>
       </div>
 
@@ -3561,13 +3560,12 @@ const SubscriptionContent = ({
             <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
             <div>
               <p className="font-medium text-amber-800">
-                Your current commission rate:{" "}
-                {vendor?.commissionRate || currentPlan?.commissionRate || 15}%
+                Your current active commission rate:{" "}
+                {vendor?.commissionRate !== undefined ? vendor.commissionRate : (currentPlan?.commissionRate || 10)}%
               </p>
               <p className="text-sm text-amber-700 mt-1">
                 For every ₹100 sale, Siraba takes ₹
-                {vendor?.commissionRate || 15} as platform fee. Upgrade your
-                plan to reduce commission rates!
+                {vendor?.commissionRate !== undefined ? vendor.commissionRate : 10} as platform fee.
               </p>
             </div>
           </div>
