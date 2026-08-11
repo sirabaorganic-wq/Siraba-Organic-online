@@ -363,8 +363,98 @@ const StatCard = ({
   </div>
 );
 
+// Helpers for missing data detection
+const isBankDetailsMissing = (vendor) => {
+  if (!vendor?.bankDetails) return true;
+  const { accountNumber, ifscCode, accountHolderName, bankName } = vendor.bankDetails;
+  return !accountNumber || !ifscCode || !accountHolderName || !bankName;
+};
+
+const isAddressMissing = (vendor) => {
+  const hasBusinessAddress = !!(
+    vendor?.address &&
+    vendor.address.city &&
+    vendor.address.state &&
+    (vendor.address.postalCode || vendor.address.pincode)
+  );
+  const hasPickupAddress = !!(
+    vendor?.pickupAddress &&
+    vendor.pickupAddress.addressLine1 &&
+    vendor.pickupAddress.pincode
+  );
+  return !hasBusinessAddress || !hasPickupAddress;
+};
+
+// Global Missing Data Banner Component
+const VendorMissingDataBanner = ({ vendor, onOpenBankModal, onOpenPickupModal, onGoToSettings }) => {
+  const bankMissing = isBankDetailsMissing(vendor);
+  const addressMissing = isAddressMissing(vendor);
+
+  if (!bankMissing && !addressMissing) return null;
+
+  return (
+    <div className="mb-6 p-5 bg-amber-50 border border-amber-300 rounded-sm shadow-md text-amber-900 animate-fadeIn">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-amber-200/70 rounded-full text-amber-900 shrink-0 mt-0.5 sm:mt-0">
+            <AlertTriangle className="w-6 h-6 text-amber-700" />
+          </div>
+          <div>
+            <h4 className="font-heading font-bold text-base text-amber-950 flex items-center gap-2">
+              Action Required: Missing Profile Information
+            </h4>
+            <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+              {bankMissing && addressMissing
+                ? "Your bank account details and address information are missing. Please update them to enable order payouts and shipping."
+                : bankMissing
+                ? "Your bank details are missing or incomplete. Add your bank account details to receive order payouts."
+                : "Your address information (business address or warehouse pickup location) is incomplete. Please update it to manage shipping."}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          {bankMissing && (
+            <button
+              type="button"
+              onClick={onOpenBankModal}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-sm text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <CreditCard size={14} /> Add Bank Details
+            </button>
+          )}
+          {addressMissing && (
+            <button
+              type="button"
+              onClick={onOpenPickupModal}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-surface rounded-sm text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <Globe size={14} /> Add Warehouse Address
+            </button>
+          )}
+          {addressMissing && (
+            <button
+              type="button"
+              onClick={onGoToSettings}
+              className="px-3 py-2 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-sm text-xs font-bold uppercase tracking-wider transition-all"
+            >
+              Edit Business Address
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Vendor Info Content - Display all vendor onboarding details
-const VendorInfoContent = ({ vendor, updateProfile, getProfile }) => {
+const VendorInfoContent = ({
+  vendor,
+  updateProfile,
+  getProfile,
+  onOpenBankModal,
+  onOpenPickupModal,
+  onGoToSettings,
+}) => {
   const [updateModal, setUpdateModal] = useState({
     isOpen: false,
     type: "email",
@@ -458,11 +548,31 @@ const VendorInfoContent = ({ vendor, updateProfile, getProfile }) => {
 
       {/* Bank Details */}
       <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
-        <div className="flex items-center gap-2 mb-6">
-          <CreditCard className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-bold text-primary">
-            Bank Account Details
-          </h3>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold text-primary">
+              Bank Account Details
+            </h3>
+            {isBankDetailsMissing(vendor) ? (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded border border-amber-300">
+                Incomplete
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
+                Complete
+              </span>
+            )}
+          </div>
+          {onOpenBankModal && (
+            <button
+              type="button"
+              onClick={onOpenBankModal}
+              className="px-3 py-1.5 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Edit Bank Details (OTP)
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InfoField
@@ -479,24 +589,89 @@ const VendorInfoContent = ({ vendor, updateProfile, getProfile }) => {
             label="Branch Name"
             value={vendor.bankDetails?.branchName}
           />
+          <InfoField
+            label="Account Type"
+            value={vendor.bankDetails?.accountType ? `${vendor.bankDetails.accountType} account` : undefined}
+          />
         </div>
       </div>
 
-      {/* Address Information */}
+      {/* Business Address Information */}
       <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
-        <div className="flex items-center gap-2 mb-6">
-          <Globe className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-bold text-primary">Address</h3>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold text-primary">Business Address</h3>
+            {!(vendor.address?.city && vendor.address?.state && (vendor.address?.postalCode || vendor.address?.pincode)) ? (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded border border-amber-300">
+                Incomplete
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
+                Complete
+              </span>
+            )}
+          </div>
+          {onGoToSettings && (
+            <button
+              type="button"
+              onClick={onGoToSettings}
+              className="px-3 py-1.5 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Edit Address in Settings
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InfoField label="Street Address" value={vendor.address?.street} />
           <InfoField label="City" value={vendor.address?.city} />
           <InfoField label="State" value={vendor.address?.state} />
-          <InfoField label="PIN Code" value={vendor.address?.pincode} />
+          <InfoField label="PIN Code" value={vendor.address?.postalCode || vendor.address?.pincode} />
           <InfoField
             label="Country"
             value={vendor.address?.country || "India"}
           />
+        </div>
+      </div>
+
+      {/* Warehouse & Pickup Address */}
+      <div className="bg-surface rounded-sm p-6 border border-secondary/10 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Store className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold text-primary">
+              Warehouse &amp; Pickup Address (Shiprocket)
+            </h3>
+            {!(vendor.pickupAddress?.addressLine1 && vendor.pickupAddress?.pincode) ? (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded border border-amber-300">
+                Incomplete
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
+                Complete
+              </span>
+            )}
+          </div>
+          {onOpenPickupModal && (
+            <button
+              type="button"
+              onClick={onOpenPickupModal}
+              className="px-3 py-1.5 bg-accent text-primary rounded-sm text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-surface transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit2 size={12} /> Edit Pickup Address (OTP)
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoField label="Facility Name" value={vendor.pickupAddress?.facilityName || vendor.businessName} />
+          <InfoField label="Contact Person" value={vendor.pickupAddress?.contactPerson || vendor.contactPerson} />
+          <InfoField label="Phone" value={vendor.pickupAddress?.phone || vendor.phone} />
+          <InfoField label="Address Line 1" value={vendor.pickupAddress?.addressLine1} />
+          <InfoField label="Address Line 2" value={vendor.pickupAddress?.addressLine2} />
+          <InfoField label="City" value={vendor.pickupAddress?.city} />
+          <InfoField label="State" value={vendor.pickupAddress?.state} />
+          <InfoField label="PIN Code" value={vendor.pickupAddress?.pincode} />
+          <InfoField label="Shiprocket Location Code" value={vendor.pickupAddress?.shiprocketLocationName || vendor.shiprocket_pickup_code} />
         </div>
       </div>
 
@@ -2633,6 +2808,26 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
               className="w-full px-4 py-3 border border-secondary/20 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent bg-background/50 transition-all font-light"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-text-secondary uppercase tracking-wide">
+              PIN Code / Postal Code
+            </label>
+            <input
+              type="text"
+              value={profileData.address?.postalCode || profileData.address?.pincode || ""}
+              onChange={(e) =>
+                setProfileData({
+                  ...profileData,
+                  address: {
+                    ...profileData.address,
+                    postalCode: e.target.value,
+                    pincode: e.target.value,
+                  },
+                })
+              }
+              className="w-full px-4 py-3 border border-secondary/20 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent bg-background/50 transition-all font-light"
+            />
+          </div>
         </div>
 
         <button
@@ -4691,6 +4886,8 @@ const VendorDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [bankModalOpen, setBankModalOpen] = useState(false);
+  const [pickupModalOpen, setPickupModalOpen] = useState(false);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -4794,7 +4991,11 @@ const VendorDashboard = () => {
                 onMarkAsRead={handleMarkAllRead}
               />
               <div className="h-8 w-px bg-secondary/20 mx-2 hidden sm:block"></div>
-              <div className="flex items-center gap-3 pl-2 cursor-pointer hover:bg-secondary/5 p-2 rounded-lg transition-colors group">
+              <div
+                onClick={() => setActiveTab("vendor-info")}
+                className="flex items-center gap-3 pl-2 cursor-pointer hover:bg-secondary/5 p-2 rounded-lg transition-colors group"
+                title="Click to view Vendor Information"
+              >
                 <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-md ring-2 ring-offset-2 ring-transparent group-hover:ring-accent transition-all">
                   <span className="text-accent font-heading font-bold text-lg">
                     {vendor?.contactPerson?.charAt(0) || "V"}
@@ -4815,6 +5016,14 @@ const VendorDashboard = () => {
 
         {/* Content */}
         <main className="p-8 max-w-[1600px] mx-auto animate-fadeIn">
+          {/* Missing Data Warning Banner */}
+          <VendorMissingDataBanner
+            vendor={vendor}
+            onOpenBankModal={() => setBankModalOpen(true)}
+            onOpenPickupModal={() => setPickupModalOpen(true)}
+            onGoToSettings={() => setActiveTab("settings")}
+          />
+
           {activeTab === "dashboard" && (
             <DashboardContent dashboardData={dashboardData} vendor={vendor} />
           )}
@@ -4823,6 +5032,9 @@ const VendorDashboard = () => {
               vendor={vendor}
               updateProfile={updateProfile}
               getProfile={getProfile}
+              onOpenBankModal={() => setBankModalOpen(true)}
+              onOpenPickupModal={() => setPickupModalOpen(true)}
+              onGoToSettings={() => setActiveTab("settings")}
             />
           )}
           {activeTab === "products" && (
@@ -4902,6 +5114,26 @@ const VendorDashboard = () => {
           )}
         </main>
       </div>
+
+      <VendorBankEditModal
+        isOpen={bankModalOpen}
+        initialData={vendor?.bankDetails}
+        onClose={() => setBankModalOpen(false)}
+        onSuccess={() => {
+          refreshVendorStatus();
+          getProfile();
+        }}
+      />
+
+      <VendorPickupEditModal
+        isOpen={pickupModalOpen}
+        initialData={vendor?.pickupAddress}
+        onClose={() => setPickupModalOpen(false)}
+        onSuccess={() => {
+          refreshVendorStatus();
+          getProfile();
+        }}
+      />
     </div>
   );
 };
