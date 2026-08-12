@@ -177,6 +177,31 @@ router.post("/", async (req, res) => {
       }
 
       invalidateCache.orders();
+
+      // Emit Realtime Socket.IO Events & System Notifications
+      if (req.io) {
+        req.io.emit("order-status-updated", parentOrder || { _id: vendorOrder.order, status: vendorOrder.status });
+        req.io.emit(`vendor-order-updated-${vendorOrder.vendor}`, vendorOrder);
+        if (parentOrder && parentOrder.user) {
+          req.io.emit(`customer-order-updated-${parentOrder.user}`, parentOrder);
+        }
+      }
+
+      // Create System Notification for Vendor & Customer on Terminal / Major Transitions
+      const Notification = require("../models/Notification");
+      if (["delivered", "in_transit", "rto", "cancelled"].includes(newInternalStatus)) {
+        try {
+          await Notification.create({
+            recipient: vendorOrder.vendor,
+            recipientModel: "Vendor",
+            type: newInternalStatus === "delivered" ? "success" : (newInternalStatus === "rto" ? "error" : "info"),
+            title: `Shipment Status: ${newInternalStatus.toUpperCase()}`,
+            message: `Shipment for Order #${vendorOrder._id.toString().slice(-8)} (AWB: ${vendorOrder.awbCode || 'N/A'}) is now ${newInternalStatus.replace('_', ' ')}.`,
+          });
+        } catch (nErr) {
+          console.error("Failed to create webhook status notification:", nErr.message);
+        }
+      }
     } else {
       console.log(`Shiprocket webhook: Ignored stale status transition from '${vendorOrder.status}' to '${newInternalStatus}' for VendorOrder: ${vendorOrder._id}`);
     }
