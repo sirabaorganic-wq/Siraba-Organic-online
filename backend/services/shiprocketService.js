@@ -275,18 +275,6 @@ class ShiprocketService {
    * Translates Siraba schemas to Shiprocket Payload to create an adhoc shipment
    */
   async createShipment(vendorOrder, order, vendor) {
-    // Idempotency check: return existing shipment if already created
-    if (vendorOrder.shiprocketOrderId) {
-      return {
-        shiprocketOrderId: vendorOrder.shiprocketOrderId,
-        shipmentId: vendorOrder.shipmentId,
-        awbCode: vendorOrder.awbCode,
-        courierName: vendorOrder.courierName,
-        courierId: vendorOrder.courierId,
-        alreadyExists: true,
-      };
-    }
-
     const token = await this.login();
 
     // Verify vendor pickup location configuration
@@ -309,6 +297,42 @@ class ShiprocketService {
       throw err;
     }
 
+    // REUSE EXISTING SHIPMENT: If shipmentId already exists, NEVER call /orders/create/adhoc again!
+    if (vendorOrder.shipmentId) {
+      console.log(`Reusing existing Shiprocket Shipment ID ${vendorOrder.shipmentId} for order ${vendorOrder._id}`);
+      const shipmentData = {
+        shiprocketOrderId: vendorOrder.shiprocketOrderId,
+        shipmentId: vendorOrder.shipmentId,
+        awbCode: vendorOrder.awbCode || '',
+        courierName: vendorOrder.courierName || '',
+        courierId: vendorOrder.courierId || '',
+        routingCode: vendorOrder.shippingRoutingCode || '',
+        labelUrl: vendorOrder.labelUrl || '',
+      };
+
+      if (!shipmentData.awbCode) {
+        const awbRes = await this.assignAwb(shipmentData.shipmentId);
+        if (awbRes?.awb_code) {
+          shipmentData.awbCode = awbRes.awb_code;
+          shipmentData.courierName = awbRes.courier_name || awbRes.courier_company_id || '';
+          shipmentData.courierId = String(awbRes.courier_company_id || '');
+        } else if (awbRes?.awb_assign_error) {
+          throw new Error(`AWB Assignment Error: ${awbRes.awb_assign_error}`);
+        }
+      }
+
+      if (shipmentData.awbCode) {
+        try {
+          await this.generatePickup(shipmentData.shipmentId);
+          shipmentData.pickupScheduled = true;
+        } catch (pErr) {
+          console.warn(`Pickup generation notice for shipment ${shipmentData.shipmentId}:`, pErr.response?.data?.message || pErr.message);
+        }
+      }
+
+      return shipmentData;
+    }
+
     const isPrepaid = order.isPaid === true || order.paymentStatus === 'captured' || order.paymentStatus === 'paid';
     const payment_method = isPrepaid ? 'Prepaid' : 'COD';
 
@@ -321,19 +345,28 @@ class ShiprocketService {
       throw new Error('Shipping address or postal code is missing');
     }
 
+    const rawPhone = String(
+      vendorOrder.shippingAddress?.phone ||
+      order.shippingAddress?.phone ||
+      order.user?.phone ||
+      vendor?.phone ||
+      '9549892293'
+    ).replace(/\D/g, '');
+    const cleanPhone = rawPhone.length === 10 ? rawPhone : (rawPhone.length > 10 ? rawPhone.slice(-10) : '9549892293');
+
     const payload = {
       order_id: vendorOrder._id.toString(),
       order_date: new Date(vendorOrder.createdAt || Date.now()).toISOString().split('T')[0],
       pickup_location: verification.locationName || pickupLocation,
-      billing_customer_name: vendorOrder.shippingAddress.name || order.user?.name || 'Customer',
+      billing_customer_name: vendorOrder.shippingAddress?.name || order.shippingAddress?.fullName || order.user?.name || 'Customer',
       billing_last_name: '',
-      billing_address: vendorOrder.shippingAddress.address,
-      billing_city: vendorOrder.shippingAddress.city,
-      billing_pincode: vendorOrder.shippingAddress.postalCode,
-      billing_state: vendorOrder.shippingAddress.state,
-      billing_country: vendorOrder.shippingAddress.country || 'India',
+      billing_address: vendorOrder.shippingAddress?.address || order.shippingAddress?.address || 'Main Street',
+      billing_city: vendorOrder.shippingAddress?.city || order.shippingAddress?.city || 'Jaipur',
+      billing_pincode: String(vendorOrder.shippingAddress?.postalCode || order.shippingAddress?.postalCode).trim(),
+      billing_state: vendorOrder.shippingAddress?.state || order.shippingAddress?.state || 'Rajasthan',
+      billing_country: vendorOrder.shippingAddress?.country || order.shippingAddress?.country || 'India',
       billing_email: order.user?.email || 'customer@sirabaorganic.com',
-      billing_phone: vendorOrder.shippingAddress.phone || '9999999999',
+      billing_phone: cleanPhone,
       shipping_is_billing: true,
       order_items: vendorOrder.items.map((item) => ({
         name: item.name,
@@ -360,12 +393,26 @@ class ShiprocketService {
       const shipmentData = {
         shiprocketOrderId: result.order_id,
         shipmentId: result.shipment_id,
-        awbCode: result.awb_code,
-        courierName: result.courier_name,
-        courierId: result.courier_company_id,
-        routingCode: result.routing_code,
-        labelUrl: result.label_url,
+        awbCode: result.awb_code || '',
+        courierName: result.courier_name || '',
+        courierId: result.courier_company_id || '',
+        routingCode: result.routing_code || '',
+        labelUrl: result.label_url || '',
       };
+
+      // Auto-attempt AWB assignment if AWB code was not included in order creation response
+      if (!shipmentData.awbCode && shipmentData.shipmentId) {
+        try {
+          const awbRes = await this.assignAwb(shipmentData.shipmentId);
+          if (awbRes?.awb_code) {
+            shipmentData.awbCode = awbRes.awb_code;
+            shipmentData.courierName = awbRes.courier_name || awbRes.courier_company_id || '';
+            shipmentData.courierId = String(awbRes.courier_company_id || '');
+          }
+        } catch (awbErr) {
+          console.warn(`Auto AWB assignment notice for shipment ${shipmentData.shipmentId}:`, awbErr.response?.data?.message || awbErr.message);
+        }
+      }
 
       return shipmentData;
     } catch (error) {

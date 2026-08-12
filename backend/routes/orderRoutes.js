@@ -365,17 +365,41 @@ router.get("/myorders", protect, async (req, res) => {
 // @route   GET /api/orders
 // @access  Private/Admin
 router.get("/", protect, admin, async (req, res) => {
-  const orders = await Order.find({})
-    .populate("user", "id name")
-    .populate({
-      path: "orderItems.product",
-      select: "vendor",
-      populate: {
-        path: "vendor",
-        select: "businessName",
-      },
+  try {
+    const orders = await Order.find({})
+      .populate("user", "id name email")
+      .populate({
+        path: "orderItems.product",
+        select: "vendor",
+        populate: {
+          path: "vendor",
+          select: "businessName shiprocket_pickup_code pickupAddress",
+        },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const orderIds = orders.map((o) => o._id);
+    const vendorOrders = await VendorOrder.find({ order: { $in: orderIds } })
+      .populate("vendor", "businessName shiprocket_pickup_code pickupAddress shiprocketPickup")
+      .lean();
+
+    const vendorOrdersMap = {};
+    vendorOrders.forEach((vo) => {
+      const parentId = vo.order.toString();
+      if (!vendorOrdersMap[parentId]) vendorOrdersMap[parentId] = [];
+      vendorOrdersMap[parentId].push(vo);
     });
-  res.json(orders);
+
+    orders.forEach((o) => {
+      o.vendorOrders = vendorOrdersMap[o._id.toString()] || [];
+    });
+
+    res.json(orders);
+  } catch (error) {
+    console.error("Get All Orders Error:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch orders" });
+  }
 });
 
 // @desc    Get order analytics

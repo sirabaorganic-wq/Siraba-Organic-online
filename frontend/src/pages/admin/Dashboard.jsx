@@ -102,6 +102,23 @@ const AdminDashboard = () => {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [contactMessages, setContactMessages] = useState([]);
   const [coupons, setCoupons] = useState([]);
+  const [retryingVendorOrders, setRetryingVendorOrders] = useState({});
+
+  const handleRetryShipment = async (vendorOrderId) => {
+    if (!vendorOrderId) return;
+    setRetryingVendorOrders((prev) => ({ ...prev, [vendorOrderId]: true }));
+    try {
+      const { data } = await client.post(`/shiprocket/retry/${vendorOrderId}`);
+      alert(`🎉 Shipment Retry Successful!\n\nShipment ID: ${data.shipment?.shipmentId || 'Created'}\nAWB Code: ${data.shipment?.awbCode || 'Assigned'}\nCourier: ${data.shipment?.courierName || 'Shiprocket Partner'}`);
+      window.location.reload();
+    } catch (error) {
+      console.error("Shipment retry error:", error);
+      const msg = error.response?.data?.message || error.message || "Shipment creation retry failed";
+      alert(`❌ Shipment Retry Failed:\n${msg}`);
+    } finally {
+      setRetryingVendorOrders((prev) => ({ ...prev, [vendorOrderId]: false }));
+    }
+  };
 
   // Vendor Management State
   const [vendors, setVendors] = useState([]);
@@ -1303,7 +1320,27 @@ const AdminDashboard = () => {
                         {formatPrice(order.totalPrice)}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 items-center">
+                          {/* Render Retry Shipment button in table row if any vendorOrder requires retry */}
+                          {order.vendorOrders?.some(vo => 
+                            ["shipment_blocked_pickup_unverified", "partially_failed", "shipment_failed", "awb_pending", "awb_assignment_failed", "pickup_failed", "pending"].includes(vo.status) || (vo.shipmentId && !vo.awbCode)
+                          ) && (
+                            <button
+                              onClick={() => {
+                                const targetVo = order.vendorOrders.find(vo => 
+                                  ["shipment_blocked_pickup_unverified", "partially_failed", "shipment_failed", "awb_pending", "awb_assignment_failed", "pickup_failed", "pending"].includes(vo.status) || (vo.shipmentId && !vo.awbCode)
+                                );
+                                if (targetVo) handleRetryShipment(targetVo._id);
+                              }}
+                              disabled={order.vendorOrders?.some(vo => retryingVendorOrders[vo._id])}
+                              className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-sm transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
+                              title="Retry Shiprocket Shipment Creation or AWB Assignment"
+                            >
+                              <RotateCcw size={14} className={order.vendorOrders?.some(vo => retryingVendorOrders[vo._id]) ? "animate-spin" : ""} />
+                              <span>{order.vendorOrders?.some(vo => retryingVendorOrders[vo._id]) ? "Retrying shipment..." : "Retry Shipment"}</span>
+                            </button>
+                          )}
+
                           <div className="relative">
                             <select
                               value={order.status}
@@ -1329,8 +1366,8 @@ const AdminDashboard = () => {
                               <option value="Pending">Placed</option>
                               <option value="Approved">Confirmed</option>
                               <option value="Packed">Packed</option>
-                              <option value="Shipped">Shipped</option>
-                              <option value="Delivered">Delivered</option>
+                              <option value="Shipped">Shipped (Shiprocket Webhook Sync)</option>
+                              <option value="Delivered">Delivered (Shiprocket Webhook Sync)</option>
                               <option value="Cancelled">Cancelled</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-text-secondary">
@@ -1347,27 +1384,19 @@ const AdminDashboard = () => {
                               Invoice
                             </span>
                           </button>
-                          <button
-                            onClick={() => handlePrintInvoice(order)}
-                            className="bg-white border border-secondary/20 hover:bg-secondary/5 text-text-secondary p-1.5 rounded-sm transition-colors hidden"
-                            title="Print Invoice"
-                          >
-                            <FileText size={16} />
-                          </button>
                         </div>
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr className="bg-secondary/5">
-                        <td colSpan="8" className="px-6 py-6">
-                          <div className="max-w-4xl">
+                        <td colSpan="9" className="px-6 py-6">
+                          <div className="max-w-4xl space-y-6">
                             {/* Tracking Timeline */}
-                            <div className="mb-6">
+                            <div>
                               <p className="text-xs font-bold uppercase text-text-secondary mb-4 tracking-wider">
-                                Order Tracking
+                                Order Tracking & Logistics Workflow
                               </p>
                               <div className="flex items-center justify-between relative">
-                                {/* Progress Line */}
                                 <div className="absolute top-5 left-0 right-0 h-1 bg-secondary/20">
                                   <div
                                     className="h-full bg-primary transition-all duration-500"
@@ -1378,7 +1407,6 @@ const AdminDashboard = () => {
                                   />
                                 </div>
 
-                                {/* Steps */}
                                 {[
                                   "Pending",
                                   "Approved",
@@ -1419,6 +1447,72 @@ const AdminDashboard = () => {
                                 })}
                               </div>
                             </div>
+
+                            {/* Shiprocket Logistics & Vendor Fulfillment Details */}
+                            {order.vendorOrders && order.vendorOrders.length > 0 && (
+                              <div className="bg-white rounded-sm border border-secondary/10 p-5 space-y-4 shadow-sm">
+                                <div className="flex justify-between items-center border-b border-secondary/10 pb-3">
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                                    <Truck size={16} /> Shiprocket Vendor Fulfillment
+                                  </h4>
+                                  <span className="text-[11px] text-text-secondary italic">
+                                    Status synchronized via carrier webhooks
+                                  </span>
+                                </div>
+
+                                <div className="space-y-3">
+                                  {order.vendorOrders.map((vo) => {
+                                    const isRetryable = ["shipment_blocked_pickup_unverified", "partially_failed", "shipment_failed", "awb_pending", "awb_assignment_failed", "pickup_failed", "pending"].includes(vo.status) || (vo.shipmentId && !vo.awbCode);
+                                    const isProcessing = retryingVendorOrders[vo._id];
+
+                                    return (
+                                      <div key={vo._id} className="p-4 bg-secondary/5 rounded-sm border border-secondary/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div className="space-y-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-bold text-sm text-primary">{vo.vendor?.businessName || "Direct Vendor"}</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                              vo.status === 'shipment_blocked_pickup_unverified' || vo.status === 'partially_failed'
+                                                ? 'bg-red-100 text-red-700'
+                                                : vo.status === 'pickup_scheduled' || vo.status === 'in_transit'
+                                                ? 'bg-indigo-100 text-indigo-700'
+                                                : vo.status === 'delivered'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-yellow-100 text-yellow-700'
+                                            }`}>
+                                              {vo.status === 'shipment_blocked_pickup_unverified' ? 'Blocked: Unverified Pickup' : vo.status}
+                                            </span>
+                                          </div>
+
+                                          <div className="text-xs text-text-secondary grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 mt-2">
+                                            <div><span className="font-medium text-text-primary">Order ID:</span> {vo.shiprocketOrderId || 'N/A'}</div>
+                                            <div><span className="font-medium text-text-primary">Shipment ID:</span> {vo.shipmentId || 'N/A'}</div>
+                                            <div><span className="font-medium text-text-primary">AWB Code:</span> {vo.awbCode ? <span className="font-bold text-green-700 font-mono">{vo.awbCode}</span> : <span className="text-amber-600">Pending</span>}</div>
+                                            <div><span className="font-medium text-text-primary">Courier:</span> {vo.courierName || 'Pending'}</div>
+                                          </div>
+
+                                          {vo.shipmentError?.message && (
+                                            <div className="text-xs text-red-600 bg-red-50 p-2 rounded-sm border border-red-100 mt-2">
+                                              <span className="font-bold">Error:</span> {vo.shipmentError.message}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {isRetryable && (
+                                          <button
+                                            disabled={isProcessing}
+                                            onClick={() => handleRetryShipment(vo._id)}
+                                            className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-sm flex items-center gap-2 shadow-sm transition-all whitespace-nowrap"
+                                          >
+                                            <RotateCcw size={14} className={isProcessing ? "animate-spin" : ""} />
+                                            {isProcessing ? "Retrying shipment..." : "Retry Shipment"}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
 
                             {/* Order Items */}
                             <div className="bg-white rounded-sm border border-secondary/10 p-4">
