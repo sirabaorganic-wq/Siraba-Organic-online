@@ -18,15 +18,25 @@ build/
 # Environment files (sensitive)
 .env
 .env.*
+!.env.example
+!.env.sample
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+!backend/.env.sample
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.sample
 
 # Local configuration
 *.local
 
-# VS Code
+# IDEs and editors
 .vscode/
 !.vscode/extensions.json
-
-# IDEs and editors
 .idea/
 .DS_Store
 *.suo
@@ -35,36 +45,10 @@ build/
 *.sln
 *.sw?
 
-# Misc
+# Misc & temporary
 coverage/
 .cache/
-
-# OS files
-Thumbs.db
-desktop.ini
-
-# Optional npm cache
-npm-debug.log*
-
-# Yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.yarn/patches
-.yarn/releases
-.yarn/plugins
-.yarn/versions
-
-# Parcel
-.cache
-
-# Storybook
-.out
-
-# Generated / temporary
 tmp/
 temp/
-
-.env
-backend/.env
+Thumbs.db
+desktop.ini

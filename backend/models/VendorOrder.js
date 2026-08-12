@@ -32,6 +32,15 @@ const vendorOrderSchema = mongoose.Schema(
     commission: { type: Number, default: 0 },
     netAmount: { type: Number, required: true }, // subtotal - commission
 
+    // Shipping Economics Snapshot
+    shippingThresholdAtOrder: { type: Number, default: 499 },
+    isFreeShippingEligible: { type: Boolean, default: false },
+    customerShippingCharge: { type: Number, default: 0 },
+    estimatedShippingCost: { type: Number, default: 0 },
+    shippingSubsidy: { type: Number, default: 0 },
+    estimatedGatewayFee: { type: Number, default: 0 },
+    expectedNetContribution: { type: Number, default: 0 },
+
     // Status tracking
     status: {
       type: String,
@@ -39,15 +48,27 @@ const vendorOrderSchema = mongoose.Schema(
         "pending",
         "confirmed",
         "processing",
+        "pickup_scheduled",
         "partially_shipped",
         "shipped",
+        "in_transit",
+        "out_for_delivery",
         "delivered",
         "cancelled",
         "returned",
+        "rto",
         "partially_failed",
-        "shipment_failed"
+        "shipment_failed",
+        "shipment_blocked_pickup_unverified"
       ],
       default: "pending",
+    },
+
+    // Detailed error tracking
+    shipmentError: {
+      code: { type: String },
+      message: { type: String },
+      timestamp: { type: Date }
     },
 
     // Shipping info

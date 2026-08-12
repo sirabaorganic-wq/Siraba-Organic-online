@@ -33,7 +33,27 @@ const shipmentWorker = new Worker('shiprocket-shipments', async job => {
 
   const vendorOrder = await VendorOrder.findById(vendorOrderId);
   const order = await Order.findById(orderId);
-  const vendor = await Vendor.findById(vendorId);
+  let vendor = vendorId ? await Vendor.findById(vendorId) : null;
+
+  if (!vendor && !vendorId) {
+    // Platform / Admin direct product
+    vendor = {
+      _id: null,
+      businessName: "SIRABA Organic Direct",
+      phone: process.env.PLATFORM_PHONE || "9876543210",
+      email: process.env.PLATFORM_EMAIL || "support@sirabaorganic.com",
+      shiprocket_pickup_code: process.env.SHIPROCKET_PRIMARY_LOCATION || "Primary",
+      pickupAddress: {
+        facilityName: "Primary",
+        shiprocketLocationName: process.env.SHIPROCKET_PRIMARY_LOCATION || "Primary",
+        addressLine1: "SIRABA Organic Fulfillment Center",
+        city: "Jaipur",
+        state: "Rajasthan",
+        pincode: "302001",
+        country: "India",
+      },
+    };
+  }
 
   if (!vendorOrder || !order || !vendor) {
     throw new Error('Referenced entities not found for shipment');
@@ -69,31 +89,37 @@ shipmentWorker.on('completed', (job, returnvalue) => {
 shipmentWorker.on('failed', async (job, err) => {
   console.error(`Shipment Job ${job.id} failed with error: ${err.message}`);
 
-  // If max attempts reached, mark as failed
-  if (job.attemptsMade >= job.opts.attempts) {
+  const isPickupUnverified = err.code === 'PICKUP_LOCATION_NOT_REGISTERED';
+  
+  // If unverified pickup location OR max attempts reached
+  if (isPickupUnverified || job.attemptsMade >= job.opts.attempts) {
     const { vendorOrderId } = job.data;
     try {
       const vendorOrder = await VendorOrder.findById(vendorOrderId);
       if (vendorOrder) {
-        vendorOrder.status = 'partially_failed';
+        vendorOrder.status = isPickupUnverified ? 'shipment_blocked_pickup_unverified' : 'partially_failed';
+        vendorOrder.shipmentError = {
+          code: err.code || (isPickupUnverified ? 'PICKUP_LOCATION_NOT_REGISTERED' : 'SHIPMENT_CREATION_FAILED'),
+          message: err.message,
+          timestamp: new Date()
+        };
         await vendorOrder.save();
 
-        // Uncomment to enable auto rollback:
-        // await shiprocketService.rollbackInventory(vendorOrder);
-
-        // Alert the Vendor
+        // Alert the Vendor & Admin
         await Notification.create({
           recipient: vendorOrder.vendor,
           recipientModel: "Vendor",
           type: "error",
-          title: "Shipment Creation Failed",
-          message: `Shiprocket failed to create a shipment after max retries for order ${vendorOrderId}. Please check the Shiprocket dashboard or retry manually.`
+          title: isPickupUnverified ? "Shipment Blocked: Pickup Location Unverified" : "Shipment Creation Failed",
+          message: isPickupUnverified
+            ? `Shipment blocked for VendorOrder ${vendorOrderId}. Vendor pickup location is not registered in Shiprocket. Please contact Admin.`
+            : `Shiprocket failed to create a shipment after max retries for order ${vendorOrderId}. Reason: ${err.message}`
         });
 
-        console.log(`VendorOrder ${vendorOrderId} marked as partially_failed due to max retries`);
+        console.log(`VendorOrder ${vendorOrderId} status set to ${vendorOrder.status}: ${err.message}`);
       }
     } catch (dbErr) {
-      console.error('Failed to update DB on job max failures:', dbErr);
+      console.error('Failed to update DB on job failure:', dbErr);
     }
   }
 });

@@ -888,9 +888,6 @@ const Home = () => {
                       className="w-full h-full object-contain p-4 md:p-6 transform group-hover:scale-103 transition-transform duration-400"
                     />
                     <div className="absolute top-4 left-4 right-4 flex justify-between z-10 pointer-events-none">
-                      <span className="bg-red-500 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-sm pointer-events-auto">
-                        PROTOTYPE
-                      </span>
                       {product.isPremium && (
                         <span className="bg-accent text-primary text-xs font-bold uppercase px-3 py-1 rounded-full shadow-sm pointer-events-auto">
                           Premium

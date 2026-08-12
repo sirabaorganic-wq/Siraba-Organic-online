@@ -550,14 +550,11 @@ const ProductCard = ({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
-        {/* Vendor Badge & Prototype */}
+        {/* Vendor Badge */}
         <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/90 text-primary text-xs font-medium rounded-full">
             <Store className="w-3 h-3" />
             {shopName}
-          </span>
-          <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-md text-center">
-            PROTOTYPE
           </span>
         </div>
 

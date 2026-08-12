@@ -33,6 +33,12 @@ const orderCache = new NodeCache({
   checkperiod: 30,
 });
 
+// Compliance cache with 5-minute TTL
+const complianceCache = new NodeCache({
+  stdTTL: 300, // 5 minutes
+  checkperiod: 60,
+});
+
 // Settings cache with long TTL (rarely changes)
 const settingsCache = new NodeCache({
   stdTTL: 1800, // 30 minutes
@@ -65,6 +71,11 @@ const invalidateCache = {
     productCache.flushAll();
     console.log("Product cache cleared");
   },
+  compliance: (productId) => {
+    complianceCache.flushAll();
+    productCache.flushAll();
+    console.log(`Compliance cache cleared for product: ${productId || "all"}`);
+  },
   vendors: () => {
     vendorCache.flushAll();
     console.log("Vendor cache cleared");
@@ -80,6 +91,7 @@ const invalidateCache = {
   all: () => {
     cache.flushAll();
     productCache.flushAll();
+    complianceCache.flushAll();
     vendorCache.flushAll();
     orderCache.flushAll();
     settingsCache.flushAll();
@@ -94,6 +106,7 @@ const getCacheStats = () => {
   return {
     general: cache.getStats(),
     products: productCache.getStats(),
+    compliance: complianceCache.getStats(),
     vendors: vendorCache.getStats(),
     orders: orderCache.getStats(),
     settings: settingsCache.getStats(),
@@ -103,6 +116,7 @@ const getCacheStats = () => {
 module.exports = {
   cache,
   productCache,
+  complianceCache,
   vendorCache,
   orderCache,
   settingsCache,

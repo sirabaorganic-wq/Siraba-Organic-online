@@ -138,9 +138,6 @@ const Cart = () => {
                                             <Link to={`/product/${item.slug}`} className="font-heading text-xl text-primary font-bold hover:text-accent transition-colors">
                                                 {item.name}
                                             </Link>
-                                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider w-max mt-1">
-                                                PROTOTYPE
-                                            </span>
                                         </div>
                                         <button
                                             onClick={() => removeFromCart(item.cartKey || item._id || item.id)}

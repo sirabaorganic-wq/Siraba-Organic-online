@@ -49,6 +49,7 @@ const productSchema = mongoose.Schema(
     options: [{
       label: { type: String },  // e.g. "100g", "250g", "500g", "1kg"
       price: { type: Number },  // price for this variant
+      mrp: { type: Number },    // optional maximum retail price
     }],
 
     // Vendor fields

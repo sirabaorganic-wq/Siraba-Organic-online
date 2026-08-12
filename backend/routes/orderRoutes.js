@@ -40,6 +40,57 @@ router.post("/", protect, async (req, res) => {
   }
 
   try {
+    // ===== SERVER-SIDE CATALOG PRICE VALIDATION & STOCK DEDUCTION =====
+    let calculatedItemsPrice = 0;
+    const verifiedOrderItems = [];
+
+    for (const item of orderItems) {
+      const dbProduct = await Product.findById(item.product);
+      if (!dbProduct || !dbProduct.isActive) {
+        return res.status(400).json({ message: `Product ${item.name || item.product} is not available for purchase` });
+      }
+
+      // Stock Check
+      if (dbProduct.stockQuantity < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for product ${dbProduct.name}. Available: ${dbProduct.stockQuantity}` });
+      }
+
+      // Authoritative Price Calculation (matches variant option if supplied)
+      let itemPrice = dbProduct.price;
+      if (item.selectedOption && dbProduct.options && dbProduct.options.length > 0) {
+        const matchedOpt = dbProduct.options.find(o => o.label === item.selectedOption.label);
+        if (matchedOpt && matchedOpt.price) itemPrice = matchedOpt.price;
+      }
+
+      calculatedItemsPrice += itemPrice * item.quantity;
+      verifiedOrderItems.push({
+        name: dbProduct.name,
+        quantity: item.quantity,
+        image: item.image || dbProduct.image,
+        price: itemPrice,
+        product: dbProduct._id,
+        sku: dbProduct.sku || "",
+      });
+    }
+
+    // Atomic Stock Deduction
+    for (const item of verifiedOrderItems) {
+      const updatedProd = await Product.findOneAndUpdate(
+        { _id: item.product, stockQuantity: { $gte: item.quantity } },
+        { $inc: { stockQuantity: -item.quantity } },
+        { new: true }
+      );
+      if (!updatedProd) {
+        return res.status(400).json({ message: `Failed to reserve stock for ${item.name}. Stock was modified.` });
+      }
+    }
+
+    // Authoritative Calculations
+    const verifiedItemsPrice = calculatedItemsPrice;
+    const verifiedDiscountAmount = discountAmount || 0;
+    const discountedSubtotal = Math.max(0, verifiedItemsPrice - verifiedDiscountAmount);
+    const verifiedTaxPrice = Math.round(discountedSubtotal * 0.18 * 100) / 100; // 18% GST
+
     // Handle Coupon Logic
     if (couponCode) {
       const Coupon = require("../models/Coupon");
@@ -70,7 +121,6 @@ router.post("/", protect, async (req, res) => {
           .json({ message: "Coupon not valid for this user" });
       }
 
-      // Apply usage
       coupon.usedCount += 1;
       await coupon.save();
     }
@@ -81,19 +131,15 @@ router.post("/", protect, async (req, res) => {
 
     let gstClaimed = false;
     let buyerGstNumber = null;
-    // Get seller GST: First try to get from vendor's profile, fallback to admin settings
     let sellerGstNumber = null;
 
-    // If this is from a vendor, use their GST number
     if (req.user.vendor) {
       sellerGstNumber =
         req.user.vendor.gstNumber || gstSettings.admin_gst_number || null;
     } else {
-      // Otherwise use admin GST
       sellerGstNumber = gstSettings.admin_gst_number || null;
     }
 
-    // Check request body first (from Checkout), then fallback to User Profile
     if (gstSettings.gst_enabled) {
       if (req.body.gstClaimed) {
         gstClaimed = true;
@@ -105,13 +151,14 @@ router.post("/", protect, async (req, res) => {
     }
 
     // ===== SERVER-SIDE SHIPPING CALCULATION =====
-    // Never trust the frontend shippingPrice — recalculate server-side
     let verifiedShippingPrice = 0;
+    let shippingBreakdownMap = new Map();
+
     try {
       const deliveryPincode = shippingAddress?.postalCode;
       if (deliveryPincode) {
         const shippingResult = await calculateShipping(
-          orderItems.map(item => ({
+          verifiedOrderItems.map(item => ({
             product: item.product,
             quantity: item.quantity,
             price: item.price,
@@ -120,27 +167,32 @@ router.post("/", protect, async (req, res) => {
           paymentMethod
         );
         verifiedShippingPrice = shippingResult.totalShipping || 0;
+
+        if (shippingResult.vendorBreakdown && Array.isArray(shippingResult.vendorBreakdown)) {
+          shippingResult.vendorBreakdown.forEach(b => {
+            shippingBreakdownMap.set(b.vendorId, b);
+          });
+        }
       }
     } catch (shippingErr) {
       console.error('Server-side shipping calculation failed, using frontend value as fallback:', shippingErr.message);
       verifiedShippingPrice = shippingPrice || 0;
     }
 
-    // Recalculate total with verified shipping
-    const verifiedTotalPrice = (itemsPrice - (discountAmount || 0)) + (taxPrice || 0) + verifiedShippingPrice;
+    const verifiedTotalPrice = discountedSubtotal + verifiedTaxPrice + verifiedShippingPrice;
 
-    // Create the main order
+    // Create main order with authoritative verified prices
     const order = new Order({
       user: req.user._id,
-      orderItems,
+      orderItems: verifiedOrderItems,
       shippingAddress,
       paymentMethod,
-      itemsPrice,
-      taxPrice,
+      itemsPrice: verifiedItemsPrice,
+      taxPrice: verifiedTaxPrice,
       shippingPrice: verifiedShippingPrice,
       totalPrice: verifiedTotalPrice,
       couponCode,
-      discountAmount,
+      discountAmount: verifiedDiscountAmount,
       gstClaimed,
       buyerGstNumber,
       sellerGstNumber,
@@ -153,7 +205,6 @@ router.post("/", protect, async (req, res) => {
     invalidateCache.vendors();
 
     // ===== CREATE VENDOR ORDERS FOR VENDOR PRODUCTS =====
-    // Get product details to check which ones are vendor products
     const productIds = orderItems.map((item) => item.product);
     const products = await Product.find({ _id: { $in: productIds } }).populate(
       "vendor",
@@ -207,6 +258,16 @@ router.post("/", protect, async (req, res) => {
           ? (vendorData.subtotal / itemsPrice) * (taxPrice || 0)
           : 0;
 
+      // Extract vendor shipping breakdown
+      const vBreakdown = shippingBreakdownMap.get(vendorId);
+      const shippingThresholdAtOrder = vBreakdown?.threshold || 499;
+      const isFreeShippingEligible = vBreakdown?.isFreeShippingEligible || (vendorData.subtotal >= shippingThresholdAtOrder);
+      const customerShippingCharge = vBreakdown?.customerShippingCharge !== undefined ? vBreakdown.customerShippingCharge : (isFreeShippingEligible ? 0 : 70);
+      const estimatedShippingCost = vBreakdown?.estimatedShippingCost || 70;
+      const shippingSubsidy = vBreakdown?.shippingSubsidy !== undefined ? vBreakdown.shippingSubsidy : Math.max(0, estimatedShippingCost - customerShippingCharge);
+      const estimatedGatewayFee = Math.round(vendorData.subtotal * 0.0236 * 100) / 100;
+      const expectedNetContribution = Math.round((customerShippingCharge + commission - estimatedShippingCost - estimatedGatewayFee) * 100) / 100;
+
       const vendorOrder = new VendorOrder({
         order: createdOrder._id,
         vendor: vendorId,
@@ -215,6 +276,16 @@ router.post("/", protect, async (req, res) => {
         tax: vendorTax,
         commission: commission,
         netAmount: netAmount,
+
+        // Shipping Economics Snapshot
+        shippingThresholdAtOrder,
+        isFreeShippingEligible,
+        customerShippingCharge,
+        estimatedShippingCost,
+        shippingSubsidy,
+        estimatedGatewayFee,
+        expectedNetContribution,
+
         status: "pending",
         shippingAddress: {
           name: shippingAddress.name || "",

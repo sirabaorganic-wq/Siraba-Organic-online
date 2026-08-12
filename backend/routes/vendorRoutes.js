@@ -676,7 +676,7 @@ router.put("/pickup-address", protectVendor, async (req, res) => {
     const locName =
       pickupAddress.shiprocketLocationName ||
       pickupAddress.facilityName ||
-      `VEND_${(pickupAddress.facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`;
+      `V_${(pickupAddress.facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15)}_${vendor._id.toString().substring(18)}`;
 
     vendor.pickupAddress = {
       facilityName: pickupAddress.facilityName || vendor.pickupAddress?.facilityName,
@@ -691,6 +691,18 @@ router.put("/pickup-address", protectVendor, async (req, res) => {
       shiprocketLocationName: locName,
     };
     vendor.shiprocket_pickup_code = locName;
+
+    // Register with Shiprocket API
+    try {
+      const shiprocketService = require("../services/shiprocketService");
+      const regResult = await shiprocketService.registerPickupLocation(vendor);
+      if (regResult.success) {
+        vendor.shiprocket_pickup_code = regResult.locationName;
+        vendor.pickupAddress.shiprocketLocationName = regResult.locationName;
+      }
+    } catch (shipErr) {
+      console.error("Shiprocket location registration error:", shipErr.message);
+    }
 
     await vendor.save();
     invalidateCache.vendors();

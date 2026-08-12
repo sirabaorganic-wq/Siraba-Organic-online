@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
 const paymentService = require('../services/paymentService');
@@ -34,15 +35,41 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Payment already processed or processing for this order' });
     }
 
-    // 2. Call Razorpay API
-    const rzpOrder = await paymentService.createRazorpayOrder(amount, receipt);
+    let validatedAmount = amount;
+    const mongoose = require('mongoose');
+    const Product = require('../models/Product');
+
+    // Server-side validation if receipt is an existing local Order
+    if (mongoose.Types.ObjectId.isValid(receipt)) {
+      const localOrder = await Order.findById(receipt);
+      if (localOrder && localOrder.totalPrice) {
+        validatedAmount = localOrder.totalPrice;
+      }
+    } else if (req.body.cartSnapshot && Array.isArray(req.body.cartSnapshot) && req.body.cartSnapshot.length > 0) {
+      // Validate cart items against DB product catalog
+      let catalogSubtotal = 0;
+      for (const item of req.body.cartSnapshot) {
+        const prod = await Product.findById(item.product || item._id || item.id);
+        if (prod) {
+          catalogSubtotal += prod.price * (item.quantity || 1);
+        }
+      }
+      if (catalogSubtotal > 0) {
+        // Enforce minimum price check: client amount must not be less than subtotal
+        if (amount < catalogSubtotal * 0.8) { // allow max 20% discount tolerance if coupon applied
+          validatedAmount = catalogSubtotal;
+        }
+      }
+    }
+
+    // 2. Call Razorpay API with server-validated amount
+    const rzpOrder = await paymentService.createRazorpayOrder(validatedAmount, receipt);
 
     // 3. Save Payment Record to DB
     // Assuming the frontend passed us the cart items for the snapshot
     const cartSnapshot = req.body.cartSnapshot || []; 
     // receipt might be an Order ID or a temporary string
     let localOrderId = null;
-    const mongoose = require('mongoose');
     if (mongoose.Types.ObjectId.isValid(receipt)) {
       const localOrder = await Order.findById(receipt);
       if (localOrder) localOrderId = localOrder._id;

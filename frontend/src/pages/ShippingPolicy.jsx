@@ -70,7 +70,7 @@ const ShippingPolicy = () => {
           </Section>
 
           <Section title="4. Shipping Charges">
-            <P>Shipping charges are calculated at checkout based on delivery location and order weight and size. Free shipping may be offered on selected orders or promotions.</P>
+            <P>Free shipping is offered on vendor fulfillment orders of ₹499 or more across India. For vendor sub-orders below ₹499, shipping charges are calculated dynamically at checkout based on delivery pincode, package weight, and courier serviceability.</P>
           </Section>
 
           <Section title="5. Order Tracking">

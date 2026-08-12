@@ -11,7 +11,9 @@ const shiprocketService = require('../services/shiprocketService');
  * Mirrors the schema defaults in SiteSettings.js.
  */
 const DEFAULT_SHIPPING_CONFIG = {
-  freeShippingThreshold: 999,
+  freeShippingThreshold: 499,
+  thresholdScope: 'PER_VENDOR_ORDER',
+  belowThresholdMode: 'CUSTOMER_PAYS',
   platformHandlingFeeFlat: 25,
   platformHandlingFeePercent: 5,
   codSurcharge: 40,
@@ -27,7 +29,6 @@ async function getShippingConfig() {
   try {
     const settings = await SiteSettings.findOne({ type: 'home' }).lean();
     if (settings?.shippingConfig) {
-      // Merge with defaults so new fields always have values
       return { ...DEFAULT_SHIPPING_CONFIG, ...settings.shippingConfig };
     }
   } catch (err) {
@@ -37,13 +38,13 @@ async function getShippingConfig() {
 }
 
 /**
- * Core shipping estimation logic.
- * Shared between the estimate endpoint and order-creation validation.
+ * Core vendor-wise shipping estimation logic.
+ * Applied per vendor fulfillment group, NOT blindly against the parent cart total.
  *
- * @param {Array}  cartItems       - [{ product: ObjectId, quantity: Number }]
+ * @param {Array}  cartItems       - [{ product: ObjectId, quantity: Number, price: Number }]
  * @param {String} deliveryPincode - Customer's postal code
  * @param {String} paymentMethod   - "COD" or "Online"
- * @returns {Object} Shipping breakdown
+ * @returns {Object} Vendor-wise shipping breakdown and totals
  */
 async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'Online') {
   const config = await getShippingConfig();
@@ -64,32 +65,35 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
   const productIds = cartItems.map(item => item.product);
   const products = await Product.find({ _id: { $in: productIds } }).populate('vendor');
 
-  // 2. Group items by vendor
+  // 2. Group items into Vendor Fulfillment Groups
   const vendorGroupMap = new Map();
-  let cartSubtotal = 0;
 
   for (const cartItem of cartItems) {
     const product = products.find(p => p._id.toString() === cartItem.product.toString());
     if (!product) continue;
 
-    const itemTotal = (cartItem.price || product.price) * cartItem.quantity;
-    cartSubtotal += itemTotal;
+    const unitPrice = cartItem.price || product.price;
+    const itemTotal = unitPrice * cartItem.quantity;
 
-    // Determine vendor key — null/undefined vendor = platform product (admin warehouse)
     const vendorId = (product.isVendorProduct && product.vendor)
       ? product.vendor._id.toString()
       : '__platform__';
 
     if (!vendorGroupMap.has(vendorId)) {
+      const vendorName = vendorId === '__platform__'
+        ? 'Siraba Organic Direct'
+        : (product.vendor.businessName || 'Vendor');
+
+      const pickupPincode = vendorId === '__platform__'
+        ? null
+        : (product.vendor.pickupAddress?.pincode || product.vendor.address?.postalCode);
+
       vendorGroupMap.set(vendorId, {
         vendorId,
-        vendorName: vendorId === '__platform__'
-          ? 'Siraba Organic'
-          : (product.vendor.businessName || 'Vendor'),
-        pickupPincode: vendorId === '__platform__'
-          ? null // Will use Shiprocket's Primary pickup
-          : product.vendor.address?.postalCode,
+        vendorName,
+        pickupPincode,
         items: [],
+        vendorSubtotal: 0,
         totalWeight: 0,
       });
     }
@@ -99,48 +103,29 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
       productId: product._id,
       name: product.name,
       quantity: cartItem.quantity,
-      price: cartItem.price || product.price,
+      price: unitPrice,
       weight: config.weightPerItem * cartItem.quantity,
     });
+    group.vendorSubtotal += itemTotal;
     group.totalWeight += config.weightPerItem * cartItem.quantity;
   }
 
-  // 3. Check free shipping threshold
-  if (cartSubtotal >= config.freeShippingThreshold) {
-    return {
-      totalShipping: 0,
-      isFreeShipping: true,
-      freeShippingThreshold: config.freeShippingThreshold,
-      amountToFreeShipping: 0,
-      codSurcharge: 0,
-      vendorBreakdown: Array.from(vendorGroupMap.values()).map(g => ({
-        vendorId: g.vendorId,
-        vendorName: g.vendorName,
-        courierRate: 0,
-        handlingFee: 0,
-        courierName: 'Free Shipping',
-        estimatedDays: '3-7',
-        subtotal: 0,
-      })),
-    };
-  }
-
-  // 4. Query Shiprocket serviceability for each vendor group
+  // 3. Process each Vendor Fulfillment Group independently
   const vendorBreakdown = [];
-  let totalShipping = 0;
+  let totalCustomerShipping = 0;
   const isCOD = paymentMethod === 'COD';
 
   for (const [, group] of vendorGroupMap) {
     let courierRate = config.flatRateFallback;
     let courierName = 'Standard Delivery';
-    let estimatedDays = '5-7';
+    let estimatedDays = '3-5 days';
 
-    // Only query Shiprocket if we have both pincodes
+    // Query Shiprocket serviceability if pincodes available
     if (group.pickupPincode && deliveryPincode) {
       try {
         const courier = await shiprocketService.checkServiceability({
-          pickup_postcode: group.pickupPincode,
-          delivery_postcode: deliveryPincode,
+          pickup_postcode: String(group.pickupPincode).trim(),
+          delivery_postcode: String(deliveryPincode).trim(),
           weight: group.totalWeight > 0 ? group.totalWeight : 0.5,
           cod: isCOD,
         });
@@ -151,52 +136,63 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
           estimatedDays = courier.etd || '3-5 days';
         }
       } catch (err) {
-        // Shiprocket API failed — use fallback rate silently
         console.error(`Shipping estimate failed for vendor ${group.vendorName}:`, err.message);
         courierRate = config.flatRateFallback;
         courierName = 'Standard Delivery (est.)';
-        estimatedDays = '5-7';
+        estimatedDays = '5-7 days';
       }
     } else {
-      // No vendor pincode (platform product) — use fallback
       courierRate = config.flatRateFallback;
     }
 
-    // Calculate platform handling fee
+    // Calculate platform handling fee & total estimated logistics cost
     const handlingFee = Math.round(
       config.platformHandlingFeeFlat + (courierRate * config.platformHandlingFeePercent / 100)
     );
+    const estimatedShippingCost = Math.round(courierRate + handlingFee);
 
-    const vendorShipping = Math.round(courierRate + handlingFee);
-    totalShipping += vendorShipping;
+    // Apply PER_VENDOR_ORDER free shipping threshold rule
+    const isFreeShippingEligible = (group.vendorSubtotal >= config.freeShippingThreshold);
+    const customerShippingCharge = isFreeShippingEligible ? 0 : estimatedShippingCost;
+    const shippingSubsidy = Math.max(0, estimatedShippingCost - customerShippingCharge);
+    const amountToFreeShipping = isFreeShippingEligible
+      ? 0
+      : Math.max(0, config.freeShippingThreshold - group.vendorSubtotal);
+
+    totalCustomerShipping += customerShippingCharge;
 
     vendorBreakdown.push({
       vendorId: group.vendorId,
       vendorName: group.vendorName,
+      vendorSubtotal: Math.round(group.vendorSubtotal * 100) / 100,
+      threshold: config.freeShippingThreshold,
+      isFreeShippingEligible,
       courierRate: Math.round(courierRate),
       handlingFee,
+      estimatedShippingCost,
+      customerShippingCharge,
+      shippingSubsidy,
+      amountToFreeShipping: Math.round(amountToFreeShipping * 100) / 100,
       courierName,
       estimatedDays,
-      subtotal: vendorShipping,
     });
   }
 
-  // 5. Add COD surcharge if applicable
+  // 4. Add COD surcharge if applicable
   const codSurcharge = isCOD ? config.codSurcharge : 0;
-  totalShipping += codSurcharge;
+  totalCustomerShipping += codSurcharge;
 
   return {
-    totalShipping: Math.round(totalShipping),
-    isFreeShipping: false,
+    totalShipping: Math.round(totalCustomerShipping),
+    isFreeShipping: totalCustomerShipping === 0,
     freeShippingThreshold: config.freeShippingThreshold,
-    amountToFreeShipping: Math.round(config.freeShippingThreshold - cartSubtotal),
     codSurcharge,
     vendorBreakdown,
   };
 }
 
 // ─── ROUTE: POST /api/shipping/estimate ───────────────────────
-// @desc    Calculate shipping charges for a cart + delivery address
+// @desc    Calculate vendor-wise shipping charges for a cart + delivery address
 // @access  Private (logged-in users)
 router.post('/estimate', protect, async (req, res) => {
   try {
@@ -219,5 +215,5 @@ router.post('/estimate', protect, async (req, res) => {
 });
 
 module.exports = router;
-// Also export the core function for server-side validation in orderRoutes
 module.exports.calculateShipping = calculateShipping;
+module.exports.getShippingConfig = getShippingConfig;

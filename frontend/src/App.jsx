@@ -25,6 +25,7 @@ import RefundPolicy from "./pages/RefundPolicy";
 import FAQ from "./pages/FAQ";
 import QualityPromise from "./pages/QualityPromise";
 import ProductDetails from "./pages/ProductDetails";
+import ProductVerification from "./pages/ProductVerification";
 import Cart from "./pages/Cart";
 import { CartProvider } from "./context/CartContext";
 import { ProductProvider } from "./context/ProductContext";
@@ -108,8 +109,9 @@ function App() {
                               />
                               <Route path="/cart" element={<Cart />} />
 
-                              <Route path="/our-story" element={<About />} />
-                              <Route path="/about" element={<About />} />
+                              <Route path="/quality-promise" element={<QualityPromise />} />
+                              <Route path="/verify/:traceId" element={<ProductVerification />} />
+                              <Route path="/account" element={<Account />} />
                               <Route path="/about-us" element={<About />} />
                               <Route
                                 path="/founder-faqs"

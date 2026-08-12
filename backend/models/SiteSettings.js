@@ -29,7 +29,9 @@ const siteSettingsSchema = new mongoose.Schema({
 
     // Shipping Configuration — used by /api/shipping/estimate and order creation
     shippingConfig: {
-        freeShippingThreshold: { type: Number, default: 999 },      // Orders ≥ ₹999 get free shipping
+        freeShippingThreshold: { type: Number, default: 499 },      // Orders ≥ ₹499 per vendor order get free shipping
+        thresholdScope: { type: String, default: 'PER_VENDOR_ORDER' }, // PER_VENDOR_ORDER vs PER_PARENT_ORDER
+        belowThresholdMode: { type: String, default: 'CUSTOMER_PAYS' },
         platformHandlingFeeFlat: { type: Number, default: 25 },      // ₹25 flat fee on top of courier rate
         platformHandlingFeePercent: { type: Number, default: 5 },    // 5% of courier rate
         codSurcharge: { type: Number, default: 40 },                 // Extra charge for COD orders

@@ -234,6 +234,18 @@ const vendorSchema = mongoose.Schema(
     
     // Shiprocket Setup
     shiprocket_pickup_code: { type: String },
+    shiprocketPickup: {
+      status: {
+        type: String,
+        enum: ["unregistered", "pending", "registered", "failed"],
+        default: "unregistered"
+      },
+      locationName: { type: String },
+      locationId: { type: String },
+      registeredAt: { type: Date },
+      lastVerifiedAt: { type: Date },
+      lastError: { type: String }
+    },
 
     // Razorpay Route — for automatic split payments
     // Vendors must be onboarded as Razorpay Route Linked Accounts.

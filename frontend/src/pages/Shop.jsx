@@ -649,9 +649,6 @@ const Shop = () => {
                             {product.tag}
                           </span>
                         )}
-                        <span className="bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg border border-red-600 text-center">
-                          PROTOTYPE
-                        </span>
                       </div>
                       <button
                         onClick={(e) => {

@@ -10,6 +10,11 @@ const VendorTransfer = require("../models/VendorTransfer");
 const Notification = require("../models/Notification");
 const OTP = require("../models/OTP");
 const Review = require("../models/Review");
+const ProductCompliance = require("../models/ProductCompliance");
+const ProductBatch = require("../models/ProductBatch");
+const TraceIdCounter = require("../models/TraceIdCounter");
+const ComplianceAuditLog = require("../models/ComplianceAuditLog");
+const complianceService = require("../services/complianceService");
 const { protect, admin, adminOrVendorOnboarder } = require("../middleware/authMiddleware");
 const RefundLog = require("../models/RefundLog");
 const { invalidateCache } = require("../config/cache");
@@ -189,6 +194,55 @@ router.put("/vendors/:id/status", protect, adminOrVendorOnboarder, async (req, r
     if (status === "approved") {
       vendor.approvedBy = req.user._id;
       vendor.approvedAt = new Date();
+
+      // Register & Verify Vendor Pickup Location with Shiprocket API
+      if (vendor.pickupAddress && vendor.pickupAddress.pincode && vendor.pickupAddress.addressLine1) {
+        try {
+          const shiprocketService = require("../services/shiprocketService");
+          const regResult = await shiprocketService.registerPickupLocation(vendor);
+          
+          if (!vendor.shiprocketPickup) vendor.shiprocketPickup = {};
+
+          if (regResult.success) {
+            vendor.shiprocket_pickup_code = regResult.locationName;
+            if (!vendor.pickupAddress) vendor.pickupAddress = {};
+            vendor.pickupAddress.shiprocketLocationName = regResult.locationName;
+            vendor.shiprocketPickup = {
+              status: "registered",
+              locationName: regResult.locationName,
+              registeredAt: new Date(),
+              lastVerifiedAt: new Date()
+            };
+          } else {
+            // Check if already registered despite addpickup error
+            const verifyRes = await shiprocketService.verifyPickupLocation(regResult.locationName || vendor.pickupAddress.shiprocketLocationName);
+            if (verifyRes.verified) {
+              vendor.shiprocket_pickup_code = verifyRes.locationName;
+              vendor.pickupAddress.shiprocketLocationName = verifyRes.locationName;
+              vendor.shiprocketPickup = {
+                status: "registered",
+                locationName: verifyRes.locationName,
+                locationId: verifyRes.locationId,
+                lastVerifiedAt: new Date()
+              };
+            } else {
+              vendor.shiprocketPickup = {
+                status: "failed",
+                locationName: regResult.locationName,
+                lastError: regResult.error || "Shiprocket API returned 403 Forbidden. Pickup location must be created in Shiprocket Seller Panel.",
+                lastVerifiedAt: new Date()
+              };
+            }
+          }
+        } catch (regErr) {
+          console.error(`Shiprocket pickup location registration error for vendor ${vendor._id}:`, regErr.message);
+          vendor.shiprocketPickup = {
+            status: "failed",
+            lastError: regErr.message,
+            lastVerifiedAt: new Date()
+          };
+        }
+      }
     } else if (status === "subadmin_approved") {
       vendor.subadminApprovedBy = req.user._id;
       vendor.subadminApprovedAt = new Date();
@@ -1592,6 +1646,340 @@ router.delete("/subadmins/:id", protect, admin, async (req, res) => {
 
     await user.deleteOne();
     res.json({ message: "Sub-admin account deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ================== PRODUCT COMPLIANCE & TRUST PASSPORT MANAGEMENT ==================
+
+// @desc    Get full internal compliance record for product
+// @route   GET /api/admin/products/:id/compliance
+// @access  Private/Admin or VendorOnboarder
+router.get("/products/:id/compliance", protect, adminOrVendorOnboarder, async (req, res) => {
+  try {
+    let compliance = await ProductCompliance.findOne({ product: req.params.id })
+      .populate("certification.verifiedBy", "name email")
+      .populate("regulatory.fssai.verifiedBy", "name email")
+      .populate("productVerification.verifiedBy", "name email")
+      .populate("scientificVerification.verifiedBy", "name email")
+      .populate("sirabaQualification.verifiedBy", "name email");
+
+    if (!compliance) {
+      return res.status(404).json({ message: "Compliance record not found for this product" });
+    }
+
+    res.json(compliance);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Create initial compliance record for product
+// @route   POST /api/admin/products/:id/compliance
+// @access  Private/Admin
+router.post("/products/:id/compliance", protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    let compliance = await ProductCompliance.findOne({ product: product._id });
+    if (compliance) {
+      return res.status(400).json({ message: "Compliance record already exists for this product" });
+    }
+
+    compliance = new ProductCompliance({
+      product: product._id,
+      vendor: product.vendor || null,
+      ...req.body,
+    });
+
+    await compliance.save();
+
+    await ComplianceAuditLog.create({
+      entityType: "product_compliance",
+      entityId: compliance._id,
+      productId: product._id,
+      vendorId: product.vendor || null,
+      action: "created",
+      performedBy: req.user._id,
+      reason: "Initial compliance record created",
+    });
+
+    invalidateCache.compliance(product._id);
+    res.status(201).json(compliance);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Update specific compliance dimension
+// @route   PUT /api/admin/products/:id/compliance/:dimension
+// @access  Private/Admin or VendorOnboarder
+router.put("/products/:id/compliance/:dimension", protect, adminOrVendorOnboarder, async (req, res) => {
+  try {
+    const { dimension } = req.params;
+    const allowedDimensions = ["certification", "regulatory", "productVerification", "scientificVerification", "sirabaQualification"];
+
+    if (!allowedDimensions.includes(dimension)) {
+      return res.status(400).json({ message: `Invalid dimension. Allowed: ${allowedDimensions.join(", ")}` });
+    }
+
+    const compliance = await ProductCompliance.findOne({ product: req.params.id });
+    if (!compliance) {
+      return res.status(404).json({ message: "Compliance record not found. Create it first." });
+    }
+
+    const updateData = {
+      ...req.body,
+      verifiedBy: req.user._id,
+      verifiedAt: new Date(),
+    };
+
+    const updated = await complianceService.updateDimension(compliance._id, dimension, updateData, req.user._id);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ================== PRODUCT BATCH MANAGEMENT ==================
+
+// @desc    Get all batches for product
+// @route   GET /api/admin/products/:id/batches
+// @access  Private/Admin or VendorOnboarder
+router.get("/products/:id/batches", protect, adminOrVendorOnboarder, async (req, res) => {
+  try {
+    const batches = await ProductBatch.find({ product: req.params.id }).sort({ createdAt: -1 });
+    res.json(batches);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Create new batch for product (Generates Trace ID & QR URL)
+// @route   POST /api/admin/products/:id/batches
+// @access  Private/Admin
+router.post("/products/:id/batches", protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const { batchNumber, manufacturedAt, bestBefore, qualityVerification, laboratoryEvidence, traceability } = req.body;
+
+    if (!batchNumber) {
+      return res.status(400).json({ message: "Batch number is required" });
+    }
+
+    // Check duplicate batch number for this product
+    const existingBatch = await ProductBatch.findOne({ product: product._id, batchNumber: batchNumber.trim() });
+    if (existingBatch) {
+      return res.status(400).json({ message: `Batch ${batchNumber} already exists for this product` });
+    }
+
+    // Derive category code for Trace ID e.g. "HNG", "TUR"
+    let catCode = (product.slug || product.category || "PRD")
+      .replace(/[^a-zA-Z]/g, "")
+      .substring(0, 3)
+      .toUpperCase();
+    if (catCode.length < 3) catCode = (catCode + "XXX").substring(0, 3);
+
+    // Atomic Trace ID sequence increment
+    const counter = await TraceIdCounter.findOneAndUpdate(
+      { _id: catCode },
+      { $inc: { sequence: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+    const traceId = `SIR-${catCode}-${String(counter.sequence).padStart(5, "0")}`;
+
+    const baseUrl = process.env.CLIENT_URL || "https://sirabaorganic.com";
+    const qrVerificationUrl = `${baseUrl}/verify/${traceId}`;
+
+    const compliance = await ProductCompliance.findOne({ product: product._id });
+
+    const newBatch = new ProductBatch({
+      product: product._id,
+      vendor: product.vendor || null, // Inherited from Product, nullable for platform products
+      compliance: compliance?._id || null,
+      batchNumber: batchNumber.trim(),
+      status: "active",
+      manufacturedAt,
+      bestBefore,
+      qualityVerification: qualityVerification || { status: "pending" },
+      laboratoryEvidence: laboratoryEvidence || [],
+      traceability: traceability || { status: "pending" },
+      traceId,
+      traceIdGeneratedAt: new Date(),
+      qrVerificationUrl,
+    });
+
+    await newBatch.save();
+
+    await ComplianceAuditLog.create({
+      entityType: "product_batch",
+      entityId: newBatch._id,
+      productId: product._id,
+      vendorId: product.vendor || null,
+      action: "batch_created",
+      performedBy: req.user._id,
+      reason: `Batch ${newBatch.batchNumber} created with Trace ID ${traceId}`,
+    });
+
+    invalidateCache.compliance(product._id);
+    res.status(201).json(newBatch);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Update batch information
+// @route   PUT /api/admin/products/:id/batches/:batchId
+// @access  Private/Admin or VendorOnboarder
+router.put("/products/:id/batches/:batchId", protect, adminOrVendorOnboarder, async (req, res) => {
+  try {
+    const batch = await ProductBatch.findById(req.params.batchId);
+    if (!batch) {
+      return res.status(404).json({ message: "Batch not found" });
+    }
+
+    if (req.body.qualityVerification) {
+      batch.qualityVerification = {
+        ...batch.qualityVerification,
+        ...req.body.qualityVerification,
+        verifiedBy: req.user._id,
+        verifiedAt: new Date(),
+      };
+    }
+
+    if (req.body.traceability) {
+      batch.traceability = {
+        ...batch.traceability,
+        ...req.body.traceability,
+        verifiedBy: req.user._id,
+        verifiedAt: new Date(),
+      };
+    }
+
+    if (req.body.laboratoryEvidence) {
+      batch.laboratoryEvidence = req.body.laboratoryEvidence;
+    }
+
+    if (req.body.status) {
+      batch.status = req.body.status;
+    }
+
+    await batch.save();
+
+    await ComplianceAuditLog.create({
+      entityType: "product_batch",
+      entityId: batch._id,
+      productId: batch.product,
+      vendorId: batch.vendor || null,
+      action: "status_changed",
+      performedBy: req.user._id,
+      reason: `Batch ${batch.batchNumber} updated`,
+    });
+
+    invalidateCache.compliance(batch.product);
+    res.json(batch);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Delete any product (Admin authorization)
+// @route   DELETE /api/admin/products/:id
+// @access  Private/Admin
+router.delete("/products/:id", protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const productId = product._id;
+
+    // Clean up associated compliance, batches, and reviews
+    const ProductBatch = require("../models/ProductBatch");
+    const ProductCompliance = require("../models/ProductCompliance");
+    const Review = require("../models/Review");
+
+    await Promise.all([
+      product.deleteOne(),
+      ProductBatch.deleteMany({ product: productId }),
+      ProductCompliance.deleteMany({ product: productId }),
+      Review.deleteMany({ product: productId }),
+    ]);
+
+    // Clear caches
+    invalidateCache.products();
+    invalidateCache.compliance(productId);
+
+    res.json({ message: "Product and associated records deleted successfully!" });
+  } catch (error) {
+    console.error("Admin product delete error:", error);
+    res.status(500).json({ message: error.message || "Failed to delete product" });
+  }
+});
+
+// @desc    Get shipping settings (threshold, scope, charges)
+// @route   GET /api/admin/shipping-settings
+// @access  Private/Admin
+router.get("/shipping-settings", protect, admin, async (req, res) => {
+  try {
+    const SiteSettings = require("../models/SiteSettings");
+    const { getShippingConfig } = require("./shippingRoutes");
+    const config = await getShippingConfig();
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Update shipping settings (threshold, scope, charges)
+// @route   PUT /api/admin/shipping-settings
+// @access  Private/Admin
+router.put("/shipping-settings", protect, admin, async (req, res) => {
+  try {
+    const SiteSettings = require("../models/SiteSettings");
+    const { freeShippingThreshold, isEnabled, platformHandlingFeeFlat, platformHandlingFeePercent, codSurcharge, flatRateFallback } = req.body;
+
+    let settings = await SiteSettings.findOne({ type: "home" });
+    if (!settings) {
+      settings = new SiteSettings({ type: "home" });
+    }
+
+    if (!settings.shippingConfig) {
+      settings.shippingConfig = {};
+    }
+
+    if (freeShippingThreshold !== undefined) settings.shippingConfig.freeShippingThreshold = Number(freeShippingThreshold);
+    if (isEnabled !== undefined) settings.shippingConfig.isEnabled = Boolean(isEnabled);
+    if (platformHandlingFeeFlat !== undefined) settings.shippingConfig.platformHandlingFeeFlat = Number(platformHandlingFeeFlat);
+    if (platformHandlingFeePercent !== undefined) settings.shippingConfig.platformHandlingFeePercent = Number(platformHandlingFeePercent);
+    if (codSurcharge !== undefined) settings.shippingConfig.codSurcharge = Number(codSurcharge);
+    if (flatRateFallback !== undefined) settings.shippingConfig.flatRateFallback = Number(flatRateFallback);
+
+    await settings.save();
+    res.json({ message: "Shipping settings updated successfully!", shippingConfig: settings.shippingConfig });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Get audit log for product compliance
+// @route   GET /api/admin/products/:id/compliance/audit
+// @access  Private/Admin
+router.get("/products/:id/compliance/audit", protect, admin, async (req, res) => {
+  try {
+    const logs = await ComplianceAuditLog.find({ productId: req.params.id })
+      .populate("performedBy", "name email")
+      .sort({ performedAt: -1 });
+    res.json(logs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
