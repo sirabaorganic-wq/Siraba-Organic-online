@@ -75,8 +75,9 @@ const sanitizePayload = (body) => {
   return clean;
 };
 
-// @desc    Shiprocket Status Webhook Endpoint
-// @route   POST /api/shiprocket/webhook
+// @desc    Shiprocket / Fulfillment Status Webhook Endpoint
+// @route   POST /api/fulfillment/status (Public Production Endpoint)
+// @route   POST /api/shiprocket/webhook (Legacy Compatibility Endpoint)
 // @access  Public (x-api-key header verified)
 router.post("/", async (req, res) => {
   try {

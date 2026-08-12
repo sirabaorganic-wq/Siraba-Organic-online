@@ -12,6 +12,7 @@ const shiprocketWebhookRoutes = require(path.join(backendDir, 'routes/shiprocket
 
 const app = express();
 app.use(express.json());
+app.use('/api/fulfillment/status', shiprocketWebhookRoutes);
 app.use('/api/shiprocket/webhook', shiprocketWebhookRoutes);
 
 const TEST_SECRET = 'test_webhook_secret_key_12345';
@@ -20,7 +21,7 @@ process.env.SHIPROCKET_WEBHOOK_SECRET = TEST_SECRET;
 async function runTests() {
   await mongoose.connect(process.env.MONGO_URI);
   console.log('\n==================================================');
-  console.log('  SHIPROCKET WEBHOOK PRODUCTION TEST SUITE');
+  console.log('  FULFILLMENT / SHIPROCKET WEBHOOK PRODUCTION TEST SUITE');
   console.log('==================================================\n');
 
   let passed = 0;
@@ -58,12 +59,13 @@ async function runTests() {
   });
 
   const server = app.listen(5899);
-  const baseURL = 'http://localhost:5899/api/shiprocket/webhook';
+  const baseURL = 'http://localhost:5899/api/fulfillment/status';
+  const legacyURL = 'http://localhost:5899/api/shiprocket/webhook';
 
-  const client = (headers = {}) => ({
+  const client = (headers = {}, url = baseURL) => ({
     post: async (data) => {
       try {
-        const res = await axios.post(baseURL, data, { headers, validateStatus: () => true });
+        const res = await axios.post(url, data, { headers, validateStatus: () => true });
         return { status: res.status, body: res.data };
       } catch (e) {
         return { status: e.response?.status || 500, body: e.response?.data || {} };
@@ -89,11 +91,15 @@ async function runTests() {
   const resD = await client({ 'x-shiprocket-secret': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'OUT FOR DELIVERY', event_id: 'evt_auth_d' });
   assert('Test D: Legacy x-shiprocket-secret header accepted (HTTP 200)', resD.status === 200);
 
-  // Test E: Correct payload but wrong secret does not mutate DB
+  // Test E: Legacy URL /api/shiprocket/webhook backward compatibility
+  const resLegacy = await client({ 'x-api-key': TEST_SECRET }, legacyURL).post({ shipment_id: '123456789', current_status: 'IN TRANSIT', event_id: 'evt_auth_legacy' });
+  assert('Test E: Legacy /api/shiprocket/webhook route returns HTTP 200', resLegacy.status === 200);
+
+  // Test F: Correct payload but wrong secret does not mutate DB
   const initialVO = await VendorOrder.findById(mockVendorOrder._id);
-  await client({ 'x-api-key': 'fake_token_123' }).post({ shipment_id: '123456789', current_status: 'DELIVERED', event_id: 'evt_auth_e' });
+  await client({ 'x-api-key': 'fake_token_123' }).post({ shipment_id: '123456789', current_status: 'DELIVERED', event_id: 'evt_auth_f' });
   const afterVO = await VendorOrder.findById(mockVendorOrder._id);
-  assert('Test E: Unauthorized attempt does NOT mutate DB status', initialVO.status === afterVO.status);
+  assert('Test F: Unauthorized attempt does NOT mutate DB status', initialVO.status === afterVO.status);
 
   console.log('\n--- SECTION 2: STATUS TRANSITION & REGRESSION TESTS ---');
 

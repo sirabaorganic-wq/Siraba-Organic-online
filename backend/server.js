@@ -187,7 +187,9 @@ app.use("/api/refunds", require("./routes/refundRoutes"));
 app.use("/api/gst", require("./routes/publicGSTRoutes"));
 app.use("/api/cache", require("./routes/cacheRoutes"));
 app.use("/api/shiprocket", require("./routes/shiprocketRoutes"));
-app.use("/api/shiprocket/webhook", require("./routes/shiprocketWebhookRoutes"));
+const shiprocketWebhookRoutes = require("./routes/shiprocketWebhookRoutes");
+app.use("/api/fulfillment/status", shiprocketWebhookRoutes);
+app.use("/api/shiprocket/webhook", shiprocketWebhookRoutes);
 app.use("/api/verification", require("./routes/verificationRoutes"));
 
 app.get("/", (req, res) => {
