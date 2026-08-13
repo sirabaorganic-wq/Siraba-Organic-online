@@ -301,6 +301,15 @@ router.post("/", protect, admin, async (req, res) => {
   try {
     const product = new Product(req.body);
     const createdProduct = await product.save();
+
+    if (createdProduct.batchNumber) {
+      await complianceService.upsertProductBatch(createdProduct._id, {
+        batchNumber: createdProduct.batchNumber,
+        batchInfo: createdProduct.batchInfo,
+        vendorId: createdProduct.vendor,
+      });
+    }
+
     // Clear product cache when new product is created
     invalidateCache.products();
     res.status(201).json(createdProduct);
@@ -318,6 +327,15 @@ router.put("/:id", protect, admin, async (req, res) => {
     if (product) {
       Object.assign(product, req.body);
       const updatedProduct = await product.save();
+
+      if (updatedProduct.batchNumber) {
+        await complianceService.upsertProductBatch(updatedProduct._id, {
+          batchNumber: updatedProduct.batchNumber,
+          batchInfo: updatedProduct.batchInfo,
+          vendorId: updatedProduct.vendor,
+        });
+      }
+
       // Clear product cache when product is updated
       invalidateCache.products();
       res.json(updatedProduct);

@@ -13,6 +13,7 @@ const ImageUploadField = ({
   maxImages = 5,
   disabled = false,
 }) => {
+  const safeImages = Array.isArray(images) ? images : [];
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadProgress, setUploadProgress] = useState({});
@@ -20,12 +21,12 @@ const ImageUploadField = ({
   const dragCounter = useRef(0);
 
   const handleFiles = async (files) => {
-    if (images.length >= maxImages) {
+    if (safeImages.length >= maxImages) {
       setUploadError(`Maximum ${maxImages} images allowed`);
       return;
     }
 
-    const filesToUpload = Array.from(files).slice(0, maxImages - images.length);
+    const filesToUpload = Array.from(files).slice(0, maxImages - safeImages.length);
 
     setUploading(true);
     setUploadError("");
@@ -65,7 +66,7 @@ const ImageUploadField = ({
           });
 
           if (response.data.url) {
-            onImagesChange([...images, response.data.url]);
+            onImagesChange([...safeImages, response.data.url]);
           }
         } catch (error) {
           console.error("Upload error:", error);
@@ -104,7 +105,7 @@ const ImageUploadField = ({
   };
 
   const removeImage = (index) => {
-    onImagesChange(images.filter((_, i) => i !== index));
+    onImagesChange(safeImages.filter((_, i) => i !== index));
   };
 
   return (
@@ -131,7 +132,7 @@ const ImageUploadField = ({
           multiple
           accept="image/*"
           onChange={(e) => handleFiles(e.target.files)}
-          disabled={disabled || uploading || images.length >= maxImages}
+          disabled={disabled || uploading || safeImages.length >= maxImages}
           className="hidden"
         />
 
@@ -139,7 +140,7 @@ const ImageUploadField = ({
           onClick={() =>
             !disabled &&
             !uploading &&
-            images.length < maxImages &&
+            safeImages.length < maxImages &&
             fileInputRef.current?.click()
           }
           className="space-y-3"
@@ -158,7 +159,7 @@ const ImageUploadField = ({
                 : "Drag images here or click to select"}
             </p>
             <p className="text-xs text-text-secondary/60 mt-1">
-              JPG, PNG, WebP • Max 5MB each • {maxImages - images.length} slots
+              JPG, PNG, WebP • Max 5MB each • {maxImages - safeImages.length} slots
               remaining
             </p>
           </div>
@@ -183,9 +184,9 @@ const ImageUploadField = ({
       )}
 
       {/* Image Preview Grid */}
-      {images.length > 0 && (
+      {safeImages.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {images.map((image, index) => (
+          {safeImages.map((image, index) => (
             <div
               key={index}
               className="relative aspect-square rounded-lg border border-secondary/20 overflow-hidden group bg-background"
@@ -228,18 +229,18 @@ const ImageUploadField = ({
       )}
 
       {/* Empty State */}
-      {images.length === 0 && !uploading && (
+      {safeImages.length === 0 && !uploading && (
         <p className="text-xs text-text-secondary/60 text-center py-4">
           No images uploaded yet. Add images to showcase your product.
         </p>
       )}
 
       {/* Success Message */}
-      {images.length > 0 && !uploading && (
+      {safeImages.length > 0 && !uploading && (
         <div className="p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
           <Check className="w-4 h-4 text-green-600" />
           <p className="text-xs text-green-700">
-            {images.length}/{maxImages} images uploaded
+            {safeImages.length}/{maxImages} images uploaded
           </p>
         </div>
       )}

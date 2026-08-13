@@ -31,6 +31,11 @@ const productBatchSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    batchInfo: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     status: {
       type: String,
       enum: batchStatusEnum,

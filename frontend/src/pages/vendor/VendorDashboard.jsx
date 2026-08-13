@@ -42,6 +42,7 @@ import {
   Palette,
   Link as LinkIcon,
   Shield,
+  ShieldCheck,
   Mail,
   Send,
   MessageCircle,
@@ -1543,6 +1544,8 @@ const ProductsContent = ({
     ingredients: "",
     stockQuantity: 0,
     sku: "",
+    batchNumber: "",
+    batchInfo: "",
   });
   const [newFeature, setNewFeature] = useState("");
 
@@ -1564,6 +1567,8 @@ const ProductsContent = ({
       ingredients: "",
       stockQuantity: 0,
       sku: "",
+      batchNumber: "",
+      batchInfo: "",
     });
     setNewFeature("");
     setEditingProduct(null);
@@ -1595,6 +1600,21 @@ const ProductsContent = ({
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+
+    let parsedFeatures = [];
+    if (Array.isArray(product.features)) {
+      parsedFeatures = product.features;
+    } else if (typeof product.features === "string" && product.features.trim()) {
+      parsedFeatures = product.features.split(",").map((f) => f.trim()).filter(Boolean);
+    }
+
+    let parsedImages = [];
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      parsedImages = product.images;
+    } else if (product.image) {
+      parsedImages = [product.image];
+    }
+
     setFormData({
       name: product.name || "",
       description: product.description || "",
@@ -1603,11 +1623,13 @@ const ProductsContent = ({
       costPrice: product.costPrice || "",
       category: product.category || "Saffron",
       tag: product.tag || "",
-      images: product.images || [],
-      features: product.features || [],
+      images: parsedImages,
+      features: parsedFeatures,
       ingredients: product.ingredients || "",
       stockQuantity: product.stockQuantity || 0,
       sku: product.sku || "",
+      batchNumber: product.batchNumber || "",
+      batchInfo: product.batchInfo || "",
     });
     setShowAddModal(true);
   };
@@ -1781,12 +1803,9 @@ const ProductsContent = ({
               {/* Actions */}
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => handleEdit(product)}
-                  disabled={!isApproved}
-                  className={`flex-1 py-2.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${isApproved
-                    ? "bg-secondary/10 hover:bg-secondary/20 text-primary"
-                    : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                    }`}
+                  className="flex-1 py-2.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors bg-secondary/10 hover:bg-secondary/20 text-primary cursor-pointer"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
@@ -1990,6 +2009,48 @@ const ProductsContent = ({
                 />
               </div>
 
+              {/* Batch & Traceability Information */}
+              <div className="p-4 rounded bg-emerald-50/60 border border-emerald-200 space-y-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 font-mono">
+                    Batch Traceability Information *
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1 text-slate-700 uppercase tracking-wide">
+                      Batch Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.batchNumber}
+                      onChange={(e) =>
+                        setFormData({ ...formData, batchNumber: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 border border-secondary/30 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white text-xs font-mono"
+                      placeholder="e.g. BATCH-2026-001"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1 text-slate-700 uppercase tracking-wide">
+                      Batch Info / Traceability Details *
+                    </label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={formData.batchInfo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, batchInfo: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 border border-secondary/30 rounded-sm focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white text-xs font-light resize-none"
+                      placeholder="e.g. Harvested from Pampore, Kashmir. Stone-ground processing."
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Images */}
               <ImageUploadField
                 images={formData.images}
@@ -2025,7 +2086,7 @@ const ProductsContent = ({
                   </button>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {formData.features.map((feat, i) => (
+                  {(Array.isArray(formData.features) ? formData.features : []).map((feat, i) => (
                     <span
                       key={i}
                       className="px-3 py-1 bg-background rounded-sm text-sm flex items-center gap-2 border border-secondary/10"

@@ -19,13 +19,15 @@ const TraceabilityTab = ({ latestBatch }) => {
         );
     }
 
-    const { batchNumber, status, manufacturedAt, bestBefore, traceability, laboratoryEvidence, traceId } = latestBatch;
+    const { batchNumber, status, manufacturedAt, bestBefore, traceability, laboratoryEvidence, traceId, batchInfo } = latestBatch;
+
+    const displayInfo = batchInfo || traceability?.batchInfo || traceability?.origin;
 
     const steps = [
         {
             icon: MapPin,
             title: '1. Source & Farm Origin',
-            detail: traceability?.origin || 'Verified Heritage Belt',
+            detail: displayInfo || 'Verified Heritage Belt',
             sub: traceability?.producer || 'Verified Organic Producer',
             status: traceability?.status === 'verified' ? 'Verified' : 'Pending',
         },
@@ -119,6 +121,18 @@ const TraceabilityTab = ({ latestBatch }) => {
                     </span>
                 </div>
             </div>
+
+            {/* Batch Information Details Card */}
+            {displayInfo && (
+                <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-1.5 shadow-2xs">
+                    <span className="text-[#0F3D2E] text-[11px] font-bold uppercase tracking-wider block font-mono">
+                        Batch Information & Traceability Details
+                    </span>
+                    <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        {displayInfo}
+                    </p>
+                </div>
+            )}
 
             {/* Visual Timeline */}
             <div className="space-y-4">

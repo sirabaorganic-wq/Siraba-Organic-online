@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const Vendor = require("../models/Vendor");
 const VendorOrder = require("../models/VendorOrder");
 const Product = require("../models/Product");
+const { upsertProductBatch } = require("../services/complianceService");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const OTP = require("../models/OTP");
@@ -1091,6 +1092,8 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
       sku,
       hsn,
       certifications,
+      batchNumber,
+      batchInfo,
     } = req.body;
 
     let prodCertifications = certifications;
@@ -1152,11 +1155,21 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
       sku: sku || `VND-${req.vendor._id.toString().slice(-6)}-${Date.now()}`,
       hsn: hsn || "0909",
       certifications: prodCertifications,
+      batchNumber: batchNumber ? String(batchNumber).trim() : "",
+      batchInfo: batchInfo ? String(batchInfo).trim() : "",
       vendor: req.vendor._id,
       isVendorProduct: true,
       vendorStatus: "pending", // Requires admin approval
       isActive: true,
     });
+
+    if (product.batchNumber) {
+      await upsertProductBatch(product._id, {
+        batchNumber: product.batchNumber,
+        batchInfo: product.batchInfo,
+        vendorId: req.vendor._id,
+      });
+    }
 
     // Clear caches when vendor creates a product
     invalidateCache.products();
@@ -1203,6 +1216,8 @@ router.put(
         hsn,
         isActive,
         certifications,
+        batchNumber,
+        batchInfo,
       } = req.body;
 
       // Validate certifications if provided
@@ -1254,6 +1269,8 @@ router.put(
       if (hsn) product.hsn = hsn;
       if (isActive !== undefined) product.isActive = isActive;
       if (certifications) product.certifications = certifications;
+      if (batchNumber !== undefined) product.batchNumber = String(batchNumber).trim();
+      if (batchInfo !== undefined) product.batchInfo = String(batchInfo).trim();
 
       // If product was rejected and updated, set back to pending for re-review
       if (product.vendorStatus === "rejected") {
@@ -1262,6 +1279,14 @@ router.put(
       }
 
       await product.save();
+
+      if (product.batchNumber) {
+        await upsertProductBatch(product._id, {
+          batchNumber: product.batchNumber,
+          batchInfo: product.batchInfo,
+          vendorId: req.vendor._id,
+        });
+      }
       // Clear caches when vendor updates a product
       invalidateCache.products();
       invalidateCache.vendors();

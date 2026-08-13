@@ -36,6 +36,7 @@ import {
   DollarSign,
   Building,
   FileCheck,
+  ShieldCheck,
   Ban,
   RefreshCw,
   RotateCcw,
@@ -435,6 +436,8 @@ const AdminDashboard = () => {
     fullDescription: "",
     ingredients: "",
     features: "",
+    batchNumber: "",
+    batchInfo: "",
   };
 
   const [currentProduct, setCurrentProduct] = useState(initialProductState);
@@ -529,6 +532,8 @@ const AdminDashboard = () => {
   const handleEditClick = (product) => {
     setCurrentProduct({
       ...product,
+      batchNumber: product.batchNumber || "",
+      batchInfo: product.batchInfo || "",
       images:
         product.images && product.images.length > 0
           ? product.images
@@ -5893,6 +5898,50 @@ const AdminDashboard = () => {
                       }
                       className="w-full bg-background border border-secondary/20 p-2 rounded-sm h-24"
                       placeholder="Organic, Vegan, Gluten-Free..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Batch & Traceability Section */}
+              <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-sm space-y-3">
+                <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs font-mono uppercase tracking-wider">
+                  <ShieldCheck size={16} className="text-emerald-700" />
+                  <span>Batch Traceability Information</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1 uppercase tracking-wide">
+                      Batch Number
+                    </label>
+                    <input
+                      type="text"
+                      value={currentProduct.batchNumber || ""}
+                      onChange={(e) =>
+                        setCurrentProduct({
+                          ...currentProduct,
+                          batchNumber: e.target.value,
+                        })
+                      }
+                      className="w-full bg-white border border-secondary/20 p-2 rounded-sm text-xs font-mono"
+                      placeholder="e.g. BATCH-2026-001"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1 uppercase tracking-wide">
+                      Batch Info / Traceability Details
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentProduct.batchInfo || ""}
+                      onChange={(e) =>
+                        setCurrentProduct({
+                          ...currentProduct,
+                          batchInfo: e.target.value,
+                        })
+                      }
+                      className="w-full bg-white border border-secondary/20 p-2 rounded-sm text-xs resize-none"
+                      placeholder="e.g. Harvested from Pampore, Kashmir. Cold-pressed processing."
                     />
                   </div>
                 </div>

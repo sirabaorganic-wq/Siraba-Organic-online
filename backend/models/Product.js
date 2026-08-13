@@ -70,6 +70,10 @@ const productSchema = mongoose.Schema(
     sku: { type: String },
     isActive: { type: Boolean, default: true },
 
+    // Batch & Traceability
+    batchNumber: { type: String, default: "" },
+    batchInfo: { type: String, default: "" },
+
     // Organic certifications
     certifications: [{
       type: String,
