@@ -32,9 +32,9 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
             title: 'CERTIFIED™',
             status: certification?.status || 'not_available',
             icon: Award,
-            summary: certification?.standard ? `${certification.standard} Organic` : 'NPOP Organic',
+            summary: certification?.standard ? `${certification.standard} Organic` : 'USDA NOP Organic',
             details: [
-                { label: 'Standard', value: certification?.standard || 'NPOP' },
+                { label: 'Standard', value: certification?.standard || 'USDA NOP' },
                 { label: 'Certification Body', value: certification?.certificationBody || 'Verified Certifier' },
                 { label: 'Certificate No', value: certification?.certificateNumber || 'Verified' },
                 { label: 'Valid Until', value: certification?.validUntil ? new Date(certification.validUntil).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Verified' },

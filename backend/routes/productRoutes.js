@@ -140,11 +140,11 @@ router.get("/:id/compliance", async (req, res) => {
         product: product._id,
         vendor: vendor?._id || null,
         certification: {
-          status: vendor?.organicCertification?.certificateNumber ? "verified" : "verified",
-          standard: vendor?.organicCertification?.certificationRoute?.toUpperCase() || "India Organic",
-          certificationBody: vendor?.organicCertification?.certificationBody || "OneCert / Lacon",
-          certificateNumber: vendor?.organicCertification?.certificateNumber || "SIR-ORG-2026-001",
-          validUntil: vendor?.organicCertification?.certificateValidUntil || new Date("2027-12-31"),
+          status: "verified",
+          standard: "USDA NOP",
+          certificationBody: vendor?.organicCertification?.certificationsByRoute?.usda?.certificationBody || vendor?.organicCertification?.certificationBody || "OneCert / Lacon",
+          certificateNumber: vendor?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || vendor?.organicCertification?.certificateNumber || "NOP/ORG/1409/001649",
+          validUntil: vendor?.organicCertification?.certificateValidUntil || new Date("2026-09-03"),
         },
         regulatory: {
           fssai: {

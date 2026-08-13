@@ -2669,18 +2669,29 @@ router.get("/plans", async (req, res) => {
 router.get("/subscription", protectVendor, async (req, res) => {
   try {
     const vendor = await Vendor.findById(req.vendor._id).select(
-      "subscription commissionRate",
+      "subscription commissionRate pricingTier storeName email wallet"
     );
     const { vendorPlans } = require("../config/vendorPlans");
+    const { getEnterpriseCommitmentStatus } = require("../services/enterpriseCommitmentService");
 
     const currentPlan = vendor.subscription?.plan || "starter";
-    const planDetails = vendorPlans[currentPlan];
+    const planDetails = vendorPlans[currentPlan] || vendorPlans.starter;
+
+    let enterpriseCommitmentStatus = null;
+    if (currentPlan === "enterprise" || vendor.pricingTier === "enterprise") {
+      try {
+        enterpriseCommitmentStatus = await getEnterpriseCommitmentStatus(vendor._id);
+      } catch (err) {
+        console.error("Error calculating Enterprise commitment status:", err);
+      }
+    }
 
     res.json({
       currentPlan,
       planDetails,
       subscription: vendor.subscription,
-      commissionRate: vendor.commissionRate,
+      commissionRate: vendor.commissionRate !== undefined && vendor.commissionRate !== null ? vendor.commissionRate : planDetails.commissionRate,
+      enterpriseCommitmentStatus,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -2704,8 +2715,8 @@ router.post("/subscription", protectVendor, async (req, res) => {
     const vendor = await Vendor.findById(req.vendor._id);
     const planDetails = vendorPlans[plan];
 
-    const planLevels = { starter: 0, professional: 1, enterprise: 2 };
-    const currentLevel = planLevels[vendor.subscription?.plan || "starter"];
+    const planLevels = { starter: 0, professional: 1, business: 2, enterprise: 3 };
+    const currentLevel = planLevels[vendor.subscription?.plan || "starter"] || 0;
     const newLevel = planLevels[plan];
 
     // Downgrade Logic
@@ -2717,6 +2728,7 @@ router.post("/subscription", protectVendor, async (req, res) => {
       vendor.subscription.upcomingPlan = plan;
       vendor.subscription.upcomingPlanDate = vendor.subscription.endDate;
       vendor.subscription.autoRenew = false;
+      vendor.subscription.status = "pending_downgrade";
 
       await vendor.save();
 
@@ -2745,6 +2757,12 @@ router.post("/subscription", protectVendor, async (req, res) => {
     if (plan === "starter") {
       vendor.subscription = {
         plan: "starter",
+        status: "active",
+        effectiveFrom: new Date(),
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: null,
+        billingProvider: "razorpay",
+        billingReference: "FREE_TIER",
         startDate: new Date(),
         endDate: null,
         isActive: true,
@@ -2770,13 +2788,22 @@ router.post("/subscription", protectVendor, async (req, res) => {
       });
     }
 
+    const startDate = new Date();
     const endDate = new Date(
-      Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000,
+      Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000
     );
+
+    const transactionId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
     vendor.subscription = {
       plan,
-      startDate: new Date(),
+      status: "active",
+      effectiveFrom: startDate,
+      currentPeriodStart: startDate,
+      currentPeriodEnd: endDate,
+      billingProvider: "razorpay",
+      billingReference: transactionId,
+      startDate: startDate,
       endDate: endDate,
       isActive: true,
       autoRenew: true,
@@ -2786,14 +2813,26 @@ router.post("/subscription", protectVendor, async (req, res) => {
         ...(vendor.subscription?.paymentHistory || []),
         {
           amount: price,
-          paymentDate: new Date(),
+          paymentDate: startDate,
           paymentMethod: "card",
-          transactionId: `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+          transactionId: transactionId,
           status: "completed",
         },
       ],
     };
     vendor.commissionRate = getCommissionRate(plan);
+
+    // Record subscription charge transaction in vendor wallet ledger for accounting audit
+    if (!vendor.wallet) {
+      vendor.wallet = { balance: 0, transactions: [] };
+    }
+    vendor.wallet.transactions.push({
+      type: "subscription_fee",
+      amount: price,
+      description: `Vendor Subscription Fee - ${planDetails.name} Plan (${billingCycle})`,
+      status: "completed",
+      createdAt: startDate,
+    });
 
     await vendor.save();
 
@@ -2802,7 +2841,7 @@ router.post("/subscription", protectVendor, async (req, res) => {
       recipientModel: "Vendor",
       type: "success",
       title: "Plan Upgraded!",
-      message: `Welcome to the ${planDetails.name} plan. You have been charged ₹${price}.`,
+      message: `Welcome to the ${planDetails.name} plan. You have been charged ₹${price.toLocaleString()}.`,
     });
 
     res.json({

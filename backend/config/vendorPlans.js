@@ -1,18 +1,26 @@
-// Vendor Subscription Plans Configuration
+// Vendor Subscription Plans Configuration - Official SIRABA Economics Architecture
 
 const vendorPlans = {
   starter: {
+    id: "starter",
     name: "Starter",
-    price: 0, // Free
+    price: 0, // ₹0/month
     priceMonthly: 0,
-    priceYearly: 0,
+    priceYearly: null, // Yearly billing disabled
+    billingInterval: "monthly",
     commissionRate: 15, // 15% commission
+    minimumMonthlyPlatformCommitment: 0,
+    positioning: "For emerging vendors.",
+    targetGMV: "Emerging vendors",
+    logisticsPolicy: "Applicable logistics charges.",
     features: [
+      "15% platform commission",
       "List up to 10 products",
       "Basic analytics dashboard",
       "Standard support",
       "Basic shop profile",
       "Manual payout (weekly)",
+      "Applicable logistics charges",
     ],
     limits: {
       maxProducts: 10,
@@ -24,14 +32,23 @@ const vendorPlans = {
     },
     badge: null,
     color: "#6B7280", // gray
+    displayOrder: 1,
+    active: true,
   },
   professional: {
+    id: "professional",
     name: "Professional",
-    price: 1999, // ₹1999/month
-    priceMonthly: 1999,
-    priceYearly: 19990, // ~2 months free
+    price: 4999, // ₹4,999/month
+    priceMonthly: 4999,
+    priceYearly: null, // Yearly billing disabled
+    billingInterval: "monthly",
     commissionRate: 10, // 10% commission
+    minimumMonthlyPlatformCommitment: 0,
+    positioning: "For vendors targeting approximately ₹1–₹2.5 lakh monthly GMV.",
+    targetGMV: "₹1–₹2.5L GMV",
+    logisticsPolicy: "Applicable logistics charges.",
     features: [
+      "10% platform commission",
       "List up to 100 products",
       "Advanced analytics & reports",
       "Priority support",
@@ -40,6 +57,7 @@ const vendorPlans = {
       "Auto payouts (bi-weekly)",
       "Promotional tools",
       "Bulk product upload",
+      "Applicable logistics charges",
     ],
     limits: {
       maxProducts: 100,
@@ -53,24 +71,76 @@ const vendorPlans = {
     },
     badge: "Popular",
     color: "#10B981", // green
+    displayOrder: 2,
+    active: true,
+  },
+  business: {
+    id: "business",
+    name: "Business",
+    price: 9999, // ₹9,999/month
+    priceMonthly: 9999,
+    priceYearly: null, // Yearly billing disabled
+    billingInterval: "monthly",
+    commissionRate: 8, // 8% commission
+    minimumMonthlyPlatformCommitment: 0,
+    positioning: "For vendors around ₹2.5–₹5 lakh+ monthly GMV.",
+    targetGMV: "₹2.5–₹5L+ GMV",
+    logisticsPolicy: "Applicable logistics charges.",
+    features: [
+      "8% platform commission",
+      "List up to 500 products",
+      "Comprehensive analytics & market insights",
+      "Priority support with dedicated queue",
+      "Custom shop page & banner branding",
+      "Featured product slots (6)",
+      "Auto payouts (weekly)",
+      "Promotional tools & campaign access",
+      "Bulk product upload",
+      "Express product review",
+      "Applicable logistics charges",
+    ],
+    limits: {
+      maxProducts: 500,
+      maxImages: 8,
+      prioritySupport: true,
+      featuredListing: true,
+      featuredSlots: 6,
+      customShopPage: true,
+      autoPayouts: true,
+      bulkUpload: true,
+      priorityApproval: true,
+    },
+    badge: "High Growth",
+    color: "#3B82F6", // blue
+    displayOrder: 3,
+    active: true,
   },
   enterprise: {
+    id: "enterprise",
     name: "Enterprise",
-    price: 4999, // ₹4999/month
-    priceMonthly: 4999,
-    priceYearly: 49990, // ~2 months free
-    commissionRate: 5, // 5% commission
+    price: 14999, // ₹14,999/month
+    priceMonthly: 14999,
+    priceYearly: null, // Yearly billing disabled
+    billingInterval: "monthly",
+    commissionRate: 6, // 6% commission
+    minimumMonthlyPlatformCommitment: 20000, // ₹20,000 minimum monthly commitment
+    positioning: "For high-volume strategic vendors.",
+    targetGMV: "High-volume strategic",
+    logisticsPolicy: "Applicable logistics charges.",
     features: [
+      "6% platform commission",
+      "Minimum monthly platform commitment: ₹20,000",
       "Unlimited products",
-      "Real-time analytics",
+      "Real-time analytics & intelligence",
       "Dedicated account manager",
       "Branded shop storefront",
-      "Featured product slots (10)",
-      "Auto payouts (weekly)",
+      "Featured product slots (15)",
+      "Auto payouts (on demand)",
       "API access",
       "White-label invoicing",
       "Priority product approval",
-      "Custom commission negotiation",
+      "Custom contract options",
+      "Applicable logistics charges",
     ],
     limits: {
       maxProducts: -1, // Unlimited
@@ -78,7 +148,7 @@ const vendorPlans = {
       prioritySupport: true,
       dedicatedManager: true,
       featuredListing: true,
-      featuredSlots: 10,
+      featuredSlots: 15,
       customShopPage: true,
       brandedStorefront: true,
       autoPayouts: true,
@@ -88,12 +158,19 @@ const vendorPlans = {
     },
     badge: "Best Value",
     color: "#8B5CF6", // purple
+    displayOrder: 4,
+    active: true,
   },
 };
 
 // Commission rates by plan
 const getCommissionRate = (plan) => {
   return vendorPlans[plan]?.commissionRate || 15;
+};
+
+// Minimum monthly platform commitment by plan
+const getMinimumMonthlyCommitment = (plan) => {
+  return vendorPlans[plan]?.minimumMonthlyPlatformCommitment || 0;
 };
 
 // Check if vendor can add more products
@@ -112,6 +189,8 @@ const getPlanFeatures = (plan) => {
 module.exports = {
   vendorPlans,
   getCommissionRate,
+  getMinimumMonthlyCommitment,
   canAddProduct,
   getPlanFeatures,
 };
+

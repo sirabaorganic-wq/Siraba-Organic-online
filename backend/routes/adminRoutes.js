@@ -865,44 +865,62 @@ router.get("/analytics/overview", protect, admin, async (req, res) => {
   }
 });
 
-// ================== PRICING MANAGEMENT ==================
+// ================== PRICING MANAGEMENT & ENTERPRISE SETTLEMENTS ==================
 
 // @desc    Get pricing tiers
 // @route   GET /api/admin/pricing
 // @access  Private/Admin
 router.get("/pricing", protect, admin, async (req, res) => {
   try {
-    // In a real app, this would come from a PricingTier model
-    const pricingTiers = {
-      standard: {
-        name: "Standard",
-        commissionRate: 15,
-        features: ["Basic dashboard", "Standard support", "Monthly payouts"],
-      },
-      premium: {
-        name: "Premium",
-        commissionRate: 10,
-        features: [
-          "Advanced analytics",
-          "Priority support",
-          "Weekly payouts",
-          "Featured listings",
-        ],
-      },
-      enterprise: {
-        name: "Enterprise",
-        commissionRate: 5,
-        features: [
-          "Custom analytics",
-          "Dedicated support",
-          "Daily payouts",
-          "Premium placement",
-          "Custom branding",
-        ],
-      },
-    };
+    const { vendorPlans } = require("../config/vendorPlans");
+    res.json(vendorPlans);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
-    res.json(pricingTiers);
+const EnterpriseSettlement = require("../models/EnterpriseSettlement");
+const { runMonthEndSettlementForAllEnterpriseVendors } = require("../jobs/enterpriseSettlementJob");
+const { runEnterpriseMonthlySettlement } = require("../services/enterpriseCommitmentService");
+
+// @desc    Get Enterprise Settlements
+// @route   GET /api/admin/enterprise-settlements
+// @access  Private/Admin
+router.get("/enterprise-settlements", protect, admin, async (req, res) => {
+  try {
+    const { year, month, vendorId } = req.query;
+    const filter = {};
+    if (year) filter.year = Number(year);
+    if (month) filter.month = Number(month);
+    if (vendorId) filter.vendor = vendorId;
+
+    const settlements = await EnterpriseSettlement.find(filter)
+      .populate("vendor", "storeName email phone subscription commissionRate")
+      .sort({ year: -1, month: -1, createdAt: -1 });
+
+    res.json(settlements);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Run Enterprise Monthly Settlement (Batch or Single Vendor)
+// @route   POST /api/admin/enterprise-settlements/run
+// @access  Private/Admin
+router.post("/enterprise-settlements/run", protect, admin, async (req, res) => {
+  try {
+    const { year, month, vendorId } = req.body;
+
+    if (vendorId) {
+      const now = new Date();
+      const targetYear = year || now.getFullYear();
+      const targetMonth = month || (now.getMonth() + 1);
+      const result = await runEnterpriseMonthlySettlement(vendorId, targetYear, targetMonth);
+      return res.json({ message: "Enterprise settlement executed successfully", result });
+    }
+
+    const batchResult = await runMonthEndSettlementForAllEnterpriseVendors(year, month);
+    res.json({ message: "Month-end settlement batch complete", batchResult });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

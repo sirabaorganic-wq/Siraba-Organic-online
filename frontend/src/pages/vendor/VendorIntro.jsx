@@ -148,7 +148,6 @@ const VendorIntro = () => {
         }
     ];
 
-
     // Subscription Plans
     const plans = [
         {
@@ -156,38 +155,43 @@ const VendorIntro = () => {
             name: 'Starter',
             icon: Rocket,
             price: null,
-            priceMonthly: null,
-            priceYearly: null,
+            priceMonthly: '₹0',
+            priceYearly: '₹0',
             priceLabel: 'Free',
             commission: '15%',
+            positioning: 'For emerging vendors',
             badge: null,
-            color: 'from-emerald-500 to-green-600',
-            iconBg: 'bg-emerald-50',
-            iconColor: 'text-emerald-600',
-            borderHover: 'hover:border-emerald-300',
+            color: 'from-gray-500 to-slate-600',
+            iconBg: 'bg-gray-50',
+            iconColor: 'text-gray-600',
+            borderHover: 'hover:border-gray-300',
             highlight: false,
             features: [
+                '15% platform commission',
                 'Up to 10 products',
                 'Basic analytics dashboard',
                 'Standard support',
                 'Basic shop profile',
                 'Manual weekly payouts',
+                'Applicable logistics charges',
             ]
         },
         {
             id: 'professional',
             name: 'Professional',
             icon: Zap,
-            priceMonthly: '₹1,999',
-            priceYearly: '₹19,990',
+            priceMonthly: '₹4,999',
+            priceYearly: '₹49,990',
             commission: '10%',
-            badge: 'Most Popular',
-            color: 'from-accent to-primary',
-            iconBg: 'bg-accent/10',
-            iconColor: 'text-accent',
-            borderHover: 'hover:border-accent',
-            highlight: true,
+            positioning: 'For vendors targeting ₹1–₹2.5L GMV',
+            badge: 'Popular',
+            color: 'from-emerald-500 to-green-600',
+            iconBg: 'bg-emerald-50',
+            iconColor: 'text-emerald-600',
+            borderHover: 'hover:border-emerald-300',
+            highlight: false,
             features: [
+                '10% platform commission',
                 'Up to 100 products',
                 'Advanced analytics & reports',
                 'Priority support',
@@ -196,15 +200,46 @@ const VendorIntro = () => {
                 'Auto payouts (bi-weekly)',
                 'Promotional tools',
                 'Bulk product upload',
+                'Applicable logistics charges',
+            ]
+        },
+        {
+            id: 'business',
+            name: 'Business',
+            icon: TrendingUp,
+            priceMonthly: '₹9,999',
+            priceYearly: '₹99,990',
+            commission: '8%',
+            positioning: 'For vendors around ₹2.5–₹5L+ GMV',
+            badge: 'High Growth',
+            color: 'from-accent to-primary',
+            iconBg: 'bg-accent/10',
+            iconColor: 'text-accent',
+            borderHover: 'hover:border-accent',
+            highlight: true,
+            features: [
+                '8% platform commission',
+                'Up to 500 products',
+                'Comprehensive analytics & market insights',
+                'Priority support with dedicated queue',
+                'Custom shop page & banner branding',
+                '6 featured product slots',
+                'Auto payouts (weekly)',
+                'Promotional tools & campaign access',
+                'Bulk product upload',
+                'Express product review',
+                'Applicable logistics charges',
             ]
         },
         {
             id: 'enterprise',
             name: 'Enterprise',
             icon: Crown,
-            priceMonthly: '₹4,999',
-            priceYearly: '₹49,990',
-            commission: '5%',
+            priceMonthly: '₹14,999',
+            priceYearly: '₹1,49,990',
+            commission: '6%',
+            minCommitment: '₹20,000/mo min platform commitment',
+            positioning: 'For high-volume strategic vendors',
             badge: 'Best Value',
             color: 'from-amber-500 to-orange-600',
             iconBg: 'bg-amber-50',
@@ -212,16 +247,18 @@ const VendorIntro = () => {
             borderHover: 'hover:border-amber-300',
             highlight: false,
             features: [
+                '6% platform commission',
+                'Min platform commitment: ₹20,000/mo',
                 'Unlimited products',
-                'Real-time analytics',
+                'Real-time analytics & intelligence',
                 'Dedicated account manager',
                 'Branded storefront',
-                '10 featured product slots',
-                'Auto payouts (weekly)',
+                '15 featured product slots',
+                'Auto payouts (on demand)',
                 'API access',
                 'White-label invoicing',
                 'Priority product approval',
-                'Custom commission negotiation',
+                'Applicable logistics charges',
             ]
         }
     ];
@@ -749,7 +786,7 @@ const VendorIntro = () => {
                     </div>
 
                     {/* Plans Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
                         {plans.map((plan) => {
                             const PlanIcon = plan.icon;
                             const displayPrice = plan.priceLabel

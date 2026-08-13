@@ -93,12 +93,84 @@ async function processEvent(event, data) {
         case 'refund.processed':
             await handleRefundProcessed(data);
             break;
+        case 'subscription.activated':
+        case 'subscription.charged':
+        case 'subscription.halted':
+        case 'subscription.cancelled':
+        case 'subscription.completed':
+            await handleSubscriptionEvent(event, data);
+            break;
         case 'transfer.processed':
         case 'transfer.failed':
             // await handleTransferEvent(event, data); // To be implemented with VendorTransfer
             break;
         default:
             console.log(`Unhandled Razorpay event: ${event}`);
+    }
+}
+
+/**
+ * Subscription Webhook Event Processor
+ */
+async function handleSubscriptionEvent(event, data) {
+    const subEntity = data.subscription?.entity || data.payment?.entity;
+    if (!subEntity) return;
+
+    const subId = subEntity.id || subEntity.subscription_id;
+    if (!subId) return;
+
+    const Vendor = require('../models/Vendor');
+    const { getCommissionRate } = require('../config/vendorPlans');
+
+    const vendor = await Vendor.findOne({
+        $or: [
+            { 'subscription.billingReference': subId },
+            { 'subscription.paymentHistory.transactionId': subId }
+        ]
+    });
+
+    if (!vendor) {
+        console.log(`Subscription Webhook: Vendor not found for subscription ID ${subId}`);
+        return;
+    }
+
+    if (event === 'subscription.charged' || event === 'subscription.activated') {
+        const amount = subEntity.amount ? subEntity.amount / 100 : vendor.subscription?.price || 0;
+        vendor.subscription.isActive = true;
+        vendor.subscription.status = 'active';
+        vendor.subscription.currentPeriodStart = new Date();
+        vendor.subscription.currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        vendor.subscription.endDate = vendor.subscription.currentPeriodEnd;
+
+        // If upcoming plan was scheduled, activate it now
+        if (vendor.subscription.upcomingPlan) {
+            vendor.subscription.plan = vendor.subscription.upcomingPlan;
+            vendor.commissionRate = getCommissionRate(vendor.subscription.upcomingPlan);
+            vendor.subscription.upcomingPlan = undefined;
+            vendor.subscription.upcomingPlanDate = undefined;
+        }
+
+        vendor.subscription.paymentHistory = vendor.subscription.paymentHistory || [];
+        vendor.subscription.paymentHistory.push({
+            amount,
+            paymentDate: new Date(),
+            paymentMethod: subEntity.method || 'razorpay',
+            transactionId: subEntity.payment_id || subId,
+            status: 'completed'
+        });
+
+        await vendor.save();
+        console.log(`Subscription Webhook: Active subscription updated for vendor ${vendor._id} (${vendor.email})`);
+    } else if (event === 'subscription.cancelled') {
+        vendor.subscription.status = 'cancelled';
+        vendor.subscription.autoRenew = false;
+        await vendor.save();
+        console.log(`Subscription Webhook: Subscription cancelled for vendor ${vendor._id}`);
+    } else if (event === 'subscription.halted') {
+        vendor.subscription.status = 'expired';
+        vendor.subscription.isActive = false;
+        await vendor.save();
+        console.log(`Subscription Webhook: Subscription halted/expired for vendor ${vendor._id}`);
     }
 }
 

@@ -3910,6 +3910,8 @@ const SubscriptionContent = ({
         return Rocket;
       case "professional":
         return Zap;
+      case "business":
+        return TrendingUp;
       case "enterprise":
         return Crown;
       default:
@@ -4141,7 +4143,7 @@ const SubscriptionContent = ({
       </div>
 
       {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {plans &&
           Object.entries(plans).map(([key, plan]) => {
             const Icon = getPlanIcon(key);
@@ -4152,7 +4154,7 @@ const SubscriptionContent = ({
             return (
               <div
                 key={key}
-                className={`relative bg-surface rounded-sm p-8 shadow-lg border transition-all duration-300 hover:scale-105 ${isCurrentPlan
+                className={`relative bg-surface rounded-sm p-8 shadow-lg border transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between ${isCurrentPlan
                   ? "border-accent shadow-xl ring-1 ring-accent/20"
                   : "border-secondary/10 hover:border-accent/50"
                   }`}
@@ -4192,8 +4194,9 @@ const SubscriptionContent = ({
                   )}
                 </div>
 
-                <p className="text-sm font-medium text-text-secondary mb-6 flex items-center gap-2">
-                  <span className="text-accent font-bold text-lg">
+                <p className="text-xs text-text-secondary mb-6 font-light">
+                  Includes{" "}
+                  <span className="font-semibold text-accent">
                     {plan.commissionRate}%
                   </span>{" "}
                   platform commission
@@ -4216,7 +4219,7 @@ const SubscriptionContent = ({
                   disabled={isCurrentPlan}
                   className={`w-full py-3.5 rounded-sm font-bold uppercase tracking-widest text-sm transition-all duration-300 ${isCurrentPlan
                     ? "bg-secondary/10 text-text-secondary cursor-not-allowed"
-                    : key === "professional"
+                    : key === "professional" || key === "business"
                       ? "bg-primary text-surface hover:bg-primary/90 shadow-md transform hover:-translate-y-0.5"
                       : key === "enterprise"
                         ? "bg-gradient-to-r from-purple-900 to-indigo-900 text-surface hover:shadow-lg shadow-md transform hover:-translate-y-0.5"
@@ -4253,6 +4256,9 @@ const SubscriptionContent = ({
                   Professional
                 </th>
                 <th className="text-center py-4 px-6 font-heading font-medium text-primary">
+                  Business
+                </th>
+                <th className="text-center py-4 px-6 font-heading font-medium text-primary">
                   Enterprise
                 </th>
               </tr>
@@ -4261,10 +4267,13 @@ const SubscriptionContent = ({
               <tr>
                 <td className="py-4 px-6 text-sm font-light">Product Limit</td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
-                  {plans?.starter?.limits?.products || 10}
+                  {plans?.starter?.limits?.maxProducts || 10}
                 </td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
-                  {plans?.professional?.limits?.products || 100}
+                  {plans?.professional?.limits?.maxProducts || 100}
+                </td>
+                <td className="text-center py-4 px-6 text-sm font-medium">
+                  {plans?.business?.limits?.maxProducts || 500}
                 </td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
                   Unlimited
@@ -4281,7 +4290,27 @@ const SubscriptionContent = ({
                   10%
                 </td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
-                  5%
+                  8%
+                </td>
+                <td className="text-center py-4 px-6 text-sm font-medium">
+                  6%
+                </td>
+              </tr>
+              <tr>
+                <td className="py-4 px-6 text-sm font-light">
+                  Min Monthly Commitment
+                </td>
+                <td className="text-center py-4 px-6 text-sm font-medium text-gray-400">
+                  —
+                </td>
+                <td className="text-center py-4 px-6 text-sm font-medium text-gray-400">
+                  —
+                </td>
+                <td className="text-center py-4 px-6 text-sm font-medium text-gray-400">
+                  —
+                </td>
+                <td className="text-center py-4 px-6 text-sm font-medium text-purple-700 font-bold">
+                  ₹20,000 / mo
                 </td>
               </tr>
               <tr>
@@ -4297,6 +4326,9 @@ const SubscriptionContent = ({
                 <td className="text-center py-4 px-6">
                   <CheckCircle className="w-5 h-5 text-secondary mx-auto" />
                 </td>
+                <td className="text-center py-4 px-6">
+                  <CheckCircle className="w-5 h-5 text-secondary mx-auto" />
+                </td>
               </tr>
               <tr>
                 <td className="py-4 px-6 text-sm font-light">
@@ -4304,8 +4336,9 @@ const SubscriptionContent = ({
                 </td>
                 <td className="text-center py-4 px-6 text-sm">Basic</td>
                 <td className="text-center py-4 px-6 text-sm">Advanced</td>
-                <td className="text-center py-4 px-6 text-sm">
-                  Advanced + Reports
+                <td className="text-center py-4 px-6 text-sm">Comprehensive</td>
+                <td className="text-center py-4 px-6 text-sm font-medium">
+                  Real-time Intelligence
                 </td>
               </tr>
             </tbody>

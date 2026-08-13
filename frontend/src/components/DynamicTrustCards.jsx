@@ -197,7 +197,7 @@ const DynamicTrustCards = ({ productId, initialTrustPassport = null }) => {
               <div className="flex justify-between items-start">
                 <span className="text-slate-500 font-medium">Standard</span>
                 <span className="font-semibold text-slate-800 text-right truncate max-w-[120px]">
-                  {certified?.standard || "India Organic"}
+                  {certified?.standard || "USDA NOP"}
                 </span>
               </div>
               <div className="flex justify-between items-start">

@@ -7,17 +7,7 @@ const Vendor = require("../models/Vendor");
 const { protect, admin } = require("../middleware/authMiddleware");
 const { invalidateCache } = require("../config/cache");
 const { enqueueShipment } = require("../jobs/shiprocketQueue");
-const { calculateShipping } = require("./shippingRoutes");
-
-// Helper function to get commission rate based on vendor's plan
-const getCommissionRate = (plan) => {
-  const rates = {
-    starter: 15,
-    professional: 10,
-    enterprise: 5,
-  };
-  return rates[plan] || 15;
-};
+const { getCommissionRate } = require("../config/vendorPlans");
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -275,6 +265,8 @@ router.post("/", protect, async (req, res) => {
         subtotal: vendorData.subtotal,
         tax: vendorTax,
         commission: commission,
+        commissionRateAtOrder: commissionRate,
+        planAtOrder: vendor?.subscription?.plan || "starter",
         netAmount: netAmount,
 
         // Shipping Economics Snapshot

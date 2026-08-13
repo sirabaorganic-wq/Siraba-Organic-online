@@ -25,6 +25,8 @@ const VendorSubscription = () => {
             priceMonthly: 0,
             priceYearly: 0,
             commission: 15,
+            positioning: "For emerging vendors.",
+            logisticsPolicy: "Applicable logistics charges.",
             features: [
                 "15% platform commission",
                 "List up to 10 products",
@@ -32,16 +34,19 @@ const VendorSubscription = () => {
                 "Standard support",
                 "Basic shop profile",
                 "Manual payout (weekly)",
+                "Applicable logistics charges",
             ],
-            color: "blue",
+            color: "gray",
             popular: false,
         },
         professional: {
             id: "professional",
             name: "Professional",
-            priceMonthly: 1999,
-            priceYearly: 19990, // roughly 17% save
+            priceMonthly: 4999,
+            priceYearly: 49990,
             commission: 10,
+            positioning: "For vendors targeting approx ₹1–₹2.5L monthly GMV.",
+            logisticsPolicy: "Applicable logistics charges.",
             features: [
                 "10% platform commission",
                 "List up to 100 products",
@@ -52,28 +57,58 @@ const VendorSubscription = () => {
                 "Auto payouts (bi-weekly)",
                 "Promotional tools",
                 "Bulk product upload",
+                "Applicable logistics charges",
             ],
-            color: "indigo",
+            color: "emerald",
             popular: true,
+        },
+        business: {
+            id: "business",
+            name: "Business",
+            priceMonthly: 9999,
+            priceYearly: 99990,
+            commission: 8,
+            positioning: "For vendors around ₹2.5–₹5L+ monthly GMV.",
+            logisticsPolicy: "Applicable logistics charges.",
+            features: [
+                "8% platform commission",
+                "List up to 500 products",
+                "Comprehensive analytics & market insights",
+                "Priority support with dedicated queue",
+                "Custom shop page & banner branding",
+                "Featured product slots (6)",
+                "Auto payouts (weekly)",
+                "Promotional tools & campaign access",
+                "Bulk product upload",
+                "Express product review",
+                "Applicable logistics charges",
+            ],
+            color: "blue",
+            popular: false,
+            badge: "High Growth",
         },
         enterprise: {
             id: "enterprise",
             name: "Enterprise",
-            priceMonthly: 4999,
-            priceYearly: 49990,
-            commission: 5,
+            priceMonthly: 14999,
+            priceYearly: 149990,
+            commission: 6,
+            minCommitment: 20000,
+            positioning: "For high-volume strategic vendors.",
+            logisticsPolicy: "Applicable logistics charges.",
             features: [
-                "5% platform commission",
+                "6% platform commission",
+                "Minimum monthly platform commitment: ₹20,000",
                 "Unlimited products",
-                "Real-time analytics",
+                "Real-time analytics & intelligence",
                 "Dedicated account manager",
                 "Branded shop storefront",
-                "Featured product slots (10)",
-                "Auto payouts (weekly)",
+                "Featured product slots (15)",
+                "Auto payouts (on demand)",
                 "API access",
                 "White-label invoicing",
                 "Priority product approval",
-                "Custom commission negotiation",
+                "Applicable logistics charges",
             ],
             color: "purple",
             popular: false,
@@ -232,7 +267,7 @@ const VendorSubscription = () => {
                 </div>
 
                 {/* Pricing Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                     {Object.values(PLANS).map((plan) => {
                         const isCurrent = activePlanId === plan.id && !upcomingPlanId;
                         const isUpcoming = upcomingPlanId === plan.id;
@@ -241,7 +276,7 @@ const VendorSubscription = () => {
                         return (
                             <div
                                 key={plan.id}
-                                className={`relative bg-surface rounded-sm overflow-hidden transition-all duration-500 ${plan.popular ? "border-2 border-accent shadow-2xl scale-105 z-10" : "border border-secondary/20 shadow-lg hover:shadow-xl hover:-translate-y-1"
+                                className={`relative bg-surface rounded-sm overflow-hidden transition-all duration-500 flex flex-col justify-between ${plan.popular ? "border-2 border-accent shadow-2xl scale-[1.02] z-10" : "border border-secondary/20 shadow-lg hover:shadow-xl hover:-translate-y-1"
                                     }`}
                             >
                                 {plan.popular && (

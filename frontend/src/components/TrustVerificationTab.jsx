@@ -90,7 +90,7 @@ const TrustVerificationTab = ({ compliance }) => {
                             </div>
                             <div>
                                 <h4 className="font-semibold text-slate-900 text-sm">01. Organic Certification</h4>
-                                <p className="text-xs text-slate-500">{certification?.standard || 'NPOP'} Standard Coverage</p>
+                                <p className="text-xs text-slate-500">{certification?.standard || 'USDA NOP'} Standard Coverage</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -104,7 +104,7 @@ const TrustVerificationTab = ({ compliance }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1">
                                     <span className="text-slate-400 text-[11px] block uppercase font-mono">Certification Standard</span>
-                                    <span className="font-semibold text-slate-800">{certification?.standard || 'NPOP (India Organic)'}</span>
+                                    <span className="font-semibold text-slate-800">{certification?.standard || 'USDA NOP Organic'}</span>
                                 </div>
                                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1">
                                     <span className="text-slate-400 text-[11px] block uppercase font-mono">Certification Body</span>

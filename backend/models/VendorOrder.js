@@ -30,6 +30,8 @@ const vendorOrderSchema = mongoose.Schema(
     subtotal: { type: Number, required: true },
     tax: { type: Number, default: 0 },
     commission: { type: Number, default: 0 },
+    commissionRateAtOrder: { type: Number },
+    planAtOrder: { type: String },
     netAmount: { type: Number, required: true }, // subtotal - commission
 
     // Shipping Economics Snapshot
