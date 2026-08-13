@@ -269,18 +269,19 @@ async function main() {
   results.authChecks = {
     canAddProductStarter10: canAddProduct("starter", 10) === false,
     canAddProductStarter9: canAddProduct("starter", 9) === true,
-    canAddProductPro100: canAddProduct("professional", 100) === false,
-    canAddProductPro99: canAddProduct("professional", 99) === true,
-    canAddProductBiz500: canAddProduct("business", 500) === false,
-    canAddProductBiz499: canAddProduct("business", 499) === true,
-    canAddProductEnterprise1000: canAddProduct("enterprise", 1000) === true, // Unlimited
+    canAddProductPro50: canAddProduct("professional", 50) === false,
+    canAddProductPro49: canAddProduct("professional", 49) === true,
+    canAddProductBiz100: canAddProduct("business", 100) === false,
+    canAddProductBiz99: canAddProduct("business", 99) === true,
+    canAddProductEnterprise500: canAddProduct("enterprise", 500) === false,
+    canAddProductEnterprise499: canAddProduct("enterprise", 499) === true,
   };
 
   console.log("Product Limit Enforcement:");
   console.log(`  Starter max 10 enforced: ${results.authChecks.canAddProductStarter10}`);
-  console.log(`  Pro max 100 enforced: ${results.authChecks.canAddProductPro100}`);
-  console.log(`  Biz max 500 enforced: ${results.authChecks.canAddProductBiz500}`);
-  console.log(`  Enterprise unlimited enforced: ${results.authChecks.canAddProductEnterprise1000}`);
+  console.log(`  Pro max 50 enforced: ${results.authChecks.canAddProductPro50}`);
+  console.log(`  Biz max 100 enforced: ${results.authChecks.canAddProductBiz100}`);
+  console.log(`  Enterprise max 500 enforced: ${results.authChecks.canAddProductEnterprise500}`);
 
   console.log("\n✅ Audit database execution completed successfully.");
   console.log(JSON.stringify(results, null, 2));

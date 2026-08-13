@@ -192,7 +192,7 @@ const VendorIntro = () => {
             highlight: false,
             features: [
                 '10% platform commission',
-                'Up to 100 products',
+                'Up to 50 products',
                 'Advanced analytics & reports',
                 'Priority support',
                 'Custom shop page',
@@ -219,7 +219,7 @@ const VendorIntro = () => {
             highlight: true,
             features: [
                 '8% platform commission',
-                'Up to 500 products',
+                'Up to 100 products',
                 'Comprehensive analytics & market insights',
                 'Priority support with dedicated queue',
                 'Custom shop page & banner branding',
@@ -249,7 +249,7 @@ const VendorIntro = () => {
             features: [
                 '6% platform commission',
                 'Min platform commitment: ₹20,000/mo',
-                'Unlimited products',
+                'Up to 500 products',
                 'Real-time analytics & intelligence',
                 'Dedicated account manager',
                 'Branded storefront',

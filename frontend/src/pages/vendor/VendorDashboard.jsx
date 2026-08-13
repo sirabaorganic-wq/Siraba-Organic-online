@@ -4270,13 +4270,13 @@ const SubscriptionContent = ({
                   {plans?.starter?.limits?.maxProducts || 10}
                 </td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
-                  {plans?.professional?.limits?.maxProducts || 100}
+                  {plans?.professional?.limits?.maxProducts || 50}
                 </td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
-                  {plans?.business?.limits?.maxProducts || 500}
+                  {plans?.business?.limits?.maxProducts || 100}
                 </td>
                 <td className="text-center py-4 px-6 text-sm font-medium">
-                  Unlimited
+                  {plans?.enterprise?.limits?.maxProducts || 500}
                 </td>
               </tr>
               <tr>

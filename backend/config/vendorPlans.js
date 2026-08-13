@@ -49,7 +49,7 @@ const vendorPlans = {
     logisticsPolicy: "Applicable logistics charges.",
     features: [
       "10% platform commission",
-      "List up to 100 products",
+      "List up to 50 products",
       "Advanced analytics & reports",
       "Priority support",
       "Custom shop page",
@@ -60,7 +60,7 @@ const vendorPlans = {
       "Applicable logistics charges",
     ],
     limits: {
-      maxProducts: 100,
+      maxProducts: 50,
       maxImages: 5,
       prioritySupport: true,
       featuredListing: true,
@@ -88,7 +88,7 @@ const vendorPlans = {
     logisticsPolicy: "Applicable logistics charges.",
     features: [
       "8% platform commission",
-      "List up to 500 products",
+      "List up to 100 products",
       "Comprehensive analytics & market insights",
       "Priority support with dedicated queue",
       "Custom shop page & banner branding",
@@ -100,7 +100,7 @@ const vendorPlans = {
       "Applicable logistics charges",
     ],
     limits: {
-      maxProducts: 500,
+      maxProducts: 100,
       maxImages: 8,
       prioritySupport: true,
       featuredListing: true,
@@ -130,7 +130,7 @@ const vendorPlans = {
     features: [
       "6% platform commission",
       "Minimum monthly platform commitment: ₹20,000",
-      "Unlimited products",
+      "List up to 500 products",
       "Real-time analytics & intelligence",
       "Dedicated account manager",
       "Branded shop storefront",
@@ -143,7 +143,7 @@ const vendorPlans = {
       "Applicable logistics charges",
     ],
     limits: {
-      maxProducts: -1, // Unlimited
+      maxProducts: 500,
       maxImages: 10,
       prioritySupport: true,
       dedicatedManager: true,
