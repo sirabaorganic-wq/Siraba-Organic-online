@@ -115,9 +115,8 @@ async function run() {
               verifiedAt: isApproved ? new Date() : null,
             },
             scientificVerification: {
-              status: isApproved ? "verified" : "pending",
-              summary: isApproved ? "Scientific evidence and laboratory documentation validated." : "Laboratory documentation pending verification.",
-              verifiedAt: isApproved ? new Date() : null,
+              status: "pending",
+              summary: "Accredited Lab Evidence pending submission and review.",
             },
             sirabaQualification: {
               status: "verified",
@@ -127,9 +126,9 @@ async function run() {
             },
             trustStatus: {
               isCertified: true,
-              isVerified: true,
+              isVerified: false,
               isQualified: true,
-              isTripleVerified: true,
+              isTripleVerified: false,
               computedAt: new Date(),
             },
           },

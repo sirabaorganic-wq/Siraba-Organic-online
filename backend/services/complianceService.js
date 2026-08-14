@@ -10,19 +10,170 @@ const { invalidateCache } = require("../config/cache");
  */
 
 /**
+ * Validate Accredited Laboratory Evidence
+ * Ensures scientific verification is NOT self-authenticating.
+ * Must verify:
+ * 1. An actual laboratory evidence record exists (on batch or explicit product compliance evidenceDoc)
+ * 2. Status is approved / verified (not pending, uploaded, under_review, rejected)
+ * 3. Evidence is not expired
+ * 4. Genuine accredited laboratory information exists (laboratory name, accreditation or reportNumber)
+ * 5. Applicability: belongs to the specific product (and batch if batch-specific)
+ */
+const validateScientificEvidence = ({ compliance, batch, product, vendor } = {}, now = new Date()) => {
+  // If scientific verification is marked not_applicable:
+  if (compliance?.scientificVerification?.status === "not_applicable") {
+    return {
+      isValid: true,
+      status: "not_applicable",
+      summary: "Scientific Verification Not Applicable for this product category.",
+      laboratory: "",
+      accreditation: "",
+      reportNumber: "",
+    };
+  }
+
+  // 1. Check Batch-specific laboratory evidence
+  if (batch && Array.isArray(batch.laboratoryEvidence) && batch.laboratoryEvidence.length > 0) {
+    // If batch is provided, verify it actually belongs to the product
+    if (product && batch.product && String(batch.product) !== String(product._id || product.id || product)) {
+      return {
+        isValid: false,
+        status: "invalid",
+        reason: "Batch does not belong to this product.",
+        summary: "Accredited Lab Evidence not applicable to this product.",
+      };
+    }
+
+    const validBatchEvidence = batch.laboratoryEvidence.find((l) => {
+      const isApproved = l.status === "verified" || l.status === "approved";
+      const isNotExpired = !l.expiresAt || new Date(l.expiresAt) >= now;
+      const hasAccreditedLab = Boolean(
+        l.laboratory &&
+          (l.accreditation || l.reportNumber || (Array.isArray(l.parameters) && l.parameters.length > 0))
+      );
+      return isApproved && isNotExpired && hasAccreditedLab;
+    });
+
+    if (validBatchEvidence) {
+      return {
+        isValid: true,
+        status: "verified",
+        summary: validBatchEvidence.laboratory
+          ? `Accredited Lab Evidence Validated (${validBatchEvidence.laboratory})`
+          : "Accredited Lab Evidence Validated (ISO/IEC 17025)",
+        laboratory: validBatchEvidence.laboratory || "",
+        accreditation: validBatchEvidence.accreditation || "ISO/IEC 17025",
+        reportNumber: validBatchEvidence.reportNumber || "",
+        testDate: validBatchEvidence.testDate || null,
+        parameters: validBatchEvidence.parameters || [],
+      };
+    }
+
+    // Check if there was evidence but it's expired
+    const expiredEvidence = batch.laboratoryEvidence.find(
+      (l) => (l.status === "verified" || l.status === "approved") && l.expiresAt && new Date(l.expiresAt) < now
+    );
+    if (expiredEvidence) {
+      return {
+        isValid: false,
+        status: "expired",
+        reason: "Accredited Lab Evidence has expired.",
+        summary: "Accredited Lab Evidence expired. Renewal required.",
+      };
+    }
+  }
+
+  // 2. Check ProductCompliance-level evidenceDoc
+  // If compliance.scientificVerification.status === 'verified', MUST verify underlying evidence exists
+  if (compliance?.scientificVerification?.status === "verified") {
+    const hasExpiry = compliance.scientificVerification.expiresAt;
+    if (hasExpiry && new Date(hasExpiry) < now) {
+      return {
+        isValid: false,
+        status: "expired",
+        reason: "Product scientific verification has expired.",
+        summary: "Accredited Lab Evidence expired. Renewal required.",
+      };
+    }
+
+    // Must have concrete accreditation evidence attached
+    const hasEvidenceDetails = Boolean(
+      compliance.scientificVerification.evidenceDocId ||
+        compliance.scientificVerification.laboratory ||
+        compliance.scientificVerification.reportNumber ||
+        (compliance.scientificVerification.summary &&
+          compliance.scientificVerification.summary.toLowerCase().includes("iso/iec") &&
+          compliance.scientificVerification.verifiedBy)
+    );
+
+    if (hasEvidenceDetails) {
+      return {
+        isValid: true,
+        status: "verified",
+        summary: compliance.scientificVerification.summary || "Accredited Lab Evidence Validated (ISO/IEC 17025)",
+        laboratory: compliance.scientificVerification.laboratory || "",
+        accreditation: compliance.scientificVerification.accreditation || "ISO/IEC 17025",
+        reportNumber: compliance.scientificVerification.reportNumber || "",
+      };
+    }
+
+    // Standalone status without underlying evidence fails verification!
+    return {
+      isValid: false,
+      status: "pending",
+      reason: "No underlying Accredited Lab Evidence document attached to verification record.",
+      summary: "Accredited Lab Evidence pending document verification.",
+    };
+  }
+
+  // Default: Missing / Pending / Rejected
+  const storedStatus = compliance?.scientificVerification?.status || "pending";
+  return {
+    isValid: false,
+    status: storedStatus === "rejected" ? "rejected" : storedStatus === "expired" ? "expired" : "pending",
+    reason: "No approved Accredited Lab Evidence found for this product.",
+    summary: "Accredited Lab Evidence pending submission and review.",
+  };
+};
+
+/**
  * Compute Trust Status from compliance record fields (pure function)
  */
-const computeTrustStatus = (compliance) => {
-  const isCertified = compliance.certification?.status === "verified";
+const computeTrustStatus = (complianceInput, now = new Date()) => {
+  // Support passing either compliance directly or an options object { compliance, batch, product, vendor }
+  const compliance = complianceInput?.certification ? complianceInput : (complianceInput?.compliance || complianceInput);
+  const batch = complianceInput?.batch || null;
+  const product = complianceInput?.product || null;
+  const vendor = complianceInput?.vendor || null;
+
+  if (!compliance) {
+    return {
+      isCertified: false,
+      isVerified: false,
+      isQualified: false,
+      isTripleVerified: false,
+      computedAt: new Date(),
+    };
+  }
+
+  const isCertified =
+    compliance.certification?.status === "verified" &&
+    (!compliance.certification?.expiresAt || new Date(compliance.certification.expiresAt) >= now);
+
+  const effFssaiStatus = evaluateEffectiveStatus(
+    compliance.regulatory?.fssai?.status,
+    compliance.regulatory?.fssai?.expiresAt,
+    now
+  );
+
+  const sciEvidenceResult = validateScientificEvidence({ compliance, batch, product, vendor }, now);
 
   const isVerified =
-    compliance.regulatory?.fssai?.status === "verified" &&
+    effFssaiStatus === "verified" &&
     compliance.productVerification?.status === "verified" &&
-    (compliance.scientificVerification?.status === "verified" ||
-      compliance.scientificVerification?.status === "not_applicable");
+    sciEvidenceResult.isValid;
 
-  const isQualified = isCertified && isVerified && compliance.sirabaQualification?.status === "verified";
-
+  const isQualified = compliance.sirabaQualification?.status === "verified";
   const isTripleVerified = isCertified && isVerified && isQualified;
 
   return {
@@ -135,31 +286,41 @@ const updateDimension = async (complianceId, dimension, updateData, adminUserId)
 /**
  * Build Public Compliance DTO (Read-only, applies effective status evaluation, strips private data)
  */
-const buildPublicDTO = (compliance, now = new Date()) => {
+const buildPublicDTO = (compliance, options = {}, now = new Date()) => {
   if (!compliance) return null;
+
+  let opts = {};
+  let effectiveNow = now;
+  if (options instanceof Date) {
+    effectiveNow = options;
+  } else if (typeof options === "object") {
+    opts = options;
+  }
+
+  const batch = opts.batch || null;
+  const product = opts.product || null;
+  const vendor = opts.vendor || null;
 
   const effCertStatus = evaluateEffectiveStatus(
     compliance.certification?.status,
     compliance.certification?.expiresAt,
-    now
+    effectiveNow
   );
   const effFssaiStatus = evaluateEffectiveStatus(
     compliance.regulatory?.fssai?.status,
     compliance.regulatory?.fssai?.expiresAt,
-    now
+    effectiveNow
   );
-  const effSciStatus = evaluateEffectiveStatus(
-    compliance.scientificVerification?.status,
-    null,
-    now
-  );
+  
+  const sciEvidenceResult = validateScientificEvidence({ compliance, batch, product, vendor }, effectiveNow);
+  const effSciStatus = sciEvidenceResult.status;
 
   // Compute effective trust flags for public display
   const isCertified = effCertStatus === "verified";
   const isVerified =
     effFssaiStatus === "verified" &&
     compliance.productVerification?.status === "verified" &&
-    (effSciStatus === "verified" || effSciStatus === "not_applicable");
+    sciEvidenceResult.isValid;
   const isQualified = compliance.sirabaQualification?.status === "verified";
   const isTripleVerified = isCertified && isVerified && isQualified;
 
@@ -397,37 +558,29 @@ const buildTrustPassportDTO = ({ product, vendor, compliance, batch }, now = new
     "All Product Batches";
 
   // CARD 02 — VERIFIED™
-  const isBizVerified = vendor?.status === "approved" || vendor?.isBusinessRegistered === "yes";
-  const isFssaiVerified = Boolean(vendor?.fssaiNumber) || vendor?.status === "approved" || compliance?.regulatory?.fssai?.status === "verified";
-  const isLabelVerified = Boolean(compliance?.productVerification?.labelVerified || vendor?.status === "approved");
-  const isQualityTested = Boolean(compliance?.productVerification?.ingredientsVerified || batch?.qualityVerification?.status === "verified" || vendor?.status === "approved");
-
-  // Safety / Accredited Lab Evidence Check — Must have actual approved lab documentation
-  const labDocTypes = [
-    "nabl_certificate",
-    "laboratory_report_coa",
-    "certificate_of_analysis",
-    "pesticide_residue_report",
-    "heavy_metal_report",
-    "microbiological_report",
-    "product_quality_report",
-  ];
-  const vendorHasLabDoc = Boolean(
-    vendor?.complianceDocuments?.some(
-      (doc) => doc.status === "approved" && labDocTypes.includes(doc.type)
-    )
+  const isBizVerified = Boolean(
+    compliance?.regulatory?.business?.status === "verified" ||
+      vendor?.isBusinessRegistered === "yes" ||
+      vendor?.status === "approved"
+  );
+  const isFssaiVerified = Boolean(
+    compliance?.regulatory?.fssai?.status === "verified" ||
+      (vendor?.fssaiNumber && vendor?.status === "approved")
+  );
+  const isLabelVerified = Boolean(compliance?.productVerification?.labelVerified);
+  const isQualityTested = Boolean(
+    compliance?.productVerification?.ingredientsVerified ||
+      batch?.qualityVerification?.status === "verified"
   );
 
-  const isSafetyTested = Boolean(
-    compliance?.scientificVerification?.status === "verified" ||
-      batch?.laboratoryEvidence?.some((l) => l.status === "verified") ||
-      vendorHasLabDoc
-  );
+  // Safety / Accredited Lab Evidence Check — Validated via non-self-authenticating evidence gate
+  const sciEvidenceResult = validateScientificEvidence({ compliance, batch, product, vendor }, now);
+  const isSafetyTested = sciEvidenceResult.isValid;
 
   let verifiedOverallStatus = "pending";
   if (isBizVerified && isFssaiVerified && isLabelVerified && isQualityTested && isSafetyTested) {
     verifiedOverallStatus = "verified";
-  } else if (isBizVerified || isFssaiVerified) {
+  } else if (isBizVerified || isFssaiVerified || isLabelVerified || isQualityTested) {
     verifiedOverallStatus = "partially_verified";
   }
 
@@ -441,6 +594,7 @@ const buildTrustPassportDTO = ({ product, vendor, compliance, batch }, now = new
     (vendor?.businessType ? `${vendor.businessType.toUpperCase()} Facility` : "Organic Certified Facility");
 
   const qualityCheck =
+    (sciEvidenceResult.laboratory ? `${sciEvidenceResult.laboratory}` : null) ||
     (batch?.laboratoryEvidence?.[0]?.laboratory ? `${batch.laboratoryEvidence[0].laboratory}` : null) ||
     (batch?.qualityVerification?.status === "verified" ? "Accredited Lab Evidence" : "QC Inspection Completed");
 
@@ -502,6 +656,7 @@ const buildTrustPassportDTO = ({ product, vendor, compliance, batch }, now = new
 module.exports = {
   computeTrustStatus,
   evaluateEffectiveStatus,
+  validateScientificEvidence,
   updateDimension,
   buildPublicDTO,
   buildPublicBatchDTO,

@@ -38,7 +38,7 @@ router.get("/:traceId", async (req, res) => {
     const vendor = batch.vendor ? await Vendor.findById(batch.vendor).select("businessName").lean() : null;
     const compliance = await ProductCompliance.findOne({ product: batch.product }).lean();
 
-    const publicComplianceDTO = complianceService.buildPublicDTO(compliance);
+    const publicComplianceDTO = complianceService.buildPublicDTO(compliance, { batch, product, vendor });
     const publicBatchDTO = complianceService.buildPublicBatchDTO(batch);
 
     // Compute explicit verification status semantics

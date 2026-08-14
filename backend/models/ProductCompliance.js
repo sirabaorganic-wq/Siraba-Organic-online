@@ -118,16 +118,16 @@ productComplianceSchema.index({ "certification.expiresAt": 1 }, { sparse: true }
 productComplianceSchema.index({ "regulatory.fssai.expiresAt": 1 }, { sparse: true });
 
 // Pre-save safety fallback to compute trustStatus
-productComplianceSchema.pre("save", function (next) {
-  const isCertified = this.certification.status === "verified";
+productComplianceSchema.pre("save", function () {
+  const isCertified = this.certification?.status === "verified";
 
   const isVerified =
-    this.regulatory.fssai.status === "verified" &&
-    this.productVerification.status === "verified" &&
-    (this.scientificVerification.status === "verified" ||
-      this.scientificVerification.status === "not_applicable");
+    this.regulatory?.fssai?.status === "verified" &&
+    this.productVerification?.status === "verified" &&
+    (this.scientificVerification?.status === "verified" ||
+      this.scientificVerification?.status === "not_applicable");
 
-  const isQualified = isCertified && isVerified && this.sirabaQualification.status === "verified";
+  const isQualified = this.sirabaQualification?.status === "verified";
 
   const isTripleVerified = isCertified && isVerified && isQualified;
 
@@ -138,8 +138,6 @@ productComplianceSchema.pre("save", function (next) {
     isTripleVerified,
     computedAt: new Date(),
   };
-
-  next();
 });
 
 const ProductCompliance = mongoose.model("ProductCompliance", productComplianceSchema);

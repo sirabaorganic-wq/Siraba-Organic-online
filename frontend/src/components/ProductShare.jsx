@@ -12,7 +12,7 @@ const ProductShare = ({ product }) => {
     if (!product) return null;
 
     const url = window.location.href;
-    const text = `Check out ${product.name} on SIRABA Organic — Triple-Verified Organic Product`;
+    const text = `Check out ${product.name} on SIRABA Organic — Certified Organic Marketplace`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(url);

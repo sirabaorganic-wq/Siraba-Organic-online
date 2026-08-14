@@ -139,27 +139,14 @@ router.get("/:id/compliance", async (req, res) => {
       const certNumber = vendor?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || vendor?.organicCertification?.certificateNumber || "";
       const certBody = vendor?.organicCertification?.certificationsByRoute?.usda?.certificationBody || vendor?.organicCertification?.certificationBody || "";
       const certValidUntil = vendor?.organicCertification?.certificateValidUntil || null;
-      const isCertVerified = Boolean(certNumber && vendor?.status === "approved");
+      const isCertVerified = Boolean(certNumber && vendor?.status === "approved" && (!certValidUntil || new Date(certValidUntil) >= new Date()));
 
-      const labDocTypes = [
-        "nabl_certificate",
-        "laboratory_report_coa",
-        "certificate_of_analysis",
-        "pesticide_residue_report",
-        "heavy_metal_report",
-        "microbiological_report",
-        "product_quality_report",
-      ];
-      const hasLabCert = Boolean(
-        vendor?.complianceDocuments?.some(
-          (doc) => doc.status === "approved" && labDocTypes.includes(doc.type)
-        )
-      );
-
-      const isFssaiVerified = Boolean(vendor?.fssaiNumber);
-      const isProductVerified = vendor?.status === "approved";
-      const isSciVerified = hasLabCert;
-      const isOverallVerified = isFssaiVerified && isProductVerified && isSciVerified;
+      // Strict evidence requirement: Scientific Verification requires product/batch specific lab evidence
+      const isFssaiVerified = Boolean(vendor?.fssaiNumber && vendor?.status === "approved");
+      const isProductVerified = false;
+      const isSciVerified = false;
+      const isOverallVerified = false;
+      const isVendorQualified = vendor?.status === "approved";
 
       const syntheticCompliance = {
         product: product._id,
@@ -178,28 +165,26 @@ router.get("/:id/compliance", async (req, res) => {
           },
         },
         productVerification: {
-          status: isProductVerified ? "verified" : "pending",
-          labelVerified: isProductVerified,
-          ingredientsVerified: isProductVerified,
-          specificationVerified: isProductVerified,
-          claimsReviewed: isProductVerified,
+          status: "pending",
+          labelVerified: false,
+          ingredientsVerified: false,
+          specificationVerified: false,
+          claimsReviewed: false,
         },
         scientificVerification: {
-          status: isSciVerified ? "verified" : "pending",
-          summary: isSciVerified
-            ? "Accredited Lab Evidence validated."
-            : "Accredited Lab Evidence pending review.",
+          status: "pending",
+          summary: "Accredited Lab Evidence pending submission and review.",
         },
         sirabaQualification: {
-          status: vendor?.status === "approved" ? "verified" : "pending",
-          vendorQualified: vendor?.status === "approved",
-          marketplaceApproved: vendor?.status === "approved",
+          status: isVendorQualified ? "verified" : "pending",
+          vendorQualified: isVendorQualified,
+          marketplaceApproved: isVendorQualified,
         },
         trustStatus: {
           isCertified: isCertVerified,
-          isVerified: isOverallVerified,
-          isQualified: vendor?.status === "approved",
-          isTripleVerified: isCertVerified && isOverallVerified && vendor?.status === "approved",
+          isVerified: false,
+          isQualified: isVendorQualified,
+          isTripleVerified: false,
         },
       };
 
@@ -207,7 +192,8 @@ router.get("/:id/compliance", async (req, res) => {
       return res.json({ compliance: publicDTO });
     }
 
-    const publicDTO = complianceService.buildPublicDTO(compliance);
+    const latestBatch = await ProductBatch.findOne({ product: product._id, status: "active" }).sort({ createdAt: -1 }).lean();
+    const publicDTO = complianceService.buildPublicDTO(compliance, { batch: latestBatch, product, vendor });
     res.json({ compliance: publicDTO });
   } catch (error) {
     console.error("Error fetching product compliance:", error);
