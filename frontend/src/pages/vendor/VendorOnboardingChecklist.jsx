@@ -29,7 +29,7 @@ const sections = [
     icon: <ClipboardCheck size={20} className="text-emerald-600" />,
     title: "Laboratory & Product Compliance",
     items: [
-      "NABL-accredited laboratory test reports",
+      "Accredited Lab Evidence & test reports",
       "Pesticide residue testing reports",
       "Heavy metal / contamination testing reports",
       "Product specification sheets",

@@ -41,9 +41,9 @@ const TraceabilityTab = ({ latestBatch }) => {
         {
             icon: FlaskConical,
             title: '3. Laboratory Quality Test',
-            detail: laboratoryEvidence?.[0]?.laboratory || 'NABL Accredited Lab',
+            detail: laboratoryEvidence?.[0]?.laboratory || 'Accredited Lab Evidence',
             sub: laboratoryEvidence?.[0]?.reportNumber ? `Report: ${laboratoryEvidence[0].reportNumber}` : 'Parameters Tested',
-            status: laboratoryEvidence?.[0]?.status === 'verified' ? 'Verified' : 'Passed',
+            status: laboratoryEvidence?.[0]?.status === 'verified' ? 'Verified' : 'Pending',
         },
         {
             icon: PackageCheck,

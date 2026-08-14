@@ -30,7 +30,7 @@ const QualityPromise = () => {
     },
     {
       title: "Scientific Documentation Standards",
-      desc: "Approved products must be supported by laboratory documentation aligned with NABL-accredited testing standards.",
+      desc: "Approved products must be supported by laboratory documentation aligned with accredited testing laboratory standards.",
       points: [
         "Quality validation systems",
         "Documentation transparency",

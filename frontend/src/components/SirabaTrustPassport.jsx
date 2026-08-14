@@ -43,14 +43,14 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
         {
             id: 'verified',
             title: 'VERIFIED™',
-            status: (regulatory?.fssai?.status === 'verified' && productVerification?.status === 'verified') ? 'verified' : 'pending',
+            status: (regulatory?.fssai?.status === 'verified' && productVerification?.status === 'verified' && (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable')) ? 'verified' : 'pending',
             icon: CheckCircle2,
-            summary: 'FSSAI License & Ingredients Verified',
+            summary: 'FSSAI License & Accredited Evidence',
             details: [
                 { label: 'FSSAI License', value: regulatory?.fssai?.licenseNumber || 'Verified' },
                 { label: 'Ingredients Checked', value: productVerification?.ingredientsVerified ? 'Verified Pure' : 'Pending' },
                 { label: 'Label Claims', value: productVerification?.claimsReviewed ? 'Reviewed' : 'Pending' },
-                { label: 'Scientific Evidence', value: scientificVerification?.summary || 'Accredited Lab Evidence' },
+                { label: 'Accredited Lab Evidence', value: (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable') ? (scientificVerification?.summary || 'Accredited Lab Evidence') : 'Pending Review' },
             ]
         },
         {

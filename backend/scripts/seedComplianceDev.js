@@ -72,7 +72,7 @@ const seedDevCompliance = async () => {
       },
       scientificVerification: {
         status: "verified",
-        summary: "Tested by NABL-accredited laboratory (ISO/IEC 17025)",
+        summary: "Tested by Accredited Laboratory (ISO/IEC 17025)",
         verifiedAt: new Date("2026-08-10"),
       },
       sirabaQualification: {
@@ -125,7 +125,7 @@ const seedDevCompliance = async () => {
         {
           status: "verified",
           laboratory: "Vedic Analytical Testing Lab",
-          accreditation: "NABL / ISO/IEC 17025",
+          accreditation: "ISO/IEC 17025 Accredited",
           reportNumber: "VATL/2026/0821",
           testDate: new Date("2026-08-03"),
           sampleBatch: "HNG-0826-001",

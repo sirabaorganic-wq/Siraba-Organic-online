@@ -76,7 +76,7 @@ const badges = [
     criteria: [
       "Valid NPOP (India Organic) certification",
       "USDA Organic or EU Organic certification",
-      "NABL-accredited laboratory documentation",
+      "Accredited laboratory evidence & documentation",
       "Sourcing & traceability records submitted",
       "Full compliance with Siraba Organic onboarding standards",
     ],
@@ -162,7 +162,7 @@ const placementIcons = {
 const steps = [
   { n: "01", title: "Submit Application",      desc: "Vendor inquiry via registration page or email" },
   { n: "02", title: "Certification Review",    desc: "NPOP + USDA / EU Organic documents verified" },
-  { n: "03", title: "Lab Documentation",       desc: "NABL-accredited testing records evaluated" },
+  { n: "03", title: "Lab Documentation",       desc: "Accredited laboratory evidence evaluated" },
   { n: "04", title: "Compliance Assessment",   desc: "Sourcing, packaging and documentation reviewed" },
   { n: "05", title: "Marketplace Approval",    desc: "Qualification confirmed; badges awarded" },
 ];

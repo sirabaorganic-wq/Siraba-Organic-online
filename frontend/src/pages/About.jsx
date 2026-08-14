@@ -10,9 +10,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 import BgImage1 from "../assets/bgimage1.png";
-import BgImage2 from "../assets/profileimage.png";
+import FounderImage from "../assets/founderimage.png";
+import CoFounderImage from "../assets/co-founderimage.jpeg";
 import SaffronImage from "../assets/saffron_jar.png";
 import HingImage from "../assets/hing_jar_s.png";
+import { Sparkles as SparklesIcon } from "lucide-react";
 
 const About = () => {
   useEffect(() => {
@@ -132,7 +134,202 @@ const About = () => {
         </div>
       </section>
 
-      {/* ── SECTION 5 — MARKETPLACE PHILOSOPHY ── */}
+      {/* ── SECTION 3 — A FEW WORDS BY THE FOUNDER & CO-FOUNDER (LEADERSHIP PROFILES) ── */}
+      <section className="py-24 md:py-32 bg-surface/60 border-b border-secondary/10 relative overflow-hidden">
+        {/* Background Gradients */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16 md:mb-20 space-y-4">
+            <span className="text-accent text-xs md:text-sm tracking-[0.25em] uppercase font-bold flex items-center justify-center gap-3">
+              <span className="w-8 h-[1px] bg-accent"></span> Leadership &amp; Vision <span className="w-8 h-[1px] bg-accent"></span>
+            </span>
+            <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-primary font-bold tracking-tight">
+              A Few Words by the <span className="italic text-accent">Founder &amp; Co-Founder</span>
+            </h2>
+            <p className="max-w-3xl mx-auto text-text-secondary font-light text-base md:text-lg leading-relaxed">
+              Guided by a shared commitment to authenticity, governance, and operational excellence — transforming the organic marketplace through verifiable trust.
+            </p>
+          </div>
+
+          <div className="space-y-16 lg:space-y-24">
+            {/* 1. RAJESH THAKUR — Founder & CEO */}
+            <div className="bg-background border border-secondary/15 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/10 rounded-bl-full pointer-events-none" />
+              
+              <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+                {/* Photo Column */}
+                <div className="w-full lg:w-4/12 flex flex-col items-center sm:items-start text-center sm:text-left space-y-4 flex-shrink-0">
+                  <div className="relative group w-full max-w-[280px] sm:max-w-[320px] mx-auto sm:mx-0">
+                    <div className="absolute -inset-1.5 bg-gradient-to-tr from-accent to-primary rounded-2xl opacity-40 group-hover:opacity-75 blur transition duration-500" />
+                    <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-primary/10 border border-accent/30 shadow-md">
+                      <img
+                        src={FounderImage}
+                        alt="Rajesh Thakur - Founder & CEO"
+                        className="w-full h-full object-cover object-top transform group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="w-full space-y-1.5 pt-2">
+                    <span className="inline-block px-3.5 py-1 bg-accent/15 text-primary border border-accent/30 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Founder &amp; CEO
+                    </span>
+                    <h3 className="font-heading text-2xl sm:text-3xl text-primary font-bold">
+                      Rajesh Thakur
+                    </h3>
+                    <p className="text-accent font-medium text-xs sm:text-sm">
+                      Founder &amp; Chief Executive Officer, SIRABA ORGANIC™
+                    </p>
+                    <p className="text-text-secondary text-xs font-light leading-relaxed pt-1">
+                      Entrepreneur • Business Growth Strategist • Author • Business Architect
+                    </p>
+                  </div>
+                </div>
+
+                {/* Text Content Column */}
+                <div className="w-full lg:w-8/12 space-y-6">
+                  {/* Highlight Quote */}
+                  <div className="relative bg-[#0F3D2E] text-surface p-6 sm:p-7 rounded-2xl border border-accent/30 shadow-md">
+                    <Quote className="text-accent w-8 h-8 opacity-40 mb-2" />
+                    <p className="font-heading text-lg sm:text-xl md:text-2xl text-amber-100 italic leading-snug">
+                      “Trust should never be assumed. It should be built, demonstrated, and continuously maintained.”
+                    </p>
+                    <p className="text-accent text-xs font-bold uppercase tracking-widest mt-3">
+                      — Rajesh Thakur, Founder &amp; CEO
+                    </p>
+                  </div>
+
+                  {/* Bio Narrative */}
+                  <div className="space-y-4 text-text-secondary font-light text-sm sm:text-base leading-relaxed">
+                    <p>
+                      <strong className="text-primary font-semibold">Rajesh Thakur</strong> is an entrepreneur, business growth strategist, author, and Founder &amp; Chief Executive Officer of SIRABA ORGANIC™, India’s Triple-Verified Organic Marketplace.
+                    </p>
+                    <p>
+                      With experience spanning business strategy, operations, supply chain, procurement, technology, governance, and business architecture, Rajesh has built his professional journey around designing businesses that can grow with greater structure, accountability, and long-term sustainability.
+                    </p>
+                    <p>
+                      His vision for SIRABA ORGANIC™ emerged from a fundamental challenge in modern organic commerce: the growing trust gap between organic claims and consumer confidence. Consumers increasingly want more than labels and marketing—they want certification, evidence, documentation, traceability, and accountability.
+                    </p>
+                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
+                      <p className="font-medium text-primary text-sm mb-1.5">
+                        SIRABA ORGANIC™ addresses this challenge through a governance-led marketplace philosophy built around:
+                      </p>
+                      <p className="text-accent font-bold text-base font-heading">
+                        Certified. Verified. Qualified.™
+                      </p>
+                      <p className="text-xs text-text-secondary mt-1">
+                        Certification establishes compliance. Verification strengthens confidence through evidence, documentation, and traceability. Qualification evaluates responsible marketplace participation.
+                      </p>
+                    </div>
+                    <p>
+                      Rajesh is also the Founder of <strong className="text-primary font-semibold">The Freedom Startup Architect™ (TFSA)</strong>, a business architecture and growth framework focused on helping founders build scalable, profitable, system-driven businesses that can operate beyond founder dependency.
+                    </p>
+                    <p>
+                      An MBA in International Business &amp; HR Management, with qualifications in Supply Chain Management, Information Technology, and Commerce, Rajesh combines strategic thinking with practical experience across business and operational environments.
+                    </p>
+                    <p>
+                      He is the author of <em className="text-primary font-serif">Breaking Free: A Path to Your Best Life</em> and <em className="text-primary font-serif">Let’s Startup</em>, with further work focused on the journey from business chaos to sustainable growth.
+                    </p>
+                  </div>
+
+                  {/* Vision Callout Box */}
+                  <div className="bg-surface border border-secondary/15 rounded-2xl p-5 sm:p-6 space-y-2 border-l-4 border-l-accent">
+                    <h4 className="font-heading text-base font-bold text-primary flex items-center gap-2">
+                      <SparklesIcon size={16} className="text-accent" /> His Vision
+                    </h4>
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed font-light">
+                      To help build an organic ecosystem where responsible producers meet conscious consumers, supported by transparency, scientific validation, traceability, and responsible governance.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. SANDEEP UNIYAL — Co-Founder */}
+            <div className="bg-background border border-secondary/15 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-bl-full pointer-events-none" />
+              
+              <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+                {/* Photo Column */}
+                <div className="w-full lg:w-4/12 flex flex-col items-center sm:items-start text-center sm:text-left space-y-4 flex-shrink-0">
+                  <div className="relative group w-full max-w-[280px] sm:max-w-[320px] mx-auto sm:mx-0">
+                    <div className="absolute -inset-1.5 bg-gradient-to-tr from-primary to-accent rounded-2xl opacity-40 group-hover:opacity-75 blur transition duration-500" />
+                    <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-primary/10 border border-accent/30 shadow-md">
+                      <img
+                        src={CoFounderImage}
+                        alt="Sandeep Uniyal - Co-Founder"
+                        className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="w-full space-y-1.5 pt-2">
+                    <span className="inline-block px-3.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Co-Founder
+                    </span>
+                    <h3 className="font-heading text-2xl sm:text-3xl text-primary font-bold">
+                      Sandeep Uniyal
+                    </h3>
+                    <p className="text-accent font-medium text-xs sm:text-sm">
+                      Co-Founder | SIRABA ORGANIC™
+                    </p>
+                    <p className="text-text-secondary text-xs font-light leading-relaxed pt-1">
+                      Supply Chain Leader • Operations &amp; Logistics Expert • Serial Entrepreneur
+                    </p>
+                  </div>
+                </div>
+
+                {/* Text Content Column */}
+                <div className="w-full lg:w-8/12 space-y-6">
+                  {/* Highlight Quote */}
+                  <div className="relative bg-[#0F3D2E] text-surface p-6 sm:p-7 rounded-2xl border border-accent/30 shadow-md">
+                    <Quote className="text-accent w-8 h-8 opacity-40 mb-2" />
+                    <p className="font-heading text-lg sm:text-xl md:text-2xl text-amber-100 italic leading-snug">
+                      “Trust in the organic ecosystem must be supported by strong processes, verifiable information, traceability and accountability.”
+                    </p>
+                    <p className="text-accent text-xs font-bold uppercase tracking-widest mt-3">
+                      — Sandeep Uniyal, Co-Founder
+                    </p>
+                  </div>
+
+                  {/* Bio Narrative */}
+                  <div className="space-y-4 text-text-secondary font-light text-sm sm:text-base leading-relaxed">
+                    <p>
+                      <strong className="text-primary font-semibold">Sandeep Uniyal</strong> is a seasoned supply chain and operations professional with over two decades of experience across precious metals, sourcing, procurement, logistics, commercial operations and business management. He holds an MBA in Operations, Logistics, Materials &amp; Supply Chain Management from Amity University.
+                    </p>
+                    <p>
+                      Throughout his professional journey, Sandeep has held key roles with leading organisations including <strong className="text-primary font-semibold">Johnson Matthey Group</strong>, <strong className="text-primary font-semibold">MMTC-PAMP India</strong> and <strong className="text-primary font-semibold">Hero Group</strong>, gaining extensive experience in gold and silver sourcing, precious-metals supply chains, raw-material planning, procurement, logistics and commercial coordination. He currently serves as Head of Logistics at Sovereign Metals Limited, a leading gold and silver refinery in India, supporting logistics, sourcing and supply-chain operations.
+                    </p>
+                    <p>
+                      Alongside his corporate career, Sandeep has developed diverse entrepreneurial interests. He is the Founder of <strong className="text-primary font-semibold">IVAN Integrated Solution – Finance &amp; Investment</strong> and Co-Founder of <strong className="text-primary font-semibold">Amrada Dairy Products</strong>, a Dehradun-based premium dairy business. These ventures have broadened his experience across investment, consumer businesses, sourcing, quality management and last-mile operations.
+                    </p>
+                    <p>
+                      As Co-Founder of SIRABA ORGANIC™, Sandeep brings his operational expertise to building a structured, transparent and scalable organic marketplace. His focus includes supply-chain architecture, vendor and producer coordination, SOP development, process controls, traceability, operational discipline and continuous improvement.
+                    </p>
+                    <p>
+                      With a hands-on and process-driven approach, Sandeep focuses on transforming strategy into reliable execution. He believes that trust in the organic ecosystem must be supported by strong processes, verifiable information, traceability and accountability.
+                    </p>
+                  </div>
+
+                  {/* Role & Impact Callout Box */}
+                  <div className="bg-surface border border-secondary/15 rounded-2xl p-5 sm:p-6 space-y-2 border-l-4 border-l-accent">
+                    <h4 className="font-heading text-base font-bold text-primary flex items-center gap-2">
+                      <SparklesIcon size={16} className="text-accent" /> His Role at SIRABA ORGANIC™
+                    </h4>
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed font-light">
+                      To help translate the company’s philosophy of <strong className="text-primary">“Trust Through Verification™”</strong> into dependable systems and consistent execution—creating an ecosystem where responsible producers can connect with conscious consumers with greater transparency, confidence and trust.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 4 — MARKETPLACE PHILOSOPHY ── */}
       <section className="py-20 md:py-24 bg-primary text-surface border-b border-accent/10 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-transparent to-transparent" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10">

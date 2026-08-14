@@ -100,7 +100,7 @@ const ACTIVE_DOCUMENTS = [
   {
     type: "laboratory_report_coa",
     title: "Accredited Laboratory Report / CoA",
-    hint: "NABL-accredited or appropriately accredited international laboratory, where available.",
+    hint: "Appropriately accredited testing laboratory, where available.",
     accept: ".pdf,.jpg,.jpeg,.png,.webp",
     mime: ["application/pdf", "image/jpeg", "image/png", "image/jpg", "image/webp"],
     maxSize: 5 * 1024 * 1024,
@@ -1673,7 +1673,7 @@ const VendorOnboarding = () => {
                   Accredited Laboratory Report / CoA <span className="text-[#6e806f] font-normal">• Recommended</span>
                 </div>
                 <div className="text-[10px] text-[#7b837e] mb-1.5">
-                  NABL-accredited or appropriately accredited international laboratory, where available.
+                  Appropriately accredited testing laboratory evidence, where available.
                 </div>
                 <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
                   <div className="min-w-0">

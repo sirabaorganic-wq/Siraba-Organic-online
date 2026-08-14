@@ -47,7 +47,7 @@ const Home = () => {
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in-up">
           {/* Cert badge */}
           <span className="font-subheading text-accent text-xs md:text-sm tracking-[0.15em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm">
-            EU Organic • USDA Organic • NPOP Certified • NABL Accredited Lab Testing Standards
+            EU Organic • USDA Organic • NPOP Certified • Accredited Lab Evidence
           </span>
           <br />
           <br />
@@ -80,9 +80,9 @@ const Home = () => {
             </p>
             <ul className="space-y-1.5">
               {[
-                "NPOP Certification",
-                "USDA Organic OR EU Organic Certification",
-                "NABL-Accredited Lab Testing Standards",
+                "Certified Organic Compliance",
+                "Scientific Evidence",
+                "SIRABA Qualification",
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-2 text-surface text-sm font-light">
                   <span className="text-accent font-bold">•</span> {item}
@@ -135,7 +135,7 @@ const Home = () => {
             </h2>
           </div>
           <p className="text-white/50 text-xs md:text-sm mt-3 tracking-widest uppercase font-light">
-            EU Organic · USDA Organic · NPOP Certified · NABL Lab Standards
+            EU Organic · USDA Organic · NPOP Certified · Accredited Lab Evidence
           </p>
         </div>
         <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
@@ -148,7 +148,7 @@ const Home = () => {
             {[
               "✔ Triple-Verified Organic Standards",
               "✔ Internationally Certified Vendors",
-              "✔ NABL Lab Documentation",
+              "✔ Accredited Lab Evidence",
               "✔ Batch-Wise Traceability",
               "✔ Export-Oriented Compliance",
             ].map((item, i) => (

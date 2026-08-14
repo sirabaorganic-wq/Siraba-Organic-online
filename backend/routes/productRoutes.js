@@ -141,6 +141,26 @@ router.get("/:id/compliance", async (req, res) => {
       const certValidUntil = vendor?.organicCertification?.certificateValidUntil || null;
       const isCertVerified = Boolean(certNumber && vendor?.status === "approved");
 
+      const labDocTypes = [
+        "nabl_certificate",
+        "laboratory_report_coa",
+        "certificate_of_analysis",
+        "pesticide_residue_report",
+        "heavy_metal_report",
+        "microbiological_report",
+        "product_quality_report",
+      ];
+      const hasLabCert = Boolean(
+        vendor?.complianceDocuments?.some(
+          (doc) => doc.status === "approved" && labDocTypes.includes(doc.type)
+        )
+      );
+
+      const isFssaiVerified = Boolean(vendor?.fssaiNumber);
+      const isProductVerified = vendor?.status === "approved";
+      const isSciVerified = hasLabCert;
+      const isOverallVerified = isFssaiVerified && isProductVerified && isSciVerified;
+
       const syntheticCompliance = {
         product: product._id,
         vendor: vendor?._id || null,
@@ -153,20 +173,22 @@ router.get("/:id/compliance", async (req, res) => {
         },
         regulatory: {
           fssai: {
-            status: vendor?.fssaiNumber ? "verified" : "pending",
+            status: isFssaiVerified ? "verified" : "pending",
             licenseNumber: vendor?.fssaiNumber || "",
           },
         },
         productVerification: {
-          status: vendor?.status === "approved" ? "verified" : "pending",
-          labelVerified: vendor?.status === "approved",
-          ingredientsVerified: vendor?.status === "approved",
-          specificationVerified: vendor?.status === "approved",
-          claimsReviewed: vendor?.status === "approved",
+          status: isProductVerified ? "verified" : "pending",
+          labelVerified: isProductVerified,
+          ingredientsVerified: isProductVerified,
+          specificationVerified: isProductVerified,
+          claimsReviewed: isProductVerified,
         },
         scientificVerification: {
-          status: vendor?.status === "approved" ? "verified" : "pending",
-          summary: vendor?.status === "approved" ? "Scientific evidence and laboratory documentation validated." : "Laboratory documentation pending verification.",
+          status: isSciVerified ? "verified" : "pending",
+          summary: isSciVerified
+            ? "Accredited Lab Evidence validated."
+            : "Accredited Lab Evidence pending review.",
         },
         sirabaQualification: {
           status: vendor?.status === "approved" ? "verified" : "pending",
@@ -175,9 +197,9 @@ router.get("/:id/compliance", async (req, res) => {
         },
         trustStatus: {
           isCertified: isCertVerified,
-          isVerified: vendor?.status === "approved",
+          isVerified: isOverallVerified,
           isQualified: vendor?.status === "approved",
-          isTripleVerified: isCertVerified && vendor?.status === "approved",
+          isTripleVerified: isCertVerified && isOverallVerified && vendor?.status === "approved",
         },
       };
 

@@ -388,7 +388,28 @@ const buildTrustPassportDTO = ({ product, vendor, compliance, batch }, now = new
   const isFssaiVerified = Boolean(vendor?.fssaiNumber) || vendor?.status === "approved" || compliance?.regulatory?.fssai?.status === "verified";
   const isLabelVerified = Boolean(compliance?.productVerification?.labelVerified || vendor?.status === "approved");
   const isQualityTested = Boolean(compliance?.productVerification?.ingredientsVerified || batch?.qualityVerification?.status === "verified" || vendor?.status === "approved");
-  const isSafetyTested = Boolean(compliance?.scientificVerification?.status === "verified" || batch?.laboratoryEvidence?.some(l => l.status === "verified") || vendor?.status === "approved");
+
+  // Safety / Accredited Lab Evidence Check — Must have actual approved lab documentation
+  const labDocTypes = [
+    "nabl_certificate",
+    "laboratory_report_coa",
+    "certificate_of_analysis",
+    "pesticide_residue_report",
+    "heavy_metal_report",
+    "microbiological_report",
+    "product_quality_report",
+  ];
+  const vendorHasLabDoc = Boolean(
+    vendor?.complianceDocuments?.some(
+      (doc) => doc.status === "approved" && labDocTypes.includes(doc.type)
+    )
+  );
+
+  const isSafetyTested = Boolean(
+    compliance?.scientificVerification?.status === "verified" ||
+      batch?.laboratoryEvidence?.some((l) => l.status === "verified") ||
+      vendorHasLabDoc
+  );
 
   let verifiedOverallStatus = "pending";
   if (isBizVerified && isFssaiVerified && isLabelVerified && isQualityTested && isSafetyTested) {
@@ -408,7 +429,7 @@ const buildTrustPassportDTO = ({ product, vendor, compliance, batch }, now = new
 
   const qualityCheck =
     (batch?.laboratoryEvidence?.[0]?.laboratory ? `${batch.laboratoryEvidence[0].laboratory}` : null) ||
-    (batch?.qualityVerification?.status === "verified" ? "Lab Tested Batch" : "QC Inspection Completed");
+    (batch?.qualityVerification?.status === "verified" ? "Accredited Lab Evidence" : "QC Inspection Completed");
 
   const packaging = batch?.traceability?.packaging || "Food Grade, Hygienic";
 

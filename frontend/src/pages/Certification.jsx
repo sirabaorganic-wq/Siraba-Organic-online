@@ -121,18 +121,15 @@ const Certification = () => {
               Every approved product must satisfy:
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
-              <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
-                <img src={JaivikBharatLogo} alt="Jaivik Bharat Logo" className="h-8 object-contain bg-white rounded p-0.5" />
-                <span className="text-surface text-sm font-semibold">NPOP Certification</span>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center">
+              <div className="bg-white/10 rounded-lg px-4 py-2.5 border border-white/10">
+                <span className="text-surface text-sm font-semibold">Certified Organic Compliance</span>
               </div>
-              <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
-                <img src={UsdaOrganicLogo} alt="USDA Organic Logo" className="h-8 object-contain bg-white rounded p-0.5" />
-                <span className="text-surface text-sm font-semibold">USDA Organic</span>
+              <div className="bg-white/10 rounded-lg px-4 py-2.5 border border-white/10">
+                <span className="text-surface text-sm font-semibold">Scientific Evidence</span>
               </div>
-              <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
-                <img src={NablLogo} alt="NABL Logo" className="h-8 object-contain bg-white rounded p-0.5" />
-                <span className="text-surface text-sm font-semibold">Accredited Lab Evidence</span>
+              <div className="bg-white/10 rounded-lg px-4 py-2.5 border border-white/10">
+                <span className="text-surface text-sm font-semibold">SIRABA Qualification</span>
               </div>
             </div>
           </div>
@@ -351,7 +348,7 @@ const Certification = () => {
             {[
               { text: "Valid NPOP certification (Mandatory)", logo: JaivikBharatLogo, logoAlt: "NPOP Logo" },
               { text: "USDA Organic Certification OR EU Organic Certification", logo: UsdaOrganicLogo, logoAlt: "USDA Logo" },
-              { text: "NABL-accredited lab documentation", logo: NablLogo, logoAlt: "NABL Logo" },
+              { text: "Accredited Lab Evidence & Documentation", logo: NablLogo, logoAlt: "Lab Evidence Logo" },
               { text: "Valid FSSAI License or Registration", logo: null },
               { text: "Product traceability and sourcing documentation", logo: null },
               { text: "Documentation verification support", logo: null },

@@ -259,7 +259,7 @@ const DynamicTrustCards = ({ productId, initialTrustPassport = null }) => {
                 { label: "FSSAI Registered", pass: verified?.fssaiRegistered },
                 { label: "Product Label Verified", pass: verified?.productLabelVerified },
                 { label: "Quality Tested", pass: verified?.qualityTested },
-                { label: "Safety Parameters", pass: verified?.safetyTested },
+                { label: "Accredited Lab Evidence", pass: verified?.safetyTested },
               ].map((chk, idx) => (
                 <div key={idx} className="flex justify-between items-center">
                   <span className="text-slate-600 font-medium text-[11px]">

@@ -43,7 +43,7 @@ const VendorQualification = () => {
         {
             title: "Scientific Documentation Requirement",
             description:
-                "Approved vendors must provide laboratory documentation aligned with NABL-accredited testing standards.",
+                "Approved vendors must provide laboratory documentation aligned with accredited laboratory testing standards.",
             points: [
                 "Documentation-backed accountability",
                 "Stronger transparency",
@@ -91,7 +91,7 @@ const VendorQualification = () => {
         },
         {
             title: "Lab Documentation Review",
-            desc: "Evaluation of NABL-accredited laboratory documentation.",
+            desc: "Evaluation of accredited laboratory evidence and documentation.",
         },
         {
             title: "Compliance Assessment",
@@ -319,7 +319,7 @@ const VendorQualification = () => {
                         {[
                             "Valid NPOP certification",
                             "USDA Organic OR EU Organic certification",
-                            "NABL-accredited lab reports",
+                            "Accredited lab evidence & reports",
                             "Product documentation",
                             "Traceable sourcing records",
                             "Food-grade packaging compliance",

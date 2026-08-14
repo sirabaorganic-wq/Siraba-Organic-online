@@ -133,7 +133,7 @@ const Shop = () => {
                 Every approved product on our platform must satisfy:
               </p>
               <ul className="space-y-1.5">
-                {["NPOP Certification", "USDA Organic OR EU Organic Certification", "NABL-Accredited Lab Documentation"].map((item, i) => (
+                {["Certified Organic Compliance", "Scientific Evidence", "SIRABA Qualification"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-surface text-sm font-light">
                     <span className="text-accent font-bold">•</span> {item}
                   </li>
@@ -373,7 +373,7 @@ const Shop = () => {
                 {[
                   "Valid NPOP certification",
                   "USDA Organic OR EU Organic certification",
-                  "NABL-accredited lab documentation",
+                  "Accredited lab evidence & documentation",
                   "Traceable sourcing records",
                   "Food-grade packaging compliance",
                 ].map((item, i) => (

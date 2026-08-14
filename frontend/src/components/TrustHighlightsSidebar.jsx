@@ -18,8 +18,8 @@ const TrustHighlightsSidebar = ({ compliance, latestBatch }) => {
         {
             icon: ShieldCheck,
             title: 'Quality Tested',
-            subtitle: compliance?.scientificVerification?.summary || 'NABL Accredited Testing',
-            active: compliance?.scientificVerification?.status === 'verified' || Boolean(latestBatch?.laboratoryEvidence?.length),
+            subtitle: compliance?.scientificVerification?.summary || 'Accredited Lab Evidence',
+            active: compliance?.scientificVerification?.status === 'verified' || Boolean(latestBatch?.laboratoryEvidence?.some(e => e.status === 'verified')),
         },
         {
             icon: MapPin,

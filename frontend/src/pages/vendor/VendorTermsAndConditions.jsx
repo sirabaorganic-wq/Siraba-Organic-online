@@ -43,7 +43,7 @@ const clauses = [
       "Valid FSSAI License or Registration",
       "GST Registration",
       "PAN Verification",
-      "NABL-accredited laboratory reports",
+      "Accredited Lab Evidence",
       "Product traceability and sourcing records",
     ],
   },
@@ -152,7 +152,7 @@ const clauses = [
       "SIRABA ORGANIC™ reserves the right to conduct periodic compliance reviews, random audits, certification verification checks, and product quality assessments.",
     list: [
       "Certification validity review",
-      "NABL testing review",
+      "Accredited Lab Evidence review",
       "Supply-chain traceability checks",
       "Packaging compliance review",
       "Consumer complaint investigations",

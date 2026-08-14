@@ -41,7 +41,7 @@ const sections = [
       "PAN Verification",
       "Business Address Verification",
       "Authorized Bank Account Verification",
-      "NABL-accredited laboratory reports where applicable",
+      "Accredited Lab Evidence where applicable",
       "Product traceability and sourcing documentation",
       "Food-grade packaging compliance confirmation",
     ],
@@ -176,7 +176,7 @@ const sections = [
       "USDA National Organic Program (NOP)",
       "EU Organic Compliance Standards",
       "FSSAI Food Safety Regulations",
-      "NABL-accredited laboratory standards",
+      "Accredited Laboratory Evidence standards",
     ],
   },
 ];

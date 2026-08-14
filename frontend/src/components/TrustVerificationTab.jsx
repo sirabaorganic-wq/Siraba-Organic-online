@@ -230,8 +230,8 @@ const TrustVerificationTab = ({ compliance }) => {
                                 <Sparkles className="w-5 h-5" />
                             </div>
                             <div>
-                                <h4 className="font-semibold text-slate-900 text-sm">04. Laboratory Testing Evidence</h4>
-                                <p className="text-xs text-slate-500">Tested by Appropriately Accredited Testing Laboratories</p>
+                                <h4 className="font-semibold text-slate-900 text-sm">04. Accredited Lab Evidence</h4>
+                                <p className="text-xs text-slate-500">Tested by Appropriately Accredited Laboratories</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -243,9 +243,9 @@ const TrustVerificationTab = ({ compliance }) => {
                     {openSection === 'scientific' && (
                         <div className="p-4 pt-2 border-t border-slate-100 bg-slate-50/50 space-y-3 text-xs">
                             <div className="p-3 rounded-lg bg-white border border-slate-200">
-                                <span className="text-slate-400 text-[11px] block uppercase font-mono">Laboratory Evidence Summary</span>
+                                <span className="text-slate-400 text-[11px] block uppercase font-mono">Accredited Lab Evidence Summary</span>
                                 <p className="text-slate-800 font-medium mt-1">
-                                    {scientificVerification?.summary || 'Scientific documentation reviewed under SIRABA Organic Trust Framework.'}
+                                    {scientificVerification?.summary || 'Accredited Lab Evidence reviewed under SIRABA Organic Trust Framework.'}
                                 </p>
                             </div>
                             <p className="text-[11px] text-slate-500 italic">

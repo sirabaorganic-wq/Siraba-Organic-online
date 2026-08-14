@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: "What certifications are required to sell on Siraba Organic?",
-    a: "Approved vendors are generally expected to provide valid NPOP Certification, USDA Organic OR EU Organic Certification, and NABL-accredited laboratory documentation where applicable.",
+    a: "Approved vendors are generally expected to provide valid NPOP Certification, USDA Organic OR EU Organic Certification, and Accredited Lab Evidence where applicable.",
   },
   {
     q: "What types of products can vendors list?",
@@ -28,7 +28,7 @@ const faqs = [
   },
   {
     q: "Are products tested before listing?",
-    a: "SIRABA ORGANIC may require laboratory documentation aligned with NABL-accredited testing standards depending on product category and marketplace requirements.",
+    a: "SIRABA ORGANIC may require laboratory documentation aligned with Accredited Lab Evidence standards depending on product category and marketplace requirements.",
   },
   {
     q: "Can vendors sell internationally through Siraba Organic?",

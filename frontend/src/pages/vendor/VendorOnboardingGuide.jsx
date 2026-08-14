@@ -25,7 +25,7 @@ const steps = [
     icon: <FileText size={22} className="text-emerald-600" />,
     title: "Laboratory & Product Compliance Review",
     description:
-      "Vendor submits NABL-accredited laboratory reports, product specifications, ingredient declarations, and batch identification records.",
+      "Vendor submits Accredited Lab Evidence, product specifications, ingredient declarations, and batch identification records.",
   },
 
   {
@@ -177,7 +177,7 @@ const VendorOnboardingGuide = () => {
                 </div>
 
                 <div className="bg-white rounded-xl border border-emerald-100 px-5 py-4">
-                  ✓ NABL-Accredited Laboratory Reports
+                  ✓ Accredited Lab Evidence
                 </div>
 
                 <div className="bg-white rounded-xl border border-emerald-100 px-5 py-4">

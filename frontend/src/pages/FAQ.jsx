@@ -19,7 +19,7 @@ const faqs = [
   },
   {
     q: "Are Siraba products laboratory tested?",
-    a: "SIRABA ORGANIC promotes documentation-backed marketplace standards and may require laboratory reports aligned with NABL-accredited testing standards where applicable.",
+    a: "SIRABA ORGANIC promotes documentation-backed marketplace standards and may require laboratory reports aligned with accredited testing laboratory standards where applicable.",
   },
   {
     q: "Can other vendors sell products on Siraba Organic?",
