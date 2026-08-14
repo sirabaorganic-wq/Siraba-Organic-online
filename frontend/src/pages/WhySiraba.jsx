@@ -65,92 +65,143 @@ const WhySiraba = () => {
         </p>
       </section>
 
-      {/* The Four Pillars */}
+      {/* The Four Foundations */}
       <section className="py-24 px-4 bg-secondary/5 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
             <span className="text-accent text-sm tracking-[0.2em] uppercase font-bold">
               Our Foundation
             </span>
-            <h2 className="font-heading text-4xl md:text-5xl text-primary font-bold mt-4">
-              The Four Pillars of Siraba
+            <h2 className="font-heading text-4xl md:text-5xl text-primary font-bold mt-3 mb-4">
+              The Four Foundations of SIRABA ORGANIC™
             </h2>
+            <p className="text-text-secondary text-base md:text-lg font-light leading-relaxed">
+              The Triple Verification Framework™ is supported by four core foundations that strengthen compliance, evidence, transparency, and marketplace integrity.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Pillar 1 */}
-            <div className="bg-surface p-8 rounded-sm shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-accent">
-              <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center mb-6">
-                <Leaf size={28} />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Certified Organic Practices
-              </h3>
-              <p className="text-text-secondary text-sm leading-relaxed">
-                Our sourcing and processing follow USDA Organic and NPOP (India
-                Organic) guidelines, aligned with APEDA export requirements
-                where applicable.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 items-stretch">
+            {[
+              {
+                id: "01",
+                title: "CERTIFICATION COMPLIANCE",
+                tagline: "Organic credibility begins with recognized certification.",
+                desc: "SIRABA ORGANIC™ requires applicable organic and regulatory credentials before a vendor can progress through qualification.",
+                points: [
+                  "NPOP or equivalent organic certification",
+                  "Product Scope Certificate",
+                  "FSSAI Licence/Registration for India",
+                  "Legal business registration",
+                  "USDA Organic / EU Organic certification where applicable",
+                  "Export registration and other relevant credentials where applicable",
+                ],
+                foundation: "Regulatory & organic compliance",
+                icon: Award,
+                borderColor: "border-accent",
+                badgeBg: "bg-accent/10 text-accent",
+              },
+              {
+                id: "02",
+                title: "SCIENTIFIC EVIDENCE",
+                tagline: "Claims should be supported by evidence.",
+                desc: "SIRABA ORGANIC™ reviews scientific and documentary evidence to strengthen product authenticity and quality assurance.",
+                points: [
+                  "Accreditable Laboratory Documentation",
+                  "ISO/IEC 17025 laboratory evidence where applicable",
+                  "Certificate of Analysis (CoA)",
+                  "Batch-wise test reports",
+                  "Product documentation",
+                  "Evidence-based validation",
+                ],
+                foundation: "Scientific verification & documentation",
+                icon: Microscope,
+                borderColor: "border-primary",
+                badgeBg: "bg-primary/10 text-primary",
+              },
+              {
+                id: "03",
+                title: "TRACEABILITY & TRANSPARENCY",
+                tagline: "Trust requires visibility beyond the label.",
+                desc: "SIRABA ORGANIC™ evaluates the evidence behind product origin, handling, packaging, and supply-chain movement.",
+                points: [
+                  "Farm-to-fork traceability",
+                  "Product origin documentation",
+                  "Packaging verification",
+                  "Supply-chain records",
+                  "Batch-level documentation",
+                  "Transparent compliance records",
+                ],
+                foundation: "Traceability & documented transparency",
+                icon: FileCheck,
+                borderColor: "border-accent",
+                badgeBg: "bg-accent/10 text-accent",
+              },
+              {
+                id: "04",
+                title: "MARKETPLACE GOVERNANCE",
+                tagline: "Qualification continues beyond onboarding.",
+                desc: "SIRABA ORGANIC™ evaluates whether vendors are operationally and ethically prepared to participate in a controlled marketplace ecosystem.",
+                points: [
+                  "Vendor documentation review",
+                  "Product quality evaluation",
+                  "Packaging & listing readiness",
+                  "Order fulfilment capability",
+                  "Ethical sourcing",
+                  "Governance & compliance",
+                  "Continuous compliance monitoring",
+                ],
+                foundation: "Marketplace qualification & long-term accountability",
+                icon: Globe,
+                borderColor: "border-primary",
+                badgeBg: "bg-primary/10 text-primary",
+              },
+            ].map((card) => {
+              const IconComp = card.icon;
+              return (
+                <div
+                  key={card.id}
+                  className={`bg-surface p-7 rounded-sm shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 ${card.borderColor} flex flex-col justify-between`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <span className="font-heading text-2xl font-bold text-accent/80 tracking-wider">
+                        {card.id}
+                      </span>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${card.badgeBg}`}>
+                        <IconComp size={24} />
+                      </div>
+                    </div>
 
-            {/* Pillar 2 */}
-            <div className="bg-surface p-8 rounded-sm shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-primary">
-              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                <Award size={28} />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Quality Testing
-              </h3>
-              <p className="text-text-secondary text-sm leading-relaxed">
-                Each production batch undergoes independent laboratory testing
-                using internationally recognized analytical methods to assess
-                safety and quality parameters.
-              </p>
-            </div>
+                    <h3 className="font-heading text-lg font-bold text-primary tracking-wide mb-2">
+                      {card.title}
+                    </h3>
 
-            {/* Pillar 3 */}
-            <div className="bg-surface p-8 rounded-sm shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-accent">
-              <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center mb-6">
-                <MapPin size={28} />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Origin Transparency
-              </h3>
-              <ul className="text-text-secondary text-sm list-disc list-inside space-y-1">
-                <li>
-                  <strong>Kashmir</strong> — saffron
-                </li>
-                <li>
-                  <strong>Ladakh & selected Indian regions</strong> — compounded
-                  and processed hing
-                </li>
-              </ul>
-            </div>
+                    <p className="text-accent text-xs font-semibold italic mb-2">
+                      {card.tagline}
+                    </p>
+                    <p className="text-text-secondary text-xs leading-relaxed mb-5">
+                      {card.desc}
+                    </p>
 
-            {/* Pillar 4 */}
-            <div className="bg-surface p-8 rounded-sm shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-primary">
-              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                <Globe size={28} />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-primary mb-3">
-                Export-Ready Operations
-              </h3>
-              <ul className="text-text-secondary text-sm space-y-1 mb-3">
-                <li className="flex items-center gap-2">
-                  <CheckCircle size={12} /> Batch traceability
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle size={12} /> Documentation records
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle size={12} /> Food-grade packaging
-                </li>
-              </ul>
-              <p className="text-text-secondary text-sm">
-                Designed to support international trade requirements and buyer
-                audits.
-              </p>
-            </div>
+                    <ul className="space-y-2 mb-6 border-t border-secondary/10 pt-4">
+                      {card.points.map((point, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-text-secondary leading-snug">
+                          <CheckCircle size={13} className="text-accent mt-0.5 shrink-0" />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-3 border-t border-secondary/10 mt-auto bg-secondary/5 -mx-7 -mb-7 p-4 rounded-b-sm">
+                    <p className="text-[11px] font-semibold text-primary leading-tight">
+                      <span className="text-accent font-bold uppercase tracking-wider block mb-0.5">Foundation:</span>
+                      {card.foundation}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
