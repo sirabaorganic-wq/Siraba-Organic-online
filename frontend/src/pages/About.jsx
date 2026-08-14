@@ -58,9 +58,9 @@ const About = () => {
               View Certified Products
             </Link>
           </div>
-          <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce opacity-70">
+          {/* <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce opacity-70">
             <ChevronDown className="text-surface w-8 h-8" />
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -177,9 +177,9 @@ const About = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { layer: "Layer 1", badge: "NPOP Certification", title: "Indian Organic Compliance", desc: "Recognized Indian organic compliance standards governed by APEDA." },
-              { layer: "Layer 2", badge: "USDA Organic OR EU Organic", title: "International Organic Validation", desc: "Internationally recognized organic standards aligned with global compliance systems." },
-              { layer: "Layer 3", badge: "NABL-Accredited Lab Testing", title: "Scientific Documentation", desc: "Scientific documentation supporting marketplace accountability and quality validation." },
+              { layer: "Layer 1 — CERTIFIED™", badge: "NPOP + USDA Organic OR EU Organic", title: "Organic Certification Gate", desc: "Mandatory organic certification required prior to marketplace onboarding." },
+              { layer: "Layer 2 — VERIFIED™", badge: "Accredited Laboratory Evidence & Traceability", title: "Scientific Evidence & Traceability", desc: "Scientific evidence, documentation, and traceability reviewed against quality parameters." },
+              { layer: "Layer 3 — QUALIFIED™", badge: "SIRABA Marketplace Qualification", title: "Marketplace Qualification & Governance", desc: "Comprehensive evaluation of vendor integrity, compliance, and operational standards." },
             ].map((item, i) => (
               <div key={i} className="bg-background border border-secondary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow duration-300">
                 <span className="text-accent text-xs font-bold uppercase tracking-widest">{item.layer}</span>

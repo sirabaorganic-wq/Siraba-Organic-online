@@ -127,7 +127,7 @@ productComplianceSchema.pre("save", function (next) {
     (this.scientificVerification.status === "verified" ||
       this.scientificVerification.status === "not_applicable");
 
-  const isQualified = this.sirabaQualification.status === "verified";
+  const isQualified = isCertified && isVerified && this.sirabaQualification.status === "verified";
 
   const isTripleVerified = isCertified && isVerified && isQualified;
 

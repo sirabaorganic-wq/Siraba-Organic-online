@@ -268,7 +268,7 @@ const Shop = () => {
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-accent mb-2">Key Focus Areas</p>
                     <ul className="space-y-1">
-                      {["Premium-grade saffron stigmas", "Globally compliant sourcing", "Certification-backed procurement", "Traceable documentation systems", "Export-oriented handling standards"].map((item, i) => (
+                      {["Premium-grade saffron stigmas", "Internationally aligned sourcing", "Certification-backed procurement", "Traceable documentation systems", "Export-oriented handling standards"].map((item, i) => (
                         <li key={i} className="flex items-start gap-1.5 text-xs text-text-secondary">
                           <Sparkles size={11} className="text-accent flex-shrink-0 mt-0.5" /> {item}
                         </li>

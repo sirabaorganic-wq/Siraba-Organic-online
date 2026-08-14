@@ -96,9 +96,9 @@ const badges = [
     description:
       "Represents Siraba Organic's commitment to triple verification — through international certifications, scientific documentation, and marketplace qualification standards.",
     criteria: [
-      "Layer 1 — NPOP Organic Compliance (India)",
-      "Layer 2 — USDA Organic or EU Organic Validation",
-      "Layer 3 — NABL-accredited Scientific Documentation",
+      "Layer 1 — CERTIFIED™: Organic Certification Gate (NPOP + USDA Organic OR EU Organic)",
+      "Layer 2 — VERIFIED™: Scientific Evidence, Documentation & Traceability",
+      "Layer 3 — QUALIFIED™: SIRABA Marketplace Qualification & Ongoing Compliance",
       "All three layers independently verified before eligibility",
     ],
     placements: ["Product Pages", "Marketplace Listings", "Packaging", "Vendor Certificates", "LinkedIn"],

@@ -150,7 +150,7 @@ const Home = () => {
               "✔ Internationally Certified Vendors",
               "✔ NABL Lab Documentation",
               "✔ Batch-Wise Traceability",
-              "✔ Export-Grade Compliance",
+              "✔ Export-Oriented Compliance",
             ].map((item, i) => (
               <span key={i} className="text-accent text-xs md:text-sm font-bold tracking-widest uppercase whitespace-nowrap">
                 {item}
@@ -324,7 +324,7 @@ const Home = () => {
                   <p className="text-xs font-bold uppercase tracking-wider text-accent/80">A. Laboratory Validation</p>
                   <ul className="space-y-1.5">
                     {[
-                      "NABL Accredited Lab Report",
+                      "Accredited Laboratory Evidence",
                       "ISO/IEC 17025 Accredited Laboratory",
                       "ILAC-MRA Recognition (where applicable)",
                     ].map((item, j) => (
@@ -697,7 +697,7 @@ const Home = () => {
                   <ul className="space-y-1.5">
                     {[
                       "Premium-grade stigmas",
-                      "Globally compliant sourcing",
+                      "Internationally aligned sourcing",
                       "Certification-backed supply chain",
                       "Export-oriented standards",
                     ].map((item, i) => (
@@ -742,7 +742,7 @@ const Home = () => {
                   <p className="text-xs font-bold uppercase tracking-wider text-accent mb-2">Focus Areas</p>
                   <ul className="space-y-1.5">
                     {[
-                      "Export-grade processing standards",
+                      "Export-oriented processing standards",
                       "Certification-led sourcing",
                       "Documentation-backed quality systems",
                       "Traceable handling practices",
@@ -783,7 +783,7 @@ const Home = () => {
               { num: "02", title: "Triple-Verified Trust Architecture", desc: "Every product must satisfy certification, international compliance, and scientific documentation requirements." },
               { num: "03", title: "Compliance-First Marketplace Model", desc: "SIRABA prioritizes documented credibility over mass product onboarding." },
               { num: "04", title: "Premium Organic Positioning", desc: "Our ecosystem is built for consumers who value purity, traceability, and globally recognized standards." },
-              { num: "05", title: "Export-Grade Standards", desc: "Focus on internationally aligned packaging, documentation, and compliance systems." },
+                      { num: "05", title: "Export-Oriented Documentation & Compliance", desc: "Focus on internationally aligned packaging, documentation, and compliance systems." },
               { num: "06", title: "Long-Term Trust Philosophy", desc: "We believe organic credibility should be earned through systems — not marketing claims." },
             ].map((item, i) => (
               <div key={i} className="bg-background border border-secondary/10 rounded-2xl p-7 space-y-3 hover:shadow-md transition-shadow duration-300">

@@ -136,43 +136,48 @@ router.get("/:id/compliance", async (req, res) => {
         vendor = await Vendor.findById(vId).lean();
       }
 
+      const certNumber = vendor?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || vendor?.organicCertification?.certificateNumber || "";
+      const certBody = vendor?.organicCertification?.certificationsByRoute?.usda?.certificationBody || vendor?.organicCertification?.certificationBody || "";
+      const certValidUntil = vendor?.organicCertification?.certificateValidUntil || null;
+      const isCertVerified = Boolean(certNumber && vendor?.status === "approved");
+
       const syntheticCompliance = {
         product: product._id,
         vendor: vendor?._id || null,
         certification: {
-          status: "verified",
-          standard: "USDA NOP",
-          certificationBody: vendor?.organicCertification?.certificationsByRoute?.usda?.certificationBody || vendor?.organicCertification?.certificationBody || "OneCert / Lacon",
-          certificateNumber: vendor?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || vendor?.organicCertification?.certificateNumber || "NOP/ORG/1409/001649",
-          validUntil: vendor?.organicCertification?.certificateValidUntil || new Date("2026-09-03"),
+          status: isCertVerified ? "verified" : "pending",
+          standard: vendor?.organicCertification?.certificationRoute ? vendor.organicCertification.certificationRoute.toUpperCase() : "Organic Certification",
+          certificationBody: certBody,
+          certificateNumber: certNumber,
+          validUntil: certValidUntil,
         },
         regulatory: {
           fssai: {
-            status: "verified",
-            licenseNumber: vendor?.fssaiNumber || "10822999000123",
+            status: vendor?.fssaiNumber ? "verified" : "pending",
+            licenseNumber: vendor?.fssaiNumber || "",
           },
         },
         productVerification: {
-          status: "verified",
-          labelVerified: true,
-          ingredientsVerified: true,
-          specificationVerified: true,
-          claimsReviewed: true,
+          status: vendor?.status === "approved" ? "verified" : "pending",
+          labelVerified: vendor?.status === "approved",
+          ingredientsVerified: vendor?.status === "approved",
+          specificationVerified: vendor?.status === "approved",
+          claimsReviewed: vendor?.status === "approved",
         },
         scientificVerification: {
-          status: "verified",
-          summary: "Verified 100% Organic Quality & NABL Lab Tested",
+          status: vendor?.status === "approved" ? "verified" : "pending",
+          summary: vendor?.status === "approved" ? "Scientific evidence and laboratory documentation validated." : "Laboratory documentation pending verification.",
         },
         sirabaQualification: {
-          status: "verified",
-          vendorQualified: true,
-          marketplaceApproved: true,
+          status: vendor?.status === "approved" ? "verified" : "pending",
+          vendorQualified: vendor?.status === "approved",
+          marketplaceApproved: vendor?.status === "approved",
         },
         trustStatus: {
-          isCertified: true,
-          isVerified: true,
-          isQualified: true,
-          isTripleVerified: true,
+          isCertified: isCertVerified,
+          isVerified: vendor?.status === "approved",
+          isQualified: vendor?.status === "approved",
+          isTripleVerified: isCertVerified && vendor?.status === "approved",
         },
       };
 

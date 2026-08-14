@@ -21,7 +21,7 @@ const computeTrustStatus = (compliance) => {
     (compliance.scientificVerification?.status === "verified" ||
       compliance.scientificVerification?.status === "not_applicable");
 
-  const isQualified = compliance.sirabaQualification?.status === "verified";
+  const isQualified = isCertified && isVerified && compliance.sirabaQualification?.status === "verified";
 
   const isTripleVerified = isCertified && isVerified && isQualified;
 
@@ -341,38 +341,38 @@ const upsertProductBatch = async (productId, { batchNumber, batchInfo, vendorId 
  * Consumes real database entities: Product, Vendor, ProductCompliance, ProductBatch
  */
 const buildTrustPassportDTO = ({ product, vendor, compliance, batch }, now = new Date()) => {
-  // CARD 01 — CERTIFIED™ (Priority: NOP Organic Certificate Details for all vendors)
+  // CARD 01 — CERTIFIED™
   const usdaRouteCert = vendor?.organicCertification?.certificationsByRoute?.usda;
   const npopRouteCert = vendor?.organicCertification?.certificationsByRoute?.npop;
 
   const certStandard =
     (usdaRouteCert?.certificateNumber ? "USDA NOP" : null) ||
-    (compliance?.certification?.standard && compliance.certification.standard.toUpperCase().includes("NOP")
+    (compliance?.certification?.standard && compliance.certification.standard.trim() !== ""
       ? compliance.certification.standard
-      : "USDA NOP");
+      : (vendor?.organicCertification?.certificationRoute ? vendor.organicCertification.certificationRoute.toUpperCase() : "Organic Certification"));
 
   const certBody =
     usdaRouteCert?.certificationBody ||
     compliance?.certification?.certificationBody ||
     vendor?.organicCertification?.certificationBody ||
     npopRouteCert?.certificationBody ||
-    "OneCert International";
+    null;
 
   const certNumber =
     usdaRouteCert?.certificateNumber ||
     compliance?.certification?.certificateNumber ||
     vendor?.organicCertification?.certificateNumber ||
     npopRouteCert?.certificateNumber ||
-    "NOP/ORG/1409/001649";
+    null;
 
   const certValidUntil =
     usdaRouteCert?.certificateValidUntil ||
     compliance?.certification?.validUntil ||
     vendor?.organicCertification?.certificateValidUntil ||
     npopRouteCert?.certificateValidUntil ||
-    "2026-09-03";
+    null;
 
-  let certStatus = compliance?.certification?.status || (certNumber && certNumber !== "Pending Verification" ? "verified" : "pending");
+  let certStatus = compliance?.certification?.status || (certNumber ? "verified" : "pending");
   if (certValidUntil && new Date(certValidUntil) < now) {
     certStatus = "expired";
   }

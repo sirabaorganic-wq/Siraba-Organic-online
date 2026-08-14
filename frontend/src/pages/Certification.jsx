@@ -35,46 +35,46 @@ const Certification = () => {
 
   const frameworkLayers = [
     {
-      title: "NPOP — Indian Organic Compliance",
-      badge: "Layer 1",
-      desc: "Products must comply with India’s National Programme for Organic Production (NPOP), governed by APEDA.",
+      title: "Organic Certification Gate",
+      badge: "Layer 1 — CERTIFIED™",
+      desc: "Mandatory requirement: NPOP + USDA Organic OR EU Organic certification plus applicable business documentation.",
       purpose: [
         "Recognized organic cultivation standards",
         "Regulated compliance systems",
         "Traceable production processes",
-        "India-recognized organic credibility",
+        "Certification-backed credibility",
       ],
-      why: "NPOP forms the foundational organic compliance layer for products approved on SIRABA ORGANIC.",
+      why: "Certification forms the foundational organic compliance gate for products approved on SIRABA ORGANIC.",
       logo: JaivikBharatLogo,
-      logoAlt: "India Organic Jaivik Bharat Logo",
+      logoAlt: "Jaivik Bharat / India Organic Logo",
     },
     {
-      title: "International Organic Validation",
-      badge: "Layer 2",
-      desc: "Approved vendors must additionally hold USDA Organic Certification OR EU Organic Certification.",
+      title: "Scientific Evidence, Documentation & Traceability",
+      badge: "Layer 2 — VERIFIED™",
+      desc: "Scientific evidence, laboratory testing documentation and batch traceability reviewed according to product category and quality parameters.",
       purpose: [
-        "Export-oriented credibility",
-        "Globally aligned compliance systems",
-        "Recognized international organic practices",
-        "Stronger marketplace trust",
+        "Accredited laboratory documentation",
+        "Internationally aligned compliance systems",
+        "Batch-level quality parameters",
+        "Scientific validation and transparency",
       ],
-      why: "This qualification layer helps position SIRABA ORGANIC around internationally compliant organic standards.",
+      why: "Scientific documentation validates product safety and quality parameters through appropriately accredited testing laboratories.",
       logo: UsdaOrganicLogo,
-      logoAlt: "USDA Organic Logo",
+      logoAlt: "Accredited Laboratory Evidence",
     },
     {
-      title: "Scientific Documentation & Quality Validation",
-      badge: "Layer 3",
-      desc: "Products must be supported by laboratory documentation aligned with NABL-accredited testing standards.",
+      title: "SIRABA Marketplace Qualification & Governance",
+      badge: "Layer 3 — QUALIFIED™",
+      desc: "Comprehensive assessment of regulatory compliance, vendor integrity, operational capability, fulfillment, and ongoing governance.",
       purpose: [
         "Documentation-backed quality systems",
-        "Stronger transparency",
-        "Quality validation processes",
+        "Vendor operational readiness",
+        "Traceability maturity & packaging",
         "Compliance-focused accountability",
       ],
-      why: "Scientific documentation helps strengthen marketplace discipline and consumer confidence.",
+      why: "Qualification ensures long-term marketplace discipline, ethical governance, and consumer trust.",
       logo: NablLogo,
-      logoAlt: "NABL Logo",
+      logoAlt: "Marketplace Qualification",
     },
   ];
 
@@ -132,7 +132,7 @@ const Certification = () => {
               </div>
               <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 border border-white/10">
                 <img src={NablLogo} alt="NABL Logo" className="h-8 object-contain bg-white rounded p-0.5" />
-                <span className="text-surface text-sm font-semibold">NABL Accredited</span>
+                <span className="text-surface text-sm font-semibold">Accredited Lab Evidence</span>
               </div>
             </div>
           </div>
@@ -523,9 +523,9 @@ const Certification = () => {
         </div>
       </section>
 
-      {/* ───────────────── DYNAMIC VENDOR DOCUMENTS ───────────────── */}
+      {/* ───────────────── DYNAMIC & SAMPLE VENDOR DOCUMENTS ───────────────── */}
       <section className="py-20 bg-surface border-b border-secondary/10">
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-bold border border-accent/30 px-4 py-2 rounded-full mb-6">
               Vendor Documentation
@@ -537,16 +537,17 @@ const Certification = () => {
 
             <p className="text-text-secondary font-light max-w-3xl mx-auto">
               All certifications and compliance documents displayed on SIRABA
-              ORGANIC are submitted and maintained by individual vendors.
+              ORGANIC are submitted and maintained by individual vendors and validated through SIRABA's Triple Verification Framework™.
             </p>
           </div>
 
-          <div className="bg-background border border-secondary/10 rounded-2xl p-8">
-            <h4 className="font-bold text-primary mb-4">
-              Vendor-submitted documents
-            </h4>
-
-            {vendorCerts && vendorCerts.length > 0 ? (
+          {/* Live Backend Vendor Documents (if available) */}
+          {vendorCerts && vendorCerts.length > 0 && (
+            <div className="bg-background border border-secondary/10 rounded-2xl p-8 mb-10">
+              <h4 className="font-bold text-primary mb-4 flex items-center gap-2">
+                <CheckCircle size={18} className="text-accent" />
+                Live Verified Vendor Documents
+              </h4>
               <ul className="space-y-3">
                 {vendorCerts.map((c, i) => (
                   <li
@@ -554,15 +555,137 @@ const Certification = () => {
                     className="flex items-center gap-3 text-text-secondary"
                   >
                     <FileText size={18} className="text-accent" />
-                    <span>{c}</span>
+                    <span>{typeof c === "string" ? c : c.name || c.type}</span>
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-text-secondary">
-                No vendor documents available currently.
-              </p>
-            )}
+            </div>
+          )}
+
+          {/* Sample Vendor Certifications Grid */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-heading text-xl font-bold text-primary flex items-center gap-2">
+                <ShieldCheck size={20} className="text-accent" />
+                Sample Verified Vendor Certifications & Compliance Evidence
+              </h4>
+              <span className="text-xs uppercase tracking-wider font-bold text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20">
+                Sample Evidence Preview
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  vendorName: "Rapid Organic Heritage Farms",
+                  vendorType: "Certified Organic Producer",
+                  certStandard: "USDA Organic (NOP) & NPOP Organic",
+                  certBody: "OneCert International",
+                  certScope: "Kashmiri Saffron, Asafoetida (Hing), Organic Spices",
+                  status: "Verified & Active",
+                  fssaiLicense: "FSSAI License Verified",
+                  labTesting: "Accredited Laboratory COA Validated",
+                  traceability: "Batch Traceability Enabled",
+                  badge: "SIRABA Qualified Vendor™",
+                },
+                {
+                  vendorName: "Organic Wellness Collective",
+                  vendorType: "Certified Processor & Exporter",
+                  certStandard: "EU Organic & NPOP Certification",
+                  certBody: "Lacon GmbH / RSOCA",
+                  certScope: "Herbal Botanicals, Organic Teas, Superfood Powders",
+                  status: "Verified & Active",
+                  fssaiLicense: "FSSAI License Active",
+                  labTesting: "Heavy Metal & Pesticide Residue Tested",
+                  traceability: "Farm-to-Fork Traceability Verified",
+                  badge: "SIRABA Qualified Vendor™",
+                },
+                {
+                  vendorName: "Himalayan Bio-Organic Estate",
+                  vendorType: "Certified Cultivator",
+                  certStandard: "NPOP Organic & USDA NOP Aligned",
+                  certBody: "Control Union Certifications",
+                  certScope: "Himalayan Herbs, Shilajit, Raw Honey & Spices",
+                  status: "Verified & Active",
+                  fssaiLicense: "FSSAI License Active",
+                  labTesting: "ISO/IEC 17025 Accredited Lab Report",
+                  traceability: "Origin & Altitude Verified",
+                  badge: "SIRABA Qualified Vendor™",
+                },
+              ].map((sample, idx) => (
+                <div
+                  key={idx}
+                  className="bg-background border border-secondary/15 rounded-2xl p-6 space-y-4 hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-accent block">
+                          {sample.vendorType}
+                        </span>
+                        <h5 className="font-heading font-bold text-primary text-base leading-tight">
+                          {sample.vendorName}
+                        </h5>
+                      </div>
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+                        ✓ {sample.status}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-surface border border-secondary/10 space-y-2 text-xs">
+                      <div>
+                        <span className="text-text-secondary text-[10px] uppercase font-bold block">
+                          Certification Standard
+                        </span>
+                        <span className="font-semibold text-primary">
+                          {sample.certStandard}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-text-secondary text-[10px] uppercase font-bold block">
+                          Issuing Certification Body
+                        </span>
+                        <span className="font-semibold text-primary">
+                          {sample.certBody}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-text-secondary text-[10px] uppercase font-bold block">
+                          Product Scope Covered
+                        </span>
+                        <span className="font-medium text-text-primary">
+                          {sample.certScope}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1 text-xs">
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <CheckCircle size={13} className="text-accent flex-shrink-0" />
+                        <span>{sample.fssaiLicense}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <CheckCircle size={13} className="text-accent flex-shrink-0" />
+                        <span>{sample.labTesting}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <CheckCircle size={13} className="text-accent flex-shrink-0" />
+                        <span>{sample.traceability}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-secondary/10 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-wider">
+                      {sample.badge}
+                    </span>
+                    <span className="text-[10px] text-text-secondary font-mono">
+                      Sample Evidence
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -581,7 +704,7 @@ const Certification = () => {
           </h2>
 
           <p className="text-lg md:text-xl font-light text-white/80 leading-relaxed max-w-3xl mx-auto mb-12">
-            ESIRABA ORGANIC™ is a premium certification-led organic marketplace where trust, traceability, compliance, and verified organic authenticity form the foundation of the ecosystem.
+            SIRABA ORGANIC™ is a premium certification-led organic marketplace where trust, traceability, compliance, and verified organic authenticity form the foundation of the ecosystem.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">

@@ -111,8 +111,9 @@ function App() {
 
                               <Route path="/quality-promise" element={<QualityPromise />} />
                               <Route path="/verify/:traceId" element={<ProductVerification />} />
-                              <Route path="/account" element={<Account />} />
                               <Route path="/about-us" element={<About />} />
+                              <Route path="/about" element={<About />} />
+                              <Route path="/our-story" element={<About />} />
                               <Route
                                 path="/founder-faqs"
                                 element={<FounderFAQs />}

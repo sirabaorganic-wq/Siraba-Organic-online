@@ -50,7 +50,7 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
                 { label: 'FSSAI License', value: regulatory?.fssai?.licenseNumber || 'Verified' },
                 { label: 'Ingredients Checked', value: productVerification?.ingredientsVerified ? 'Verified Pure' : 'Pending' },
                 { label: 'Label Claims', value: productVerification?.claimsReviewed ? 'Reviewed' : 'Pending' },
-                { label: 'Scientific Evidence', value: scientificVerification?.summary || 'NABL Lab Tested' },
+                { label: 'Scientific Evidence', value: scientificVerification?.summary || 'Accredited Lab Evidence' },
             ]
         },
         {

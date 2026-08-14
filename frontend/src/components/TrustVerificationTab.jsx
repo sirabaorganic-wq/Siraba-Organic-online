@@ -104,19 +104,19 @@ const TrustVerificationTab = ({ compliance }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1">
                                     <span className="text-slate-400 text-[11px] block uppercase font-mono">Certification Standard</span>
-                                    <span className="font-semibold text-slate-800">{certification?.standard || 'USDA NOP Organic'}</span>
+                                    <span className="font-semibold text-slate-800">{certification?.standard || 'Organic Certification Standard'}</span>
                                 </div>
                                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1">
                                     <span className="text-slate-400 text-[11px] block uppercase font-mono">Certification Body</span>
-                                    <span className="font-semibold text-slate-800">{certification?.certificationBody || 'Accredited Agency'}</span>
+                                    <span className="font-semibold text-slate-800">{certification?.certificationBody || 'Pending Verification Review'}</span>
                                 </div>
                                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1">
                                     <span className="text-slate-400 text-[11px] block uppercase font-mono">Certificate Number</span>
-                                    <span className="font-mono font-medium text-slate-800">{certification?.certificateNumber || 'N/A'}</span>
+                                    <span className="font-mono font-medium text-slate-800">{certification?.certificateNumber || 'Pending Verification Review'}</span>
                                 </div>
                                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1">
                                     <span className="text-slate-400 text-[11px] block uppercase font-mono">Certified Product Scope</span>
-                                    <span className="font-medium text-slate-800">{certification?.productScope || 'Organic Agricultural Product'}</span>
+                                    <span className="font-medium text-slate-800">{certification?.productScope || 'Organic Product Scope Under Review'}</span>
                                 </div>
                             </div>
                             {certification?.lastVerifiedAt && (
@@ -231,7 +231,7 @@ const TrustVerificationTab = ({ compliance }) => {
                             </div>
                             <div>
                                 <h4 className="font-semibold text-slate-900 text-sm">04. Laboratory Testing Evidence</h4>
-                                <p className="text-xs text-slate-500">Tested by NABL-Accredited Laboratories</p>
+                                <p className="text-xs text-slate-500">Tested by Appropriately Accredited Testing Laboratories</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -245,7 +245,7 @@ const TrustVerificationTab = ({ compliance }) => {
                             <div className="p-3 rounded-lg bg-white border border-slate-200">
                                 <span className="text-slate-400 text-[11px] block uppercase font-mono">Laboratory Evidence Summary</span>
                                 <p className="text-slate-800 font-medium mt-1">
-                                    {scientificVerification?.summary || 'Tested by NABL-accredited laboratory (ISO/IEC 17025 compliant)'}
+                                    {scientificVerification?.summary || 'Scientific documentation reviewed under SIRABA Organic Trust Framework.'}
                                 </p>
                             </div>
                             <p className="text-[11px] text-slate-500 italic">

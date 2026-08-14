@@ -79,9 +79,10 @@ async function run() {
 
     for (const p of products) {
       const v = p.vendor ? await Vendor.findById(p.vendor).lean() : null;
-      const certBody = v?.organicCertification?.certificationsByRoute?.usda?.certificationBody || v?.organicCertification?.certificationBody || "OneCert International";
-      const certNum = v?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || v?.organicCertification?.certificateNumber || "NOP/ORG/1409/001649";
-      const validUntil = v?.organicCertification?.certificateValidUntil || new Date("2026-09-03");
+      const certBody = v?.organicCertification?.certificationsByRoute?.usda?.certificationBody || v?.organicCertification?.certificationBody || "";
+      const certNum = v?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || v?.organicCertification?.certificateNumber || "";
+      const validUntil = v?.organicCertification?.certificateValidUntil || null;
+      const isApproved = v?.status === "approved";
 
       await ProductCompliance.findOneAndUpdate(
         { product: p._id },
@@ -90,33 +91,33 @@ async function run() {
             product: p._id,
             vendor: p.vendor || null,
             certification: {
-              status: "verified",
-              standard: "USDA NOP",
+              status: (certNum && isApproved) ? "verified" : "pending",
+              standard: v?.organicCertification?.certificationRoute ? v.organicCertification.certificationRoute.toUpperCase() : "Organic Certification",
               certificationBody: certBody,
               certificateNumber: certNum,
               validUntil: validUntil,
               productScope: p.name,
-              verifiedAt: new Date(),
+              verifiedAt: isApproved ? new Date() : null,
             },
             regulatory: {
               fssai: {
-                status: "verified",
-                licenseNumber: v?.fssaiNumber || "10822999000123",
-                verifiedAt: new Date(),
+                status: v?.fssaiNumber ? "verified" : "pending",
+                licenseNumber: v?.fssaiNumber || "",
+                verifiedAt: v?.fssaiNumber ? new Date() : null,
               },
             },
             productVerification: {
-              status: "verified",
-              labelVerified: true,
-              ingredientsVerified: true,
-              specificationVerified: true,
-              claimsReviewed: true,
-              verifiedAt: new Date(),
+              status: isApproved ? "verified" : "pending",
+              labelVerified: isApproved,
+              ingredientsVerified: isApproved,
+              specificationVerified: isApproved,
+              claimsReviewed: isApproved,
+              verifiedAt: isApproved ? new Date() : null,
             },
             scientificVerification: {
-              status: "verified",
-              summary: "Verified 100% Organic Quality, Safety Parameters & NABL Lab Tested",
-              verifiedAt: new Date(),
+              status: isApproved ? "verified" : "pending",
+              summary: isApproved ? "Scientific evidence and laboratory documentation validated." : "Laboratory documentation pending verification.",
+              verifiedAt: isApproved ? new Date() : null,
             },
             sirabaQualification: {
               status: "verified",

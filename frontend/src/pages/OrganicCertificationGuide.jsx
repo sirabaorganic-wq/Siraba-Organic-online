@@ -141,7 +141,7 @@ const OrganicCertificationGuide = () => {
         {/* Header */}
         <div className="mb-12">
           <p className="text-text-secondary text-sm uppercase tracking-[0.2em] mb-3">
-            Siraba Organic · Certification-Led | Traceable | Globally Compliant
+            Siraba Organic · Certification-Led | Traceable | Internationally Aligned
           </p>
           <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-4">
             Organic Certification Guide

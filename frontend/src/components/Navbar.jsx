@@ -101,7 +101,7 @@ const Navbar = () => {
             label: 'Why Siraba',
             children: [
                 { label: 'Our Story', path: '/our-story' },
-                { label: 'Why Our Market Place is diferent', path: '/why-siraba' },
+                { label: 'Why Our Marketplace is Different', path: '/why-siraba' },
                 { label: 'Certifications & Standards', path: '/certifications' },
             ]
         },
