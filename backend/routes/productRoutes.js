@@ -116,26 +116,36 @@ router.get(
 router.get("/:id/compliance", async (req, res) => {
   try {
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.id);
-    const query = isObjectId ? { _id: req.params.id } : { slug: req.params.id };
+    const productQuery = isObjectId ? { _id: req.params.id } : { slug: req.params.id };
 
-    let compliance = await ProductCompliance.findOne(query).lean();
-    if (!compliance && isObjectId) {
-      compliance = await ProductCompliance.findOne({ product: req.params.id }).lean();
+    let product = await Product.findOne(productQuery).populate("vendor").lean();
+
+    let compliance = null;
+    if (product) {
+      compliance = await ProductCompliance.findOne({ product: product._id }).lean();
+    } else if (isObjectId) {
+      compliance = await ProductCompliance.findById(req.params.id).lean();
+      if (compliance && compliance.product) {
+        product = await Product.findById(compliance.product).populate("vendor").lean();
+      }
     }
 
+    if (!product && !compliance) {
+      return res.json({ compliance: null });
+    }
+
+    const Vendor = require("../models/Vendor");
+    let vendor = product?.vendor;
+    if (vendor && (typeof vendor === "string" || !vendor.businessName)) {
+      const vId = typeof vendor === "string" ? vendor : vendor._id;
+      vendor = await Vendor.findById(vId).lean();
+    }
+
+    const latestBatch = product?._id
+      ? await ProductBatch.findOne({ product: product._id, status: "active" }).sort({ createdAt: -1 }).lean()
+      : null;
+
     if (!compliance) {
-      const product = await Product.findOne(query).populate("vendor").lean();
-      if (!product) {
-        return res.json({ compliance: null });
-      }
-
-      const Vendor = require("../models/Vendor");
-      let vendor = product.vendor;
-      if (vendor && (typeof vendor === "string" || !vendor.businessName)) {
-        const vId = typeof vendor === "string" ? vendor : vendor._id;
-        vendor = await Vendor.findById(vId).lean();
-      }
-
       const certNumber = vendor?.organicCertification?.certificationsByRoute?.usda?.certificateNumber || vendor?.organicCertification?.certificateNumber || "";
       const certBody = vendor?.organicCertification?.certificationsByRoute?.usda?.certificationBody || vendor?.organicCertification?.certificationBody || "";
       const certValidUntil = vendor?.organicCertification?.certificateValidUntil || null;
@@ -149,7 +159,7 @@ router.get("/:id/compliance", async (req, res) => {
       const isVendorQualified = vendor?.status === "approved";
 
       const syntheticCompliance = {
-        product: product._id,
+        product: product?._id,
         vendor: vendor?._id || null,
         certification: {
           status: isCertVerified ? "verified" : "pending",
@@ -188,13 +198,12 @@ router.get("/:id/compliance", async (req, res) => {
         },
       };
 
-      const publicDTO = complianceService.buildPublicDTO(syntheticCompliance);
+      const publicDTO = complianceService.buildPublicDTO(syntheticCompliance, { batch: latestBatch, product, vendor });
       return res.json({ compliance: publicDTO });
     }
 
-    const latestBatch = await ProductBatch.findOne({ product: product._id, status: "active" }).sort({ createdAt: -1 }).lean();
     const publicDTO = complianceService.buildPublicDTO(compliance, { batch: latestBatch, product, vendor });
-    res.json({ compliance: publicDTO });
+    return res.json({ compliance: publicDTO });
   } catch (error) {
     console.error("Error fetching product compliance:", error);
     res.status(500).json({ message: error.message });

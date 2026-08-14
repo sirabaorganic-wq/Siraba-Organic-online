@@ -8,43 +8,52 @@ import { ShieldCheck, Award, MapPin, Sparkles, CheckCircle } from 'lucide-react'
 const TrustHighlightsSidebar = ({ compliance, latestBatch }) => {
     if (!compliance && !latestBatch) return null;
 
+    const isCertActive = compliance?.certification?.status === 'verified';
+    const isSciActive = compliance?.scientificVerification?.status === 'verified' || Boolean(latestBatch?.laboratoryEvidence?.some(e => e.status === 'verified'));
+    const isTraceActive = Boolean(latestBatch?.traceability?.origin && latestBatch?.traceability?.status === 'verified');
+    const isQualActive = compliance?.sirabaQualification?.status === 'verified';
+
     const highlights = [
         {
             icon: Award,
             title: 'Organic Certified',
-            subtitle: compliance?.certification?.standard ? `${compliance.certification.standard} Verified` : 'NPOP Certified',
-            active: compliance?.certification?.status === 'verified',
+            subtitle: isCertActive
+                ? (compliance?.certification?.standard ? `${compliance.certification.standard} Verified` : 'Certified Organic')
+                : 'Certification Pending Review',
+            active: isCertActive,
         },
         {
             icon: ShieldCheck,
             title: 'Accredited Lab Evidence',
-            subtitle: (compliance?.scientificVerification?.summary || 'Accredited Lab Evidence Reviewed')
-                .replace(/NABL[- ]Accredited Lab Report/gi, 'Accredited Lab Evidence')
-                .replace(/NABL[- ]Accredited Lab/gi, 'Accredited Lab Evidence')
-                .replace(/&?\s*NABL\s*Lab Tested/gi, '& Accredited Lab Evidence')
-                .replace(/NABL Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
-                .replace(/NABL Lab Testing/gi, 'Accredited Lab Evidence')
-                .replace(/NABL Verified/gi, 'Accredited Lab Evidence Reviewed')
-                .replace(/Tested by NABL Lab/gi, 'Laboratory Evidence Reviewed')
-                .replace(/NABL Testing/gi, 'Accredited Lab Evidence')
-                .replace(/NABL Verification/gi, 'Accredited Lab Evidence')
-                .replace(/NABL Lab Evidence/gi, 'Accredited Lab Evidence')
-                .replace(/\bNABL\b/gi, 'Accredited Lab')
-                .replace(/Accredited Lab Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
-                .trim(),
-            active: compliance?.scientificVerification?.status === 'verified' || Boolean(latestBatch?.laboratoryEvidence?.some(e => e.status === 'verified')),
+            subtitle: isSciActive
+                ? (compliance?.scientificVerification?.summary || 'Accredited Lab Evidence Reviewed')
+                    .replace(/NABL[- ]Accredited Lab Report/gi, 'Accredited Lab Evidence')
+                    .replace(/NABL[- ]Accredited Lab/gi, 'Accredited Lab Evidence')
+                    .replace(/&?\s*NABL\s*Lab Tested/gi, '& Accredited Lab Evidence')
+                    .replace(/NABL Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+                    .replace(/NABL Lab Testing/gi, 'Accredited Lab Evidence')
+                    .replace(/NABL Verified/gi, 'Accredited Lab Evidence Reviewed')
+                    .replace(/Tested by NABL Lab/gi, 'Laboratory Evidence Reviewed')
+                    .replace(/NABL Testing/gi, 'Accredited Lab Evidence')
+                    .replace(/NABL Verification/gi, 'Accredited Lab Evidence')
+                    .replace(/NABL Lab Evidence/gi, 'Accredited Lab Evidence')
+                    .replace(/\bNABL\b/gi, 'Accredited Lab')
+                    .replace(/Accredited Lab Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+                    .trim()
+                : 'Accredited Lab Evidence Pending',
+            active: isSciActive,
         },
         {
             icon: MapPin,
             title: 'Traceable Source',
-            subtitle: latestBatch?.traceability?.origin || 'Verified Origin',
-            active: Boolean(latestBatch?.traceability?.origin),
+            subtitle: latestBatch?.traceability?.origin || 'Batch Traceability Pending',
+            active: isTraceActive,
         },
         {
             icon: Sparkles,
             title: 'Marketplace Approved',
-            subtitle: 'SIRABA Quality Vetted',
-            active: compliance?.sirabaQualification?.status === 'verified',
+            subtitle: isQualActive ? 'SIRABA Quality Vetted' : 'Vendor Qualification Pending',
+            active: isQualActive,
         },
     ];
 

@@ -50,9 +50,14 @@ const ProductDetails = () => {
   const [activeImage, setActiveImage] = useState(null);
 
   // Central Compliance Data Layer Hook
-  const { compliance, latestBatch, productTrustStatus, isTripleVerified } = useProductCompliance(
-    product?._id
-  );
+  const {
+    compliance,
+    latestBatch,
+    productTrustStatus,
+    isTripleVerified,
+    loading: complianceLoading,
+    error: complianceError,
+  } = useProductCompliance(product?._id);
 
   // Callback for when reviews are updated
   const handleReviewUpdate = (data) => {
@@ -474,6 +479,8 @@ const ProductDetails = () => {
             <SirabaTrustPassport
               compliance={compliance}
               latestBatch={latestBatch}
+              loading={complianceLoading}
+              error={complianceError}
               onTabSelect={(tab) => setActiveTab(tab)}
             />
 

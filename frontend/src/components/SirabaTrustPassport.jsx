@@ -6,8 +6,30 @@ import { Shield, CheckCircle2, Award, FileText, MapPin, Sparkles, ChevronDown, C
  * Renders the 4 pillars of the SIRABA Trust Passport™
  * CERTIFIED • VERIFIED • TRACEABLE • QUALIFIED
  */
-const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
+const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect, loading, error }) => {
     const [expandedPillar, setExpandedPillar] = useState(null);
+
+    if (loading) {
+        return (
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center justify-between animate-pulse">
+                <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-slate-400" />
+                    <span>Loading verification details...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-rose-400" />
+                    <span>Verification details could not be loaded.</span>
+                </div>
+            </div>
+        );
+    }
 
     if (!compliance) {
         return (
@@ -44,28 +66,33 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
             .trim();
     };
 
+    const isCertVerified = certification?.status === 'verified';
+    const isVerifiedPillar = regulatory?.fssai?.status === 'verified' && productVerification?.status === 'verified' && (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable');
+    const isTraceablePillar = latestBatch?.traceability?.status === 'verified';
+    const isQualifiedPillar = sirabaQualification?.status === 'verified';
+
     const pillars = [
         {
             id: 'certified',
             title: 'CERTIFIED™',
             status: certification?.status || 'not_available',
             icon: Award,
-            summary: certification?.standard ? `${certification.standard} Organic` : 'USDA NOP Organic',
+            summary: isCertVerified ? (certification?.standard ? `${certification.standard} Organic` : 'Certified Organic') : 'Certification Pending Review',
             details: [
-                { label: 'Standard', value: certification?.standard || 'USDA NOP' },
-                { label: 'Certification Body', value: certification?.certificationBody || 'Verified Certifier' },
-                { label: 'Certificate No', value: certification?.certificateNumber || 'Verified' },
-                { label: 'Valid Until', value: certification?.validUntil ? new Date(certification.validUntil).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Verified' },
+                { label: 'Standard', value: certification?.standard || (isCertVerified ? 'Verified Standard' : 'Pending Review') },
+                { label: 'Certification Body', value: certification?.certificationBody || (isCertVerified ? 'Verified Certifier' : 'Pending Review') },
+                { label: 'Certificate No', value: certification?.certificateNumber || (isCertVerified ? 'Verified' : 'Pending Verification') },
+                { label: 'Valid Until', value: certification?.validUntil ? new Date(certification.validUntil).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : (isCertVerified ? 'Verified' : 'Pending') },
             ]
         },
         {
             id: 'verified',
             title: 'VERIFIED™',
-            status: (regulatory?.fssai?.status === 'verified' && productVerification?.status === 'verified' && (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable')) ? 'verified' : 'pending',
+            status: isVerifiedPillar ? 'verified' : 'pending',
             icon: CheckCircle2,
-            summary: 'FSSAI & Accredited Lab Evidence',
+            summary: isVerifiedPillar ? 'FSSAI & Accredited Lab Evidence' : 'Accredited Lab Evidence Pending',
             details: [
-                { label: 'FSSAI License', value: regulatory?.fssai?.licenseNumber || 'Verified' },
+                { label: 'FSSAI License', value: regulatory?.fssai?.status === 'verified' ? (regulatory?.fssai?.licenseNumber || 'Verified') : 'Pending Verification' },
                 { label: 'Ingredients Checked', value: productVerification?.ingredientsVerified ? 'Verified Pure' : 'Pending' },
                 { label: 'Label Claims', value: productVerification?.claimsReviewed ? 'Reviewed' : 'Pending' },
                 { label: 'Accredited Lab Evidence', value: (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable') ? cleanEvidenceSummary(scientificVerification?.summary) : 'Accredited Lab Evidence Pending' },
@@ -74,26 +101,26 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
         {
             id: 'traceable',
             title: 'TRACEABLE™',
-            status: latestBatch?.traceability?.status || 'pending',
+            status: isTraceablePillar ? 'verified' : 'pending',
             icon: MapPin,
-            summary: latestBatch?.traceability?.origin ? `Origin: ${latestBatch.traceability.origin}` : 'Batch Traceability Enabled',
+            summary: latestBatch?.traceability?.origin ? `Origin: ${latestBatch.traceability.origin}` : (latestBatch ? 'Batch Traceability Assigned' : 'Batch Traceability Pending'),
             details: [
-                { label: 'Current Batch', value: latestBatch?.batchNumber || 'Assigned' },
-                { label: 'Source Region', value: latestBatch?.traceability?.origin || 'Verified Belt' },
-                { label: 'Processing', value: latestBatch?.traceability?.processing || 'Verified Facility' },
-                { label: 'Trace ID', value: latestBatch?.traceId || 'SIR-TRC-001' },
+                { label: 'Current Batch', value: latestBatch?.batchNumber || 'Pending Assignment' },
+                { label: 'Source Region', value: latestBatch?.traceability?.origin || 'Pending Assignment' },
+                { label: 'Processing', value: latestBatch?.traceability?.processing || 'Pending Facility Audit' },
+                { label: 'Trace ID', value: latestBatch?.traceId || (latestBatch ? 'Assigned' : 'Pending Assignment') },
             ]
         },
         {
             id: 'qualified',
             title: 'QUALIFIED™',
-            status: sirabaQualification?.status || 'not_available',
+            status: isQualifiedPillar ? 'verified' : 'pending',
             icon: Sparkles,
-            summary: 'SIRABA Marketplace Vendor Qualified',
+            summary: isQualifiedPillar ? 'SIRABA Marketplace Vendor Qualified' : 'Vendor Qualification Pending',
             details: [
                 { label: 'Vendor Status', value: sirabaQualification?.vendorQualified ? 'Vetted & Approved' : 'Pending' },
                 { label: 'Marketplace Status', value: sirabaQualification?.marketplaceApproved ? 'Authorized Seller' : 'Pending' },
-                { label: 'Quality Audit', value: 'Passed Standard Audit' },
+                { label: 'Quality Audit', value: isQualifiedPillar ? 'Passed Standard Audit' : 'Audit Pending' },
             ]
         }
     ];
