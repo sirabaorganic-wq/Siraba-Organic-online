@@ -231,7 +231,7 @@ const TrustVerificationTab = ({ compliance }) => {
                             </div>
                             <div>
                                 <h4 className="font-semibold text-slate-900 text-sm">04. Accredited Lab Evidence</h4>
-                                <p className="text-xs text-slate-500">Tested by Appropriately Accredited Laboratories</p>
+                                <p className="text-xs text-slate-500">Evidence from Appropriately Accredited Laboratories</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -245,7 +245,20 @@ const TrustVerificationTab = ({ compliance }) => {
                             <div className="p-3 rounded-lg bg-white border border-slate-200">
                                 <span className="text-slate-400 text-[11px] block uppercase font-mono">Accredited Lab Evidence Summary</span>
                                 <p className="text-slate-800 font-medium mt-1">
-                                    {scientificVerification?.summary || 'Accredited Lab Evidence reviewed under SIRABA Organic Trust Framework.'}
+                                    {(scientificVerification?.summary || 'Accredited Lab Evidence reviewed under SIRABA Organic Trust Framework.')
+                                        .replace(/NABL[- ]Accredited Lab Report/gi, 'Accredited Lab Evidence')
+                                        .replace(/NABL[- ]Accredited Lab/gi, 'Accredited Lab Evidence')
+                                        .replace(/&?\s*NABL\s*Lab Tested/gi, '& Accredited Lab Evidence')
+                                        .replace(/NABL Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+                                        .replace(/NABL Lab Testing/gi, 'Accredited Lab Evidence')
+                                        .replace(/NABL Verified/gi, 'Accredited Lab Evidence Reviewed')
+                                        .replace(/Tested by NABL Lab/gi, 'Laboratory Evidence Reviewed')
+                                        .replace(/NABL Testing/gi, 'Accredited Lab Evidence')
+                                        .replace(/NABL Verification/gi, 'Accredited Lab Evidence')
+                                        .replace(/NABL Lab Evidence/gi, 'Accredited Lab Evidence')
+                                        .replace(/\bNABL\b/gi, 'Accredited Lab')
+                                        .replace(/Accredited Lab Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+                                        .trim()}
                                 </p>
                             </div>
                             <p className="text-[11px] text-slate-500 italic">

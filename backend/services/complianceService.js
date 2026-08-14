@@ -198,7 +198,20 @@ const buildPublicDTO = (compliance, now = new Date()) => {
     },
     scientificVerification: {
       status: effSciStatus,
-      summary: compliance.scientificVerification?.summary || "",
+      summary: (compliance.scientificVerification?.summary || "")
+        .replace(/NABL[- ]Accredited Lab Report/gi, "Accredited Lab Evidence")
+        .replace(/NABL[- ]Accredited Lab/gi, "Accredited Lab Evidence")
+        .replace(/&?\s*NABL\s*Lab Tested/gi, "& Accredited Lab Evidence")
+        .replace(/NABL Lab Tested/gi, "Accredited Lab Evidence Reviewed")
+        .replace(/NABL Lab Testing/gi, "Accredited Lab Evidence")
+        .replace(/NABL Verified/gi, "Accredited Lab Evidence Reviewed")
+        .replace(/Tested by NABL Lab/gi, "Laboratory Evidence Reviewed")
+        .replace(/NABL Testing/gi, "Accredited Lab Evidence")
+        .replace(/NABL Verification/gi, "Accredited Lab Evidence")
+        .replace(/NABL Lab Evidence/gi, "Accredited Lab Evidence")
+        .replace(/\bNABL\b/gi, "Accredited Lab")
+        .replace(/Accredited Lab Lab Tested/gi, "Accredited Lab Evidence Reviewed")
+        .trim(),
       lastVerifiedAt: compliance.scientificVerification?.verifiedAt,
     },
     sirabaQualification: {

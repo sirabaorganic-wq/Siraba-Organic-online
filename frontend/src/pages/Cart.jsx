@@ -125,14 +125,14 @@ const Cart = () => {
                     {/* Cart Items List */}
                     <div className="lg:col-span-2 space-y-6">
                         {cartItems.map((item) => (
-                            <div key={item.cartKey || item._id || item.id} className="bg-surface p-6 rounded-sm shadow-sm border border-secondary/10 flex gap-6 items-center">
+                            <div key={item.cartKey || item._id || item.id} className="bg-surface p-4 sm:p-6 rounded-sm shadow-sm border border-secondary/10 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
                                 {/* Product Image */}
-                                <div className="w-24 h-24 bg-background p-2 rounded-sm flex-shrink-0 border border-secondary/5">
+                                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-background p-2 rounded-sm flex-shrink-0 border border-secondary/5 mx-auto sm:mx-0">
                                     <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
                                 </div>
 
                                 {/* Details */}
-                                <div className="flex-grow">
+                                <div className="flex-grow w-full">
                                     <div className="flex justify-between items-start mb-1">
                                         <div className="flex flex-col">
                                             <Link to={`/product/${item.slug}`} className="font-heading text-xl text-primary font-bold hover:text-accent transition-colors">

@@ -264,7 +264,7 @@ const Shop = () => {
                 <p className="text-text-secondary text-sm leading-relaxed font-light">
                   Saffron remains one of the world's most valuable and most adulterated ingredients. SIRABA ORGANIC aims to build a platform where authenticity, traceability, and compliance are prioritized over volume.
                 </p>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-accent mb-2">Key Focus Areas</p>
                     <ul className="space-y-1">
@@ -308,7 +308,7 @@ const Shop = () => {
                 <p className="text-text-secondary text-sm leading-relaxed font-light">
                   The objective is to deliver a more disciplined and trustworthy category experience within one of the world's most commonly adulterated spice segments.
                 </p>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-accent mb-2">Key Focus Areas</p>
                     <ul className="space-y-1">

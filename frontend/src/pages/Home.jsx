@@ -69,7 +69,7 @@ const Home = () => {
             who meet internationally recognized organic standards and scientific documentation requirements.
           </p>
 
-          <div className="bg-primary text-surface text-sm tracking-widest uppercase px-8 py-4 hover:bg-accent transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-50vw md:w-auto">
+          <div className="bg-primary text-surface text-sm tracking-widest uppercase px-6 sm:px-8 py-3.5 sm:py-4 hover:bg-accent transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full max-w-xl mx-auto md:w-auto inline-block">
             Not Every Organic Product Qualifies for SIRABA ORGANIC.
           </div>
 
@@ -210,19 +210,19 @@ const Home = () => {
           </div>
 
           {/* ── CERTIFIED → VERIFIED → QUALIFIED flow bar ── */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-0 mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-0 mb-8 w-full max-w-4xl mx-auto">
             {[
               { label: "CERTIFIED™", desc: "Certified by recognized regulatory and organic certification bodies.", color: "bg-primary text-surface" },
               { label: "VERIFIED™", desc: "Scientifically verified through evidence-based review of laboratory reports, documentation and traceability records.", color: "bg-accent text-primary" },
               { label: "QUALIFIED™", desc: "Qualified through SIRABA ORGANIC™ marketplace assessment and ongoing compliance review.", color: "bg-secondary text-surface" },
             ].map((step, i) => (
-              <div key={i} className="flex items-center">
-                <div className={`${step.color} px-6 py-4 text-center max-w-[200px] shadow-md`}>
+              <div key={i} className="flex flex-col sm:flex-row items-center w-full sm:w-auto">
+                <div className={`${step.color} px-5 sm:px-6 py-4 text-center w-full sm:w-56 md:w-64 min-h-[90px] flex flex-col justify-center shadow-md rounded-sm`}>
                   <p className="font-heading font-bold text-sm tracking-[0.15em] uppercase">{step.label}</p>
-                  <p className="text-[11px] opacity-75 font-light leading-snug mt-1">{step.desc}</p>
+                  <p className="text-[11px] opacity-85 font-light leading-snug mt-1">{step.desc}</p>
                 </div>
                 {i < 2 && (
-                  <ArrowRight size={20} className="hidden sm:block text-accent/50 mx-1 flex-shrink-0" />
+                  <ArrowRight size={20} className="hidden sm:block text-accent/70 mx-2 flex-shrink-0" />
                 )}
               </div>
             ))}

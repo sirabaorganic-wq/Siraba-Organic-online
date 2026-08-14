@@ -72,7 +72,7 @@ const seedDevCompliance = async () => {
       },
       scientificVerification: {
         status: "verified",
-        summary: "Tested by Accredited Laboratory (ISO/IEC 17025)",
+        summary: "Accredited Lab Evidence Validated (ISO/IEC 17025)",
         verifiedAt: new Date("2026-08-10"),
       },
       sirabaQualification: {

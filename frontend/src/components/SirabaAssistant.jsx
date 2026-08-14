@@ -137,10 +137,10 @@ export default function SirabaAssistant() {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end pointer-events-none">
             {/* Chat Panel */}
             {isOpen && (
-                <div className="pointer-events-auto bg-surface w-[350px] max-w-[calc(100vw-32px)] h-[500px] max-h-[calc(100vh-120px)] rounded-2xl shadow-2xl border border-secondary/20 flex flex-col mb-4 overflow-hidden animate-chat-slide-up origin-bottom-right">
+                <div className="pointer-events-auto bg-surface w-[350px] max-w-[calc(100vw-24px)] h-[480px] max-h-[calc(100dvh-100px)] rounded-2xl shadow-2xl border border-secondary/20 flex flex-col mb-3 sm:mb-4 overflow-hidden animate-chat-slide-up origin-bottom-right">
 
                     {/* Header */}
                     <div className="bg-primary text-white p-4 flex justify-between items-center shadow-md z-10">

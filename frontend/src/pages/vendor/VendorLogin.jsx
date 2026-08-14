@@ -616,7 +616,7 @@ const VendorLogin = () => {
                   {!isLogin && (
                     <>
                       {/* Business Name + Type */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Field label="Business Name *">
                           <IconInput
                             icon={Store}
@@ -656,7 +656,7 @@ const VendorLogin = () => {
                       </div>
 
                       {/* Contact + Phone */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Field label="Contact Person *">
                           <IconInput
                             icon={User}
@@ -682,7 +682,7 @@ const VendorLogin = () => {
                       </div>
 
                       {/* City / State / PIN */}
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Field label="City *">
                           <PlainInput
                             type="text"

@@ -11,7 +11,7 @@ const products = [
         reviews: 128,
         tag: "Best Seller",
         category: "Spices",
-        features: ["100% Organic", "Hand Picked", "Lab Tested", "GI Tagged"],
+        features: ["100% Organic", "Hand Picked", "Accredited Lab Evidence", "GI Tagged"],
         ingredients: "100% Pure Crocus Sativus Stigmas"
     },
     {

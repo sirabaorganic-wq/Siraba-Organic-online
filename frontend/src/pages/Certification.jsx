@@ -13,7 +13,6 @@ import {
 import BgImage1 from "../assets/bgimage1.png";
 import JaivikBharatLogo from "../assets/jaivik_bharat.png";
 import UsdaOrganicLogo from "../assets/usda_organic.png";
-import NablLogo from "../assets/nabl_logo.png";
 
 const Certification = () => {
   const [certData, setCertData] = useState(null);
@@ -59,7 +58,7 @@ const Certification = () => {
         "Scientific validation and transparency",
       ],
       why: "Scientific documentation validates product safety and quality parameters through appropriately accredited testing laboratories.",
-      logo: UsdaOrganicLogo,
+      logo: null,
       logoAlt: "Accredited Laboratory Evidence",
     },
     {
@@ -73,7 +72,7 @@ const Certification = () => {
         "Compliance-focused accountability",
       ],
       why: "Qualification ensures long-term marketplace discipline, ethical governance, and consumer trust.",
-      logo: NablLogo,
+      logo: null,
       logoAlt: "Marketplace Qualification",
     },
   ];
@@ -348,7 +347,7 @@ const Certification = () => {
             {[
               { text: "Valid NPOP certification (Mandatory)", logo: JaivikBharatLogo, logoAlt: "NPOP Logo" },
               { text: "USDA Organic Certification OR EU Organic Certification", logo: UsdaOrganicLogo, logoAlt: "USDA Logo" },
-              { text: "Accredited Lab Evidence & Documentation", logo: NablLogo, logoAlt: "Lab Evidence Logo" },
+              { text: "Accredited Lab Evidence & Documentation", logo: null, logoAlt: "Lab Evidence" },
               { text: "Valid FSSAI License or Registration", logo: null },
               { text: "Product traceability and sourcing documentation", logo: null },
               { text: "Documentation verification support", logo: null },
@@ -581,7 +580,7 @@ const Certification = () => {
                   certScope: "Kashmiri Saffron, Asafoetida (Hing), Organic Spices",
                   status: "Verified & Active",
                   fssaiLicense: "FSSAI License Verified",
-                  labTesting: "Accredited Laboratory COA Validated",
+                  labTesting: "Accredited Lab Evidence Validated",
                   traceability: "Batch Traceability Enabled",
                   badge: "SIRABA Qualified Vendor™",
                 },
@@ -593,7 +592,7 @@ const Certification = () => {
                   certScope: "Herbal Botanicals, Organic Teas, Superfood Powders",
                   status: "Verified & Active",
                   fssaiLicense: "FSSAI License Active",
-                  labTesting: "Heavy Metal & Pesticide Residue Tested",
+                  labTesting: "Accredited Lab Evidence (Residue Analysis)",
                   traceability: "Farm-to-Fork Traceability Verified",
                   badge: "SIRABA Qualified Vendor™",
                 },
@@ -605,7 +604,7 @@ const Certification = () => {
                   certScope: "Himalayan Herbs, Shilajit, Raw Honey & Spices",
                   status: "Verified & Active",
                   fssaiLicense: "FSSAI License Active",
-                  labTesting: "ISO/IEC 17025 Accredited Lab Report",
+                  labTesting: "Accredited Lab Evidence Reviewed",
                   traceability: "Origin & Altitude Verified",
                   badge: "SIRABA Qualified Vendor™",
                 },

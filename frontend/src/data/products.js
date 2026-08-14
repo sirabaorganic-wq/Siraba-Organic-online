@@ -4,7 +4,7 @@ export const products = [
         name: "Kashmiri Mongra Saffron",
         slug: "kashmiri-mongra-saffron",
         description: "Grade A1 Premium Organic Saffron. Hand-harvested from the fields of Pampore. Known for its potent aroma and deep crimson color.",
-        fullDescription: "Our Kashmiri Mongra Saffron is the finest quality saffron available, distinguished by its dark red color and long, thick stigmas. Sourced directly from the heritage fields of Pampore, Kashmir, each flower is hand-picked at dawn to preserve its delicate aroma and potent flavor. Lab-tested for purity, it contains no additives, artificial colors, or preservatives. Perfect for culinary masterpieces, traditional recipes, and holistic wellness.",
+        fullDescription: "Our Kashmiri Mongra Saffron is the finest quality saffron available, distinguished by its dark red color and long, thick stigmas. Sourced directly from the heritage fields of Pampore, Kashmir, each flower is hand-picked at dawn to preserve its delicate aroma and potent flavor. Verified with accredited lab evidence for purity, it contains no additives, artificial colors, or preservatives. Perfect for culinary masterpieces, traditional recipes, and holistic wellness.",
         price: 1,
         currency: "₹",
         image: "/images/saffron_jar.png",
@@ -12,7 +12,7 @@ export const products = [
         reviews: 128,
         tag: "Best Seller",
         category: "Spices",
-        features: ["100% Organic", "Hand Picked", "Lab Tested", "GI Tagged"],
+        features: ["100% Organic", "Hand Picked", "Accredited Lab Evidence", "GI Tagged"],
         ingredients: "100% Pure Crocus Sativus Stigmas"
     },
     {

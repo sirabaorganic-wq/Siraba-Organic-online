@@ -262,8 +262,8 @@ const OrganicCertificationGuide = () => {
             sold. Vendors seeking to sell internationally often obtain multiple
             certifications to meet regulatory requirements in different markets.
           </p>
-          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-x-auto">
+            <table className="w-full text-sm min-w-[500px] sm:min-w-0">
               <thead>
                 <tr className="bg-emerald-50 border-b border-emerald-100">
                   <th className="text-left px-5 py-3 font-bold text-emerald-800 text-xs uppercase tracking-wider">

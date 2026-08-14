@@ -587,8 +587,6 @@ const MarketplaceBadges = () => {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

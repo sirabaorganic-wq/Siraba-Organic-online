@@ -16,11 +16,25 @@
 }
 
 @layer base {
+    *, ::before, ::after {
+        box-sizing: border-box;
+    }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+    }
+
     body {
         background-color: var(--color-background);
         color: var(--color-text-primary);
         font-family: var(--font-body);
         -webkit-font-smoothing: antialiased;
+        min-width: 320px;
+    }
+
+    img, video {
+        max-width: 100%;
     }
 
     h1,
@@ -30,6 +44,11 @@
     h5,
     h6 {
         font-family: var(--font-heading);
+        overflow-wrap: break-word;
+    }
+
+    p, span, a, label, li {
+        overflow-wrap: break-word;
     }
 }
 

@@ -122,11 +122,12 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 <div className="flex justify-between items-center h-20">
 
-                    {/* Mobile Menu Button */}
-                    <div className="flex items-center md:hidden">
+                    {/* Mobile/Tablet Menu Button */}
+                    <div className="flex items-center lg:hidden">
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="text-primary hover:text-accent transition-colors"
+                            className="p-2 -ml-2 text-primary hover:text-accent transition-colors focus:outline-none"
+                            aria-label="Toggle menu"
                         >
                             <span className="sr-only">Open menu</span>
                             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -134,42 +135,42 @@ const Navbar = () => {
                     </div>
 
                     {/* Logo */}
-                    <div className={`flex-shrink-0 flex items-center justify-center flex-1 md:flex-none md:justify-start ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>
-                        <Link to="/" className="flex items-center gap-2 md:gap-3 group">
-                            <img src={logo} alt="Siraba Organic Logo" className="h-10 w-auto md:h-12 object-contain" />
+                    <div className={`flex-shrink-0 flex items-center justify-center flex-1 lg:flex-none lg:justify-start ${isSearchOpen ? 'hidden lg:flex' : 'flex'}`}>
+                        <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
+                            <img src={logo} alt="Siraba Organic Logo" className="h-9 sm:h-10 xl:h-12 w-auto object-contain" />
                             <div className="flex flex-col items-start">
-                                <span className="font-heading text-xl md:text-2xl font-bold text-primary tracking-wide group-hover:text-accent transition-colors duration-300 leading-none">
+                                <span className="font-heading text-lg sm:text-xl xl:text-2xl font-bold text-primary tracking-wide group-hover:text-accent transition-colors duration-300 leading-none">
                                     SIRABA
                                 </span>
-                                <span className="text-[0.55rem] md:text-[0.65rem] uppercase tracking-[0.2em] text-secondary font-medium group-hover:text-primary transition-colors duration-300 leading-tight">
+                                <span className="text-[0.5rem] sm:text-[0.55rem] xl:text-[0.65rem] uppercase tracking-[0.2em] text-secondary font-medium group-hover:text-primary transition-colors duration-300 leading-tight">
                                     Organic
                                 </span>
-                                <p className="text-secondary text-[0.65rem] leading-relaxed font-light">
-                                Certified • Verified • Qualified
+                                <p className="text-secondary text-[0.55rem] sm:text-[0.65rem] leading-relaxed font-light hidden sm:block">
+                                    Certified • Verified • Qualified
                                 </p>
                             </div>
                         </Link>
                     </div>
 
                     {/* Desktop Navigation / Search Bar Transition */}
-                    <div className="flex-1 flex items-center justify-end md:justify-center px-4 md:px-8 relative">
+                    <div className="flex-1 flex items-center justify-end lg:justify-center px-2 lg:px-4 xl:px-8 relative">
                         {!isSearchOpen ? (
-                            /* Standard Nav Links */
-                            <div className="hidden md:flex items-center space-x-6 lg:space-x-8 animate-fade-in">
+                            /* Standard Nav Links (visible on lg and above) */
+                            <div className="hidden lg:flex items-center space-x-3 xl:space-x-6 2xl:space-x-8 animate-fade-in">
                                 {navItems.map((item) => (
                                     item.children ? (
                                         <div key={item.label} className="relative group">
-                                            <button className="flex items-center gap-1 text-text-primary hover:text-accent font-body text-xs lg:text-sm uppercase tracking-widest transition-all duration-300 py-2">
+                                            <button className="flex items-center gap-1 text-text-primary hover:text-accent font-body text-[11px] xl:text-xs 2xl:text-sm uppercase tracking-wider xl:tracking-widest transition-all duration-300 py-2">
                                                 {item.label}
-                                                <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300" />
+                                                <ChevronDown size={13} className="group-hover:rotate-180 transition-transform duration-300" />
                                             </button>
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 w-48 z-50">
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 w-52 z-50">
                                                 <div className="bg-surface shadow-xl rounded-sm border border-secondary/10 overflow-hidden py-1">
                                                     {item.children.map(child => (
                                                         <Link
                                                             key={child.label}
                                                             to={child.path}
-                                                            className="block px-4 py-2 text-text-primary hover:text-accent hover:bg-secondary/5 font-body text-xs uppercase tracking-wider transition-colors text-center"
+                                                            className="block px-4 py-2.5 text-text-primary hover:text-accent hover:bg-secondary/5 font-body text-xs uppercase tracking-wider transition-colors text-center"
                                                         >
                                                             {child.label}
                                                         </Link>
@@ -181,7 +182,7 @@ const Navbar = () => {
                                         <Link
                                             key={item.label}
                                             to={item.path}
-                                            className="text-text-primary hover:text-accent font-body text-xs lg:text-sm uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 whitespace-nowrap"
+                                            className="text-text-primary hover:text-accent font-body text-[11px] xl:text-xs 2xl:text-sm uppercase tracking-wider xl:tracking-widest transition-all duration-300 hover:-translate-y-0.5 whitespace-nowrap"
                                         >
                                             {item.label}
                                         </Link>
@@ -199,7 +200,7 @@ const Navbar = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={handleSearchSubmit}
                                     placeholder="Search details..."
-                                    className="w-full bg-transparent border-none text-primary placeholder-primary/40 text-lg pl-10 pr-12 py-2 focus:ring-0 font-light outline-none"
+                                    className="w-full bg-transparent border-none text-primary placeholder-primary/40 text-base sm:text-lg pl-9 sm:pl-10 pr-12 py-2 focus:ring-0 font-light outline-none"
                                 />
                                 <button onClick={handleCloseSearch} className="absolute right-0 top-1/2 -translate-y-1/2 text-primary/50 text-xs uppercase tracking-wider font-bold hover:text-primary transition-colors">
                                     Close
@@ -254,16 +255,16 @@ const Navbar = () => {
                     </div>
 
                     {/* Icons Section */}
-                    <div className="flex items-center space-x-4 md:space-x-6">
-                        {/* Currency Selector - Desktop */}
-                        <div ref={currencyRef} className="hidden md:block relative">
+                    <div className="flex items-center space-x-2 sm:space-x-3 xl:space-x-5">
+                        {/* Currency Selector - Desktop (visible on lg and above) */}
+                        <div ref={currencyRef} className="hidden lg:block relative">
                             <button
                                 onClick={() => setIsCurrencyOpen(!isCurrencyOpen)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary/5 hover:bg-secondary/10 border border-secondary/10 hover:border-accent/30 text-sm font-bold text-primary hover:text-accent transition-all duration-200"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-secondary/5 hover:bg-secondary/10 border border-secondary/10 hover:border-accent/30 text-xs xl:text-sm font-bold text-primary hover:text-accent transition-all duration-200"
                             >
-                                <span className="text-base">{currencySymbols[currency] || currency}</span>
-                                <span className="text-xs">{currency}</span>
-                                <span className={`text-[10px] transition-transform duration-200 ${isCurrencyOpen ? 'rotate-180' : ''}`}>▼</span>
+                                <span className="text-sm xl:text-base">{currencySymbols[currency] || currency}</span>
+                                <span className="text-[11px] xl:text-xs">{currency}</span>
+                                <span className={`text-[9px] transition-transform duration-200 ${isCurrencyOpen ? 'rotate-180' : ''}`}>▼</span>
                             </button>
                             {isCurrencyOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-40 bg-surface border border-secondary/20 shadow-xl rounded-md py-2 z-50 animate-fade-in max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
@@ -293,20 +294,20 @@ const Navbar = () => {
                         {!isSearchOpen && (
                             <button
                                 onClick={() => setIsSearchOpen(true)}
-                                className="group flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary/10 transition-all duration-300"
+                                className="group flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 xl:w-10 xl:h-10 rounded-full hover:bg-secondary/10 transition-all duration-300"
                                 aria-label="Search"
                             >
-                                <Search size={22} strokeWidth={1.5} className="text-primary group-hover:text-accent transition-colors" />
+                                <Search size={20} strokeWidth={1.5} className="text-primary group-hover:text-accent transition-colors" />
                             </button>
                         )}
 
-                        <Link to="/account" className={`hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary/10 transition-all duration-300 ${isSearchOpen ? 'hidden lg:flex' : ''}`}>
-                            <User size={22} strokeWidth={1.5} className="text-primary hover:text-accent transition-colors" />
+                        <Link to="/account" className={`hidden sm:flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 xl:w-10 xl:h-10 rounded-full hover:bg-secondary/10 transition-all duration-300 ${isSearchOpen ? 'hidden xl:flex' : ''}`}>
+                            <User size={20} strokeWidth={1.5} className="text-primary hover:text-accent transition-colors" />
                         </Link>
-                        <Link to="/cart" className={`relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary/10 transition-all duration-300 group ${isSearchOpen ? 'hidden lg:flex' : ''}`}>
-                            <ShoppingBag size={22} strokeWidth={1.5} className="text-primary group-hover:text-accent transition-colors" />
+                        <Link to="/cart" className={`relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 xl:w-10 xl:h-10 rounded-full hover:bg-secondary/10 transition-all duration-300 group ${isSearchOpen ? 'hidden xl:flex' : ''}`}>
+                            <ShoppingBag size={20} strokeWidth={1.5} className="text-primary group-hover:text-accent transition-colors" />
                             {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 h-5 w-5 bg-accent text-primary text-[10px] font-bold flex items-center justify-center rounded-full shadow-sm">
+                                <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 bg-accent text-primary text-[9px] sm:text-[10px] font-bold flex items-center justify-center rounded-full shadow-sm">
                                     {cartCount}
                                 </span>
                             )}
@@ -317,11 +318,11 @@ const Navbar = () => {
 
             {/* Backdrop for Desktop Focus */}
             {isSearchOpen && (
-                <div className="hidden md:block fixed inset-0 top-20 bg-black/20 backdrop-blur-[2px] -z-10 animate-fade-in" onClick={handleCloseSearch}></div>
+                <div className="hidden lg:block fixed inset-0 top-20 bg-black/20 backdrop-blur-[2px] -z-10 animate-fade-in" onClick={handleCloseSearch}></div>
             )}
 
-            {/* Mobile Menu */}
-            <div className={`md:hidden absolute top-full left-0 w-full bg-background border-b border-secondary/20 transition-all duration-300 ease-in-out transform ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+            {/* Mobile/Tablet Menu Drawer */}
+            <div className={`lg:hidden absolute top-full left-0 w-full bg-background border-b border-secondary/20 shadow-2xl max-h-[calc(100dvh-80px)] overflow-y-auto transition-all duration-300 ease-in-out transform ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
                 {/* Mobile Search Input */}
                 <div className="p-4 border-b border-secondary/10">
                     <div className="relative">

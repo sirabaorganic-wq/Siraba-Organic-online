@@ -230,8 +230,23 @@ const ProductVerification = () => {
 
                                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                                         <div>
-                                            <span className="font-semibold text-slate-800 block">Laboratory Testing</span>
-                                            <span className="text-slate-500 text-[11px]">{compliance.scientificVerification?.summary}</span>
+                                            <span className="font-semibold text-slate-800 block">Accredited Lab Evidence</span>
+                                            <span className="text-slate-500 text-[11px]">
+                                                {(compliance.scientificVerification?.summary || "Accredited Lab Evidence validated")
+                                                    .replace(/NABL[- ]Accredited Lab Report/gi, 'Accredited Lab Evidence')
+                                                    .replace(/NABL[- ]Accredited Lab/gi, 'Accredited Lab Evidence')
+                                                    .replace(/&?\s*NABL\s*Lab Tested/gi, '& Accredited Lab Evidence')
+                                                    .replace(/NABL Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+                                                    .replace(/NABL Lab Testing/gi, 'Accredited Lab Evidence')
+                                                    .replace(/NABL Verified/gi, 'Accredited Lab Evidence Reviewed')
+                                                    .replace(/Tested by NABL Lab/gi, 'Laboratory Evidence Reviewed')
+                                                    .replace(/NABL Testing/gi, 'Accredited Lab Evidence')
+                                                    .replace(/NABL Verification/gi, 'Accredited Lab Evidence')
+                                                    .replace(/NABL Lab Evidence/gi, 'Accredited Lab Evidence')
+                                                    .replace(/\bNABL\b/gi, 'Accredited Lab')
+                                                    .replace(/Accredited Lab Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+                                                    .trim()}
+                                            </span>
                                         </div>
                                         <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
                                             {compliance.scientificVerification?.status} ✓

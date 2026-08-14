@@ -106,7 +106,7 @@ const WhySiraba = () => {
                 tagline: "Claims should be supported by evidence.",
                 desc: "SIRABA ORGANIC™ reviews scientific and documentary evidence to strengthen product authenticity and quality assurance.",
                 points: [
-                  "Accreditable Laboratory Documentation",
+                  "Accredited Lab Evidence & Documentation",
                   "ISO/IEC 17025 laboratory evidence where applicable",
                   "Certificate of Analysis (CoA)",
                   "Batch-wise test reports",

@@ -26,6 +26,24 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
         setExpandedPillar(expandedPillar === id ? null : id);
     };
 
+    const cleanEvidenceSummary = (summary) => {
+        if (!summary) return 'Accredited Lab Evidence Reviewed';
+        return summary
+            .replace(/NABL[- ]Accredited Lab Report/gi, 'Accredited Lab Evidence')
+            .replace(/NABL[- ]Accredited Lab/gi, 'Accredited Lab Evidence')
+            .replace(/&?\s*NABL\s*Lab Tested/gi, '& Accredited Lab Evidence')
+            .replace(/NABL Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+            .replace(/NABL Lab Testing/gi, 'Accredited Lab Evidence')
+            .replace(/NABL Verified/gi, 'Accredited Lab Evidence Reviewed')
+            .replace(/Tested by NABL Lab/gi, 'Laboratory Evidence Reviewed')
+            .replace(/NABL Testing/gi, 'Accredited Lab Evidence')
+            .replace(/NABL Verification/gi, 'Accredited Lab Evidence')
+            .replace(/NABL Lab Evidence/gi, 'Accredited Lab Evidence')
+            .replace(/\bNABL\b/gi, 'Accredited Lab')
+            .replace(/Accredited Lab Lab Tested/gi, 'Accredited Lab Evidence Reviewed')
+            .trim();
+    };
+
     const pillars = [
         {
             id: 'certified',
@@ -45,12 +63,12 @@ const SirabaTrustPassport = ({ compliance, latestBatch, onTabSelect }) => {
             title: 'VERIFIED™',
             status: (regulatory?.fssai?.status === 'verified' && productVerification?.status === 'verified' && (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable')) ? 'verified' : 'pending',
             icon: CheckCircle2,
-            summary: 'FSSAI License & Accredited Evidence',
+            summary: 'FSSAI & Accredited Lab Evidence',
             details: [
                 { label: 'FSSAI License', value: regulatory?.fssai?.licenseNumber || 'Verified' },
                 { label: 'Ingredients Checked', value: productVerification?.ingredientsVerified ? 'Verified Pure' : 'Pending' },
                 { label: 'Label Claims', value: productVerification?.claimsReviewed ? 'Reviewed' : 'Pending' },
-                { label: 'Accredited Lab Evidence', value: (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable') ? (scientificVerification?.summary || 'Accredited Lab Evidence') : 'Pending Review' },
+                { label: 'Accredited Lab Evidence', value: (scientificVerification?.status === 'verified' || scientificVerification?.status === 'not_applicable') ? cleanEvidenceSummary(scientificVerification?.summary) : 'Accredited Lab Evidence Pending' },
             ]
         },
         {

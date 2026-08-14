@@ -41,9 +41,9 @@ const VendorQualification = () => {
             ],
         },
         {
-            title: "Scientific Documentation Requirement",
+            title: "Accredited Lab Evidence Requirement",
             description:
-                "Approved vendors must provide laboratory documentation aligned with accredited laboratory testing standards.",
+                "Approved vendors must provide documentation aligned with accredited lab evidence standards.",
             points: [
                 "Documentation-backed accountability",
                 "Stronger transparency",
@@ -90,7 +90,7 @@ const VendorQualification = () => {
             desc: "Review of NPOP and USDA/EU Organic certification documentation.",
         },
         {
-            title: "Lab Documentation Review",
+            title: "Accredited Lab Evidence Review",
             desc: "Evaluation of accredited laboratory evidence and documentation.",
         },
         {
@@ -319,7 +319,7 @@ const VendorQualification = () => {
                         {[
                             "Valid NPOP certification",
                             "USDA Organic OR EU Organic certification",
-                            "Accredited lab evidence & reports",
+                            "Accredited Lab Evidence & Documentation",
                             "Product documentation",
                             "Traceable sourcing records",
                             "Food-grade packaging compliance",
