@@ -166,24 +166,38 @@ const Shop = () => {
         </div>
       </section>
 
-      {/* ── ELITE MARKETPLACE HIGHLIGHT ── */}
-      <section className="relative overflow-hidden py-6 md:py-8" style={{ background: 'linear-gradient(135deg, #1a3c2a 0%, #0d2818 40%, #1a3c2a 100%)' }}>
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(212,175,55,0.3) 50%, transparent 60%, transparent 100%)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer-shop 3s linear infinite',
-        }} />
-        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-        <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
-          <div className="flex flex-col items-center justify-center gap-3">
-            <span className="flex items-center gap-2 text-accent text-xs md:text-sm font-bold uppercase tracking-[0.25em] bg-accent/10 border border-accent/30 px-4 py-1.5 rounded-full">
-              <Sparkles size={14} className="animate-pulse" />
+      {/* ── ELITE MARKETPLACE HIGHLIGHT (NARROW STRIP) ── */}
+      <section
+        className="relative overflow-hidden py-3 sm:py-3.5 md:py-4"
+        style={{ background: 'linear-gradient(135deg, #0F3D2E 0%, #08281E 50%, #0F3D2E 100%)' }}
+      >
+        <div
+          className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(201,162,77,0.25) 50%, transparent 60%, transparent 100%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer-shop 4s linear infinite',
+          }}
+        />
+        {/* Subtle accent hair-line borders */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[1px]"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(201,162,77,0.45), transparent)' }}
+        />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[1px]"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(201,162,77,0.45), transparent)' }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <div className="flex flex-col items-center justify-center gap-1.5 sm:gap-2">
+            <span className="inline-flex items-center gap-1.5 text-accent text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] bg-accent/10 border border-accent/25 px-3 py-0.5 sm:py-1 rounded-full shadow-sm shrink-0">
+              <Sparkles size={11} className="text-accent shrink-0" />
               Elite Organic Platform
             </span>
-            <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl text-surface font-bold tracking-wide leading-snug">
+            <h2 className="font-heading text-base sm:text-lg md:text-xl lg:text-[1.35rem] text-surface font-normal tracking-wide leading-tight whitespace-normal md:whitespace-nowrap">
               An{" "}
-              <span className="text-accent" style={{ textShadow: '0 0 20px rgba(212,175,55,0.4)' }}>
+              <span className="text-accent italic font-medium" style={{ textShadow: '0 0 16px rgba(201,162,77,0.35)' }}>
                 Elite Organic Marketplace
               </span>{" "}
               for Globally Certified Products.
@@ -210,7 +224,7 @@ const Shop = () => {
       {/* ── PRODUCT LISTING SECTION ── */}
       <div
         id="product-grid"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 md:pt-10 pb-12 md:pb-16"
       >
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar / Filters */}
