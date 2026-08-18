@@ -104,7 +104,7 @@ const Shop = () => {
     <div className="w-full pt-20 bg-background min-h-screen">
 
       {/* ── HERO SECTION ── */}
-      <section className="relative min-h-[97vh] flex items-center justify-center overflow-hidden">
+      <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={BgImage1}
@@ -114,8 +114,8 @@ const Shop = () => {
           <div className="absolute inset-0 bg-primary/35 mix-blend-multiply" />
           <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-primary/40" />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 relative z-10">
-          <div className="text-center space-y-7 max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-10 sm:pt-10 sm:pb-12 md:pt-14 md:pb-14 lg:pt-16 lg:pb-16 relative z-10">
+          <div className="text-center space-y-5 sm:space-y-6 md:space-y-7 max-w-4xl mx-auto">
             <span className="inline-flex items-center gap-2 border border-accent/30 text-accent px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest bg-black/20">
               <Sparkles size={14} />
               Triple-Verified Organic Marketplace
@@ -128,7 +128,7 @@ const Shop = () => {
               SIRABA ORGANIC curates premium organic ingredients from vendors who meet internationally recognized certification and scientific documentation requirements.
             </p>
             {/* Trust Statement */}
-            <div className="inline-block bg-black/30 backdrop-blur border border-white/20 rounded-xl px-6 py-4 text-left">
+            <div className="inline-block bg-black/30 backdrop-blur border border-white/20 rounded-xl px-5 py-3.5 sm:px-6 sm:py-4 text-left">
               <p className="text-white/60 text-xs uppercase tracking-widest font-bold mb-3">
                 Every approved product on our platform must satisfy:
               </p>
@@ -140,22 +140,22 @@ const Shop = () => {
                 ))}
               </ul>
             </div>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-1 sm:pt-2">
               <a
                 href="#product-grid"
-                className="bg-accent text-primary font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto text-center"
+                className="bg-accent text-primary font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
               >
                 Explore Certified Products
               </a>
               <Link
                 to="/certifications"
-                className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full md:w-auto text-center"
+                className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
               >
                 View Certification Standards
               </Link>
             </div>
             {!loading && (
-              <p className="text-white/50 text-xs pt-2">
+              <p className="text-white/50 text-xs pt-1 sm:pt-2">
                 Showing <span className="font-bold text-accent">{products.length}</span> certified products
                 {filters.keyword && ` for "${filters.keyword}"`}
                 {filters.category && ` in ${filters.category}`}

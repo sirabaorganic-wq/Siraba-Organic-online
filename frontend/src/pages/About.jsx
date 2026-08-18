@@ -306,7 +306,7 @@ const About = () => {
                       Alongside his corporate career, Sandeep has developed diverse entrepreneurial interests. He is the Founder of <strong className="text-primary font-semibold">IVAN Integrated Solution – Finance &amp; Investment</strong> and Co-Founder of <strong className="text-primary font-semibold">Amrada Dairy Products</strong>, a Dehradun-based premium dairy business. These ventures have broadened his experience across investment, consumer businesses, sourcing, quality management and last-mile operations.
                     </p>
                     <p>
-                      As Co-Founder of SIRABA ORGANIC™, Sandeep brings his operational expertise to building a structured, transparent and scalable organic marketplace. His focus includes supply-chain architecture, vendor and producer coordination, SOP development, process controls, traceability, operational discipline and continuous improvement.
+                      As <strong className="text-primary font-semibold">Co-Founder of SIRABA ORGANIC™</strong>, Sandeep brings his operational expertise to building a structured, transparent and scalable organic marketplace. His focus includes supply-chain architecture, vendor and producer coordination, SOP development, process controls, traceability, operational discipline and continuous improvement.
                     </p>
                     <p>
                       With a hands-on and process-driven approach, Sandeep focuses on transforming strategy into reliable execution. He believes that trust in the organic ecosystem must be supported by strong processes, verifiable information, traceability and accountability.
