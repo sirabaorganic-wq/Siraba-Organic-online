@@ -114,9 +114,9 @@ const Shop = () => {
           <div className="absolute inset-0 bg-primary/35 mix-blend-multiply" />
           <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-primary/40" />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-10 sm:pt-10 sm:pb-12 md:pt-14 md:pb-14 lg:pt-16 lg:pb-16 relative z-10">
-          <div className="text-center space-y-5 sm:space-y-6 md:space-y-7 max-w-4xl mx-auto">
-            <span className="inline-flex items-center gap-2 border border-accent/30 text-accent px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest bg-black/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-6 sm:pt-6 sm:pb-7 md:pt-7 md:pb-8 lg:pt-8 lg:pb-8 relative z-10">
+          <div className="text-center space-y-3.5 sm:space-y-4 md:space-y-4.5 max-w-5xl mx-auto">
+            <span className="inline-flex items-center gap-2 border border-accent/30 text-accent px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-black/20">
               <Sparkles size={14} />
               Triple-Verified Organic Marketplace
             </span>
@@ -128,11 +128,11 @@ const Shop = () => {
               SIRABA ORGANIC curates premium organic ingredients from vendors who meet internationally recognized certification and scientific documentation requirements.
             </p>
             {/* Trust Statement */}
-            <div className="inline-block bg-black/30 backdrop-blur border border-white/20 rounded-xl px-5 py-3.5 sm:px-6 sm:py-4 text-left">
-              <p className="text-white/60 text-xs uppercase tracking-widest font-bold mb-3">
+            <div className="inline-block bg-black/30 backdrop-blur border border-white/20 rounded-xl px-5 py-2.5 sm:px-6 sm:py-3 text-left">
+              <p className="text-white/60 text-xs uppercase tracking-widest font-bold mb-2">
                 Every approved product on our platform must satisfy:
               </p>
-              <ul className="space-y-1.5">
+              <ul className="space-y-1">
                 {["Certified Organic Compliance", "Scientific Evidence", "SIRABA Qualification"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-surface text-sm font-light">
                     <span className="text-accent font-bold">•</span> {item}
@@ -140,22 +140,22 @@ const Shop = () => {
                 ))}
               </ul>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-1 sm:pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-0.5 sm:pt-1">
               <a
                 href="#product-grid"
-                className="bg-accent text-primary font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
+                className="bg-accent text-primary font-bold text-sm tracking-widest uppercase px-7 py-3 sm:px-8 sm:py-3.5 hover:bg-surface transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
               >
                 Explore Certified Products
               </a>
               <Link
                 to="/certifications"
-                className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-8 py-4 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
+                className="bg-white/10 backdrop-blur text-surface border border-white/20 font-bold text-sm tracking-widest uppercase px-7 py-3 sm:px-8 sm:py-3.5 hover:bg-surface hover:text-primary transition-all duration-300 transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
               >
                 View Certification Standards
               </Link>
             </div>
             {!loading && (
-              <p className="text-white/50 text-xs pt-1 sm:pt-2">
+              <p className="text-white/50 text-xs pt-0.5">
                 Showing <span className="font-bold text-accent">{products.length}</span> certified products
                 {filters.keyword && ` for "${filters.keyword}"`}
                 {filters.category && ` in ${filters.category}`}
