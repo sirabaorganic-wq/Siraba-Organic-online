@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductContext";
@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useSocket } from "../context/SocketContext";
 import useProductCompliance from "../hooks/useProductCompliance";
+import client from "../api/client";
 
 import {
   ShoppingBag,
@@ -59,13 +60,22 @@ const ProductDetails = () => {
     error: complianceError,
   } = useProductCompliance(product?._id);
 
-  // Callback for when reviews are updated
-  const handleReviewUpdate = (data) => {
-    const updated = products.find((p) => p.slug === slug);
-    if (updated) {
-      setProduct(updated);
+  // Re-fetch the product from the real API so the UI immediately reflects
+  // the latest database state after any review mutation (submit / edit / delete).
+  // We never read from the stale in-memory ProductContext cache here.
+  const handleReviewUpdate = useCallback(async () => {
+    if (!product?._id) return;
+    try {
+      const { data } = await client.get(`/products/${product._id}`);
+      if (data) {
+        setProduct(data);
+      }
+    } catch (err) {
+      // Non-fatal: the page still shows the last known state.
+      // A hard refresh by the user will always fix it.
+      console.error("Failed to refresh product after review update:", err);
     }
-  };
+  }, [product?._id]);
 
   useEffect(() => {
     if (products.length > 0) {
@@ -274,30 +284,41 @@ const ProductDetails = () => {
                 </p>
               )}
 
-              {/* Customer Star Rating & Reviews */}
+              {/* Customer Star Rating & Reviews — derived exclusively from real database data */}
               <div className="flex items-center gap-3 pt-1">
-                <div className="flex items-center gap-1 text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={15}
-                      className={
-                        i < Math.floor(product.rating || 5)
-                          ? "fill-current"
-                          : "text-slate-300"
-                      }
-                    />
-                  ))}
-                  <span className="text-xs font-bold text-slate-800 ml-1">
-                    {product.rating || "4.9"}
-                  </span>
-                </div>
+                {product.numReviews > 0 ? (
+                  <div className="flex items-center gap-1 text-amber-500">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={15}
+                        className={
+                          i < Math.floor(product.rating)
+                            ? "fill-current"
+                            : "text-slate-300"
+                        }
+                      />
+                    ))}
+                    <span className="text-xs font-bold text-slate-800 ml-1">
+                      {Number(product.rating).toFixed(1)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-slate-300">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={15} />
+                    ))}
+                    <span className="text-xs font-medium text-slate-400 ml-1">
+                      No ratings yet
+                    </span>
+                  </div>
+                )}
                 <span className="text-xs text-slate-400">•</span>
                 <button
                   onClick={() => setActiveTab("reviews")}
                   className="text-xs text-emerald-800 font-medium hover:underline cursor-pointer"
                 >
-                  {product.numReviews || 0} Customer Reviews
+                  {product.numReviews || 0} Customer {product.numReviews === 1 ? "Review" : "Reviews"}
                 </button>
               </div>
             </div>

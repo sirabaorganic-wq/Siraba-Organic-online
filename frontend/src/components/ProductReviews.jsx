@@ -19,6 +19,8 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [editingReviewId, setEditingReviewId] = useState(null);
+    // Tracks whether the parent product data is still being loaded
+    const [reviewsError, setReviewsError] = useState(null);
 
     // Check if user can review this product
     useEffect(() => {
@@ -82,9 +84,9 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
                 setReviewRating(5);
             }
 
-            // Update parent component
+            // Re-fetch product from the database so the UI reflects the real state
             if (onReviewUpdate) {
-                onReviewUpdate(response.data);
+                await onReviewUpdate();
             }
 
             // Refresh eligibility
@@ -112,13 +114,14 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
             setReviewRating(5);
             setEditingReviewId(null);
 
+            // Re-fetch product from the database so the UI reflects the real state
+            if (onReviewUpdate) {
+                await onReviewUpdate();
+            }
+
             // Refresh eligibility
             const { data: newEligibility } = await client.get(`/products/${product._id}/can-review`);
             setEligibility(newEligibility);
-
-            if (onReviewUpdate) {
-                onReviewUpdate({ deleted: true });
-            }
         } catch (error) {
             setErrorMessage(error.response?.data?.message || 'Failed to delete review');
         }
@@ -165,17 +168,31 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
 
     return (
         <div className="space-y-8">
-            {/* Reviews Statistics */}
+            {/* Reviews Statistics — all values from real database records only */}
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-6 rounded-lg border border-primary/10">
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                     <div className="text-center">
-                        <div className="text-5xl font-bold text-primary mb-2">
-                            {product.rating ? product.rating.toFixed(1) : '0.0'}
-                        </div>
-                        <StarRating rating={Math.round(product.rating || 0)} />
-                        <div className="text-sm text-text-secondary mt-2">
-                            {product.numReviews || 0} {product.numReviews === 1 ? 'Review' : 'Reviews'}
-                        </div>
+                        {product.numReviews > 0 ? (
+                            <>
+                                <div className="text-5xl font-bold text-primary mb-2">
+                                    {Number(product.rating).toFixed(1)}
+                                </div>
+                                <StarRating rating={Math.round(product.rating)} />
+                                <div className="text-sm text-text-secondary mt-2">
+                                    {product.numReviews} {product.numReviews === 1 ? 'Review' : 'Reviews'}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="text-lg font-semibold text-text-secondary mb-2">
+                                    No ratings yet
+                                </div>
+                                <StarRating rating={0} />
+                                <div className="text-sm text-text-secondary mt-2">
+                                    0 Reviews
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Rating Distribution */}
@@ -349,9 +366,14 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-primary">{review.name}</span>
-                                                    <VerifiedBadge />
-                                                </div>
+                                            <span className="font-bold text-primary">{review.name}</span>
+                                            {/* Only display Verified Purchase badge when the
+                                                database record explicitly marks this review as
+                                                verified. Never assume or fake this badge. */}
+                                            {review.verifiedPurchase === true && (
+                                                <VerifiedBadge deliveredAt={review.deliveredAt} />
+                                            )}
+                                        </div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <StarRating rating={review.rating} size={14} />
                                                     <span className="text-xs text-text-secondary">
@@ -393,9 +415,11 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
                 ) : (
                     <div className="bg-surface border border-secondary/10 rounded-lg p-12 text-center">
                         <Star size={48} className="mx-auto text-gray-300 mb-4" />
-                        <p className="text-text-secondary text-lg mb-2">No reviews yet</p>
+                        <p className="text-text-secondary text-lg font-semibold mb-2">
+                            No Customer Reviews Yet
+                        </p>
                         <p className="text-text-secondary text-sm">
-                            Be the first to review this product!
+                            Be the first customer to share your experience.
                         </p>
                     </div>
                 )}
