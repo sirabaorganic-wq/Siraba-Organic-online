@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import BgImage1 from "../assets/bgimage1.png";
 import FounderImage from "../assets/founderimage.png";
-import CoFounderImage from "../assets/co-founderimage.jpeg";
+import CoFounderImage from "../assets/co-founderimage.png";
 import SaffronImage from "../assets/saffron_jar.png";
 import HingImage from "../assets/hing_jar_s.png";
 import { Sparkles as SparklesIcon } from "lucide-react";
@@ -157,7 +157,7 @@ const About = () => {
             {/* 1. RAJESH THAKUR — Founder & CEO */}
             <div className="bg-background border border-secondary/15 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-accent/10 rounded-bl-full pointer-events-none" />
-              
+
               <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
                 {/* Photo Column */}
                 <div className="w-full lg:w-4/12 flex flex-col items-center sm:items-start text-center sm:text-left space-y-4 flex-shrink-0">
@@ -171,7 +171,7 @@ const About = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="w-full space-y-1.5 pt-2">
                     <span className="inline-block px-3.5 py-1 bg-accent/15 text-primary border border-accent/30 rounded-full text-xs font-bold uppercase tracking-wider">
                       Founder &amp; CEO
@@ -250,7 +250,7 @@ const About = () => {
             {/* 2. SANDEEP UNIYAL — Co-Founder */}
             <div className="bg-background border border-secondary/15 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-bl-full pointer-events-none" />
-              
+
               <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
                 {/* Photo Column */}
                 <div className="w-full lg:w-4/12 flex flex-col items-center sm:items-start text-center sm:text-left space-y-4 flex-shrink-0">
@@ -264,7 +264,7 @@ const About = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="w-full space-y-1.5 pt-2">
                     <span className="inline-block px-3.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-bold uppercase tracking-wider">
                       Co-Founder
