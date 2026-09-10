@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, Search, Menu, X, User, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useCurrency } from '../context/CurrencyContext';
@@ -16,6 +16,8 @@ const Navbar = () => {
     const searchInputRef = useRef(null);
     const currencyRef = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
+    const isShopRoute = location.pathname === '/shop' || location.pathname.startsWith('/shop/');
 
     const { currency, setCurrency, availableCurrencies } = useCurrency();
     const { getCartCount } = useCart();
@@ -178,6 +180,18 @@ const Navbar = () => {
                                                 </div>
                                             </div>
                                         </div>
+                                    ) : item.label === 'Shop' ? (
+                                        <Link
+                                            key={item.label}
+                                            to={item.path}
+                                            className={`font-body text-[11px] xl:text-xs 2xl:text-sm uppercase tracking-wider xl:tracking-widest transition-all duration-300 whitespace-nowrap px-3.5 py-1.5 rounded-full border inline-flex items-center justify-center font-semibold ${
+                                                isShopRoute
+                                                    ? 'bg-accent text-primary border-accent shadow-sm shadow-accent/25 hover:brightness-105'
+                                                    : 'bg-accent/15 text-primary border-accent/40 hover:bg-accent hover:text-primary hover:border-accent hover:shadow-sm hover:-translate-y-0.5'
+                                            }`}
+                                        >
+                                            {item.label}
+                                        </Link>
                                     ) : (
                                         <Link
                                             key={item.label}
@@ -385,6 +399,26 @@ const Navbar = () => {
                                     </div>
                                 </div>
                             </div>
+                        ) : item.label === 'Shop' ? (
+                            <Link
+                                key={item.label}
+                                to={item.path}
+                                className={`px-3.5 py-2.5 text-base font-bold rounded-lg border transition-all flex items-center justify-between ${
+                                    isShopRoute
+                                        ? 'bg-accent text-primary border-accent shadow-sm'
+                                        : 'bg-accent/15 text-primary border-accent/40 hover:bg-accent hover:text-primary'
+                                }`}
+                                onClick={() => setIsOpen(false)}
+                            >
+                                <span className="uppercase tracking-wider text-sm">{item.label}</span>
+                                <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full ${
+                                    isShopRoute
+                                        ? 'bg-primary text-accent'
+                                        : 'bg-accent/20 text-primary'
+                                }`}>
+                                    Featured
+                                </span>
+                            </Link>
                         ) : (
                             <Link
                                 key={item.label}
