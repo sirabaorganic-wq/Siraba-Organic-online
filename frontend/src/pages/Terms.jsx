@@ -178,8 +178,26 @@ const Terms = () => {
           <Section title="14. Contact Information">
             <P>For any questions regarding these terms, please contact:</P>
             <div className="space-y-1">
-              <p><span className="font-medium">Email:</span> info@sirabaorganic.com</p>
-              <p><span className="font-medium">Phone:</span> +91-8586836660</p>
+              <p>
+                <span className="font-medium">Email:</span>{" "}
+                <a
+                  href="mailto:info@sirabaorganic.com"
+                  data-placement="Terms Page - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  info@sirabaorganic.com
+                </a>
+              </p>
+              <p>
+                <span className="font-medium">Phone:</span>{" "}
+                <a
+                  href="tel:+918586836660"
+                  data-placement="Terms Page - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  +91-8586836660
+                </a>
+              </p>
             </div>
           </Section>
 

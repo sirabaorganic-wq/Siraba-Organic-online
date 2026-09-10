@@ -126,7 +126,13 @@ const PrivacyPolicy = () => {
             ]} />
             <P>
               To make such requests, contact us at:{" "}
-              <span className="font-medium">info@sirabaorganic.com</span>
+              <a
+                href="mailto:info@sirabaorganic.com"
+                data-placement="Privacy Policy - Data Requests"
+                className="font-medium text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                info@sirabaorganic.com
+              </a>
             </P>
           </Section>
 
@@ -147,8 +153,26 @@ const PrivacyPolicy = () => {
           <Section title="11. Contact Information">
             <P>For privacy-related questions or concerns, please contact us:</P>
             <div className="space-y-1">
-              <p><span className="font-medium">Email:</span> info@sirabaorganic.com</p>
-              <p><span className="font-medium">Phone:</span> +91-8586836660</p>
+              <p>
+                <span className="font-medium">Email:</span>{" "}
+                <a
+                  href="mailto:info@sirabaorganic.com"
+                  data-placement="Privacy Policy - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  info@sirabaorganic.com
+                </a>
+              </p>
+              <p>
+                <span className="font-medium">Phone:</span>{" "}
+                <a
+                  href="tel:+918586836660"
+                  data-placement="Privacy Policy - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  +91-8586836660
+                </a>
+              </p>
             </div>
           </Section>
 

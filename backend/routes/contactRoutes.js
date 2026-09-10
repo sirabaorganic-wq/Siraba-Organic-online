@@ -8,13 +8,38 @@ const { protect, admin } = require('../middleware/authMiddleware');
 // @access  Public
 router.post('/', async (req, res) => {
     try {
-        const { firstName, lastName, email, subject, message } = req.body;
+        const {
+            firstName,
+            lastName,
+            email,
+            subject,
+            message,
+            utmSource,
+            utmMedium,
+            utmCampaign,
+            utmTerm,
+            utmContent,
+            referrer,
+            landingPage,
+            firstTouchSource,
+            lastTouchSource
+        } = req.body;
+
         const newSubmission = await ContactSubmission.create({
             firstName,
             lastName,
             email,
             subject,
-            message
+            message,
+            utmSource: utmSource || '',
+            utmMedium: utmMedium || '',
+            utmCampaign: utmCampaign || '',
+            utmTerm: utmTerm || '',
+            utmContent: utmContent || '',
+            referrer: referrer || '',
+            landingPage: landingPage || '',
+            firstTouchSource: firstTouchSource || '',
+            lastTouchSource: lastTouchSource || ''
         });
         res.status(201).json(newSubmission);
     } catch (error) {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Star, ShieldCheck, Store, Clock, Edit, Trash2, CheckCircle } from 'lucide-react';
 import client from '../api/client';
+import { trackFormSubmission } from '../utils/analytics';
 
 /**
  * ProductReviews Component
@@ -76,6 +77,14 @@ const ProductReviews = ({ product, onReviewUpdate }) => {
                     comment: reviewComment.trim(),
                 });
                 setSuccessMessage('Review submitted successfully! Thank you for your feedback.');
+                trackFormSubmission({
+                    formId: 'product_review_form',
+                    formName: 'Product Review Form',
+                    formType: 'product_review',
+                    additionalMetadata: {
+                        review_rating: reviewRating,
+                    }
+                });
             }
 
             // Reset form

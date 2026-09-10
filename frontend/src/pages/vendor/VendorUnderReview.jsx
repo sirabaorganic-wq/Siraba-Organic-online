@@ -141,7 +141,14 @@ const VendorUnderReview = () => {
             <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1">
-                  <Mail size={13} className="text-emerald-700" /> sirabaorganic@gmail.com
+                  <Mail size={13} className="text-emerald-700" />
+                  <a
+                    href="mailto:sirabaorganic@gmail.com"
+                    data-placement="Vendor Under Review - Support"
+                    className="hover:text-emerald-700 hover:underline focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                  >
+                    sirabaorganic@gmail.com
+                  </a>
                 </span>
               </div>
               <button

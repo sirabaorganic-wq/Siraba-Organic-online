@@ -116,6 +116,7 @@ const Footer = () => {
                   Contact Us
                 </Link>
               </li>
+
               <li>
                 <Link to="/shipping-policy" className="hover:text-accent transition-colors">
                   Shipping Policy
@@ -183,7 +184,25 @@ const Footer = () => {
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-xs text-white/60 font-light space-y-1 text-center md:text-left break-words max-w-full">
-            <p className="break-words leading-relaxed">© 2026 Siraba Organic. All rights reserved. | Business Name: Siraba Organic | GSTIN: 06ACMPT6127H1ZA | URN: UDYAM-HR-05-0179395 | IEC Code: ACMPT6127H</p>
+            <p className="break-words leading-relaxed">© 2026 Siraba Organic. All rights reserved. | Business Name: Siraba Organic | GSTIN: 06ACMPT6127H1ZA | URN: UDYAM-HR-05-0179395 | IEC Code: ACMPT6127H
+
+              <a
+                href="tel:+918586836660"
+                data-placement="Footer - Customer Support"
+                className="hover:text-accent transition-colors block"
+              >
+                +91-8586836660
+              </a>
+
+              <a
+                href="mailto:info@sirabaorganic.com"
+                data-placement="Footer - Customer Support"
+                className="hover:text-accent transition-colors block break-all"
+              >
+                info@sirabaorganic.com
+              </a>
+
+            </p>
           </div>
         </div>
       </div>

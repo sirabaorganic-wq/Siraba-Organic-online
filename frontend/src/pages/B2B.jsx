@@ -5,6 +5,7 @@ import BgImage1 from '../assets/bgimage1.png';
 import { useCurrency } from '../context/CurrencyContext';
 
 import client from '../api/client';
+import { trackFormSubmission, trackLead, getAttributionSnapshot } from '../utils/analytics';
 
 const B2B = () => {
     const { formatPrice } = useCurrency();
@@ -90,7 +91,51 @@ const B2B = () => {
 
     const submitForm = async (endpoint, data, resetFn) => {
         try {
-            await client.post(endpoint, data);
+            const attribution = getAttributionSnapshot();
+            await client.post(endpoint, {
+                ...data,
+                utmSource: attribution.last_touch_source,
+                utmMedium: attribution.last_touch_medium,
+                utmCampaign: attribution.last_touch_campaign,
+            });
+
+            // Track confirmed conversion (Strictly non-PII)
+            if (endpoint === '/inquiries') {
+                trackFormSubmission({
+                    formId: 'b2b_trade_inquiry',
+                    formName: 'B2B Trade Inquiry Form',
+                    formType: 'b2b_trade_inquiry',
+                    additionalMetadata: {
+                        destination_country: data.destination || '',
+                    },
+                });
+                trackLead({
+                    leadType: 'b2b_trade_inquiry',
+                    formId: 'b2b_trade_inquiry',
+                    formName: 'B2B Trade Inquiry Form',
+                    additionalMetadata: {
+                        destination_country: data.destination || '',
+                    },
+                });
+            } else if (endpoint === '/b2b/samples') {
+                trackFormSubmission({
+                    formId: 'b2b_sample_request',
+                    formName: 'B2B Sample Request Form',
+                    formType: 'b2b_sample_request',
+                    additionalMetadata: {
+                        sample_count: data.items?.length || 0,
+                    },
+                });
+                trackLead({
+                    leadType: 'b2b_sample_request',
+                    formId: 'b2b_sample_request',
+                    formName: 'B2B Sample Request Form',
+                    additionalMetadata: {
+                        sample_count: data.items?.length || 0,
+                    },
+                });
+            }
+
             alert('Request submitted successfully! Our team will review and contact you shortly.');
             resetFn();
         } catch (error) {

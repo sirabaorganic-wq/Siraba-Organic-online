@@ -73,7 +73,14 @@ const VendorRejected = () => {
                 If you believe this decision was made in error or if you have updated evidence (such as renewed organic certificates or FSSAI license), please contact our support team at:
               </p>
               <div className="flex items-center gap-2 font-bold text-emerald-800 text-xs pt-1">
-                <Mail size={14} /> sirabaorganic@gmail.com
+                <Mail size={14} />
+                <a
+                  href="mailto:sirabaorganic@gmail.com"
+                  data-placement="Vendor Rejected - Support"
+                  className="hover:underline focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                >
+                  sirabaorganic@gmail.com
+                </a>
               </div>
             </div>
 

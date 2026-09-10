@@ -62,10 +62,26 @@ import VendorTermsAndConditions from "./pages/vendor/VendorTermsAndConditions";
 import VendorFAQ from "./pages/vendor/VendorFAQ";
 import MarketplaceBadges from "./pages/MarketplaceBadges";
 import SirabaAssistant from "./components/SirabaAssistant";
+import { useEffect } from "react";
 import { SocketProvider } from "./context/SocketContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { ToastProvider } from "./components/Toast";
 import { ConfirmProvider } from "./components/ConfirmModal";
+import { trackPageView, initGlobalAnalyticsListeners } from "./utils/analytics";
+
+const RouteTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    initGlobalAnalyticsListeners();
+  }, []);
+
+  useEffect(() => {
+    trackPageView(location);
+  }, [location.pathname, location.search]);
+
+  return null;
+};
 
 const FooterWrapper = () => {
   const location = useLocation();
@@ -93,6 +109,7 @@ function App() {
                   <OrderProvider>
                     <CartProvider>
                       <Router>
+                        <RouteTracker />
                         <div className="flex flex-col min-h-screen font-body text-text-primary bg-background selection:bg-accent selection:text-primary">
                           <NavbarWrapper />
                           <main className="flex-grow">

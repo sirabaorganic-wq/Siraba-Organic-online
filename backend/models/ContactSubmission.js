@@ -12,7 +12,17 @@ const contactSubmissionSchema = new mongoose.Schema({
         default: 'New'
     },
     adminNotes: { type: String },
-    readAt: { type: Date }
+    readAt: { type: Date },
+    // Attribution Metadata (Non-PII marketing source tracking)
+    utmSource: { type: String, default: '' },
+    utmMedium: { type: String, default: '' },
+    utmCampaign: { type: String, default: '' },
+    utmTerm: { type: String, default: '' },
+    utmContent: { type: String, default: '' },
+    referrer: { type: String, default: '' },
+    landingPage: { type: String, default: '' },
+    firstTouchSource: { type: String, default: '' },
+    lastTouchSource: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('ContactSubmission', contactSubmissionSchema);

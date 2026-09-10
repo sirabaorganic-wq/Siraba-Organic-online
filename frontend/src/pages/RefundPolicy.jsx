@@ -121,8 +121,26 @@ const RefundPolicy = () => {
           <Section title="7. How to Request a Refund or Return">
             <P>To initiate a request, please contact us and include your order number, a description of the issue, and photos or videos if applicable:</P>
             <div className="space-y-1 mt-2">
-              <p><span className="font-medium">Email:</span> info@sirabaorganic.com</p>
-              <p><span className="font-medium">Phone:</span> +91-8586836660</p>
+              <p>
+                <span className="font-medium">Email:</span>{" "}
+                <a
+                  href="mailto:info@sirabaorganic.com"
+                  data-placement="Refund Policy - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  info@sirabaorganic.com
+                </a>
+              </p>
+              <p>
+                <span className="font-medium">Phone:</span>{" "}
+                <a
+                  href="tel:+918586836660"
+                  data-placement="Refund Policy - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  +91-8586836660
+                </a>
+              </p>
             </div>
           </Section>
 

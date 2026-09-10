@@ -2863,6 +2863,40 @@ const AdminDashboard = () => {
                                   </a>
                                 </div>
                               </div>
+
+                              {(msg.utmSource || msg.utmMedium || msg.referrer || msg.firstTouchSource) && (
+                                <div className="border-t border-secondary/10 pt-3 mt-3">
+                                  <span className="block text-text-secondary uppercase font-bold text-[11px] mb-2">
+                                    Marketing Attribution
+                                  </span>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-secondary/5 p-3 rounded-sm">
+                                    <div>
+                                      <span className="text-text-secondary block text-[10px] uppercase">Traffic Source</span>
+                                      <span className="font-semibold text-primary">
+                                        {msg.utmSource || msg.lastTouchSource || 'direct'} / {msg.utmMedium || '(none)'}
+                                      </span>
+                                    </div>
+                                    {msg.utmCampaign && (
+                                      <div>
+                                        <span className="text-text-secondary block text-[10px] uppercase">Campaign</span>
+                                        <span className="font-medium text-primary">{msg.utmCampaign}</span>
+                                      </div>
+                                    )}
+                                    {msg.firstTouchSource && (
+                                      <div>
+                                        <span className="text-text-secondary block text-[10px] uppercase">First Touch</span>
+                                        <span className="font-medium text-primary">{msg.firstTouchSource}</span>
+                                      </div>
+                                    )}
+                                    {msg.referrer && (
+                                      <div className="truncate" title={msg.referrer}>
+                                        <span className="text-text-secondary block text-[10px] uppercase">Referrer</span>
+                                        <span className="font-medium text-primary truncate block">{msg.referrer}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>

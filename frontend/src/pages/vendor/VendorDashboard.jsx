@@ -237,7 +237,15 @@ const SupportContent = ({ vendor }) => {
               </h3>
             </div>
             <div>
-              <p className="font-medium text-primary">info@sirabaorganic.com</p>
+              <p className="font-medium text-primary">
+                <a
+                  href="mailto:info@sirabaorganic.com"
+                  data-placement="Vendor Dashboard - Support"
+                  className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  info@sirabaorganic.com
+                </a>
+              </p>
               <p className="text-sm text-text-secondary font-light">
                 Response time: 24 hours
               </p>
@@ -254,7 +262,15 @@ const SupportContent = ({ vendor }) => {
               </h3>
             </div>
             <div>
-              <p className="font-medium text-primary">+91 98765 43210</p>
+              <p className="font-medium text-primary">
+                <a
+                  href="tel:+918586836660"
+                  data-placement="Vendor Dashboard - Support"
+                  className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  +91-8586836660
+                </a>
+              </p>
               <p className="text-sm text-text-secondary font-light">
                 Mon-Fri, 9am - 6pm IST
               </p>

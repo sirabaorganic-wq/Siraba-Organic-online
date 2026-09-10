@@ -1531,7 +1531,15 @@ const Account = () => {
                                             </div>
                                             <div className="flex-1">
                                                 <p className="font-bold text-primary text-sm">Email Support</p>
-                                                <p className="text-text-secondary text-sm">info@sirabaorganic.com</p>
+                                                <p className="text-text-secondary text-sm">
+                                                    <a
+                                                        href="mailto:info@sirabaorganic.com"
+                                                        data-placement="Account Page - Support"
+                                                        className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                                                    >
+                                                        info@sirabaorganic.com
+                                                    </a>
+                                                </p>
                                                 <p className="text-xs text-text-secondary mt-1">Response time: 24 hours</p>
                                             </div>
                                         </div>
@@ -1541,7 +1549,15 @@ const Account = () => {
                                             </div>
                                             <div>
                                                 <h4 className="font-bold text-sm">Phone</h4>
-                                                <p className="text-text-secondary text-sm">+91 98765 43210</p>
+                                                <p className="text-text-secondary text-sm">
+                                                    <a
+                                                        href="tel:+918586836660"
+                                                        data-placement="Account Page - Support"
+                                                        className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                                                    >
+                                                        +91-8586836660
+                                                    </a>
+                                                </p>
                                                 <p className="text-xs text-text-secondary mt-1">Mon-Fri, 9am - 6pm IST</p>
                                             </div>
                                         </div>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, Building2 } from "lucide-react";
 import client from "../api/client";
 import BgImage1 from "../assets/bgimage1.png";
+import { trackFormSubmission, trackLead, getAttributionSnapshot } from "../utils/analytics";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +16,36 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await client.post("/contact", formData);
+      const attribution = getAttributionSnapshot();
+      await client.post("/contact", {
+        ...formData,
+        utmSource: attribution.last_touch_source,
+        utmMedium: attribution.last_touch_medium,
+        utmCampaign: attribution.last_touch_campaign,
+        utmTerm: attribution.last_touch_term,
+        utmContent: attribution.last_touch_content,
+        landingPage: attribution.landing_page,
+        firstTouchSource: attribution.first_touch_source,
+        lastTouchSource: attribution.last_touch_source,
+      });
+
+      // Confirmed conversion tracking (Strictly non-PII)
+      trackFormSubmission({
+        formId: "contact_form",
+        formName: "Contact Us Form",
+        formType: "contact",
+        formSubject: formData.subject,
+      });
+
+      trackLead({
+        leadType: "contact_inquiry",
+        formId: "contact_form",
+        formName: "Contact Us Form",
+        additionalMetadata: {
+          form_subject: formData.subject,
+        },
+      });
+
       alert("Thank you! Your message has been sent successfully.");
       setFormData({
         firstName: "",
@@ -89,8 +119,24 @@ const Contact = () => {
                   <p className="text-text-secondary font-light text-sm mb-1">
                     For orders, product enquiries, and shipping issues:
                   </p>
-                  <p className="text-text-secondary font-light">info@sirabaorganic.com</p>
-                  <p className="text-text-secondary font-light">+91-8586836660</p>
+                  <p className="text-text-secondary font-light">
+                    <a
+                      href="mailto:info@sirabaorganic.com"
+                      data-placement="Contact Page - Customer Support"
+                      className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                      info@sirabaorganic.com
+                    </a>
+                  </p>
+                  <p className="text-text-secondary font-light">
+                    <a
+                      href="tel:+918586836660"
+                      data-placement="Contact Page - Customer Support"
+                      className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                      +91-8586836660
+                    </a>
+                  </p>
                 </div>
               </div>
 
@@ -123,7 +169,15 @@ const Contact = () => {
                   <p className="text-text-secondary font-light text-sm mb-1">
                     For feedback or non-urgent queries:
                   </p>
-                  <p className="text-text-secondary font-light">sirabaorganic@gmail.com</p>
+                  <p className="text-text-secondary font-light">
+                    <a
+                      href="mailto:sirabaorganic@gmail.com"
+                      data-placement="Contact Page - General Suggestions"
+                      className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                      sirabaorganic@gmail.com
+                    </a>
+                  </p>
                 </div>
               </div>
 
@@ -139,7 +193,15 @@ const Contact = () => {
                   <p className="text-text-secondary font-light text-sm mb-1">
                     For bulk orders or distributor partnerships:
                   </p>
-                  <p className="text-text-secondary font-light">info@sirabaorganic.com</p>
+                  <p className="text-text-secondary font-light">
+                    <a
+                      href="mailto:info@sirabaorganic.com"
+                      data-placement="Contact Page - Wholesale Enquiries"
+                      className="hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                      info@sirabaorganic.com
+                    </a>
+                  </p>
                   <p className="text-text-secondary font-light text-sm mt-1">
                     Subject Line: <span className="font-medium">Bulk Enquiry</span>
                   </p>
@@ -156,7 +218,14 @@ const Contact = () => {
                   NPOP India Organic) may apply for listing.
                 </p>
                 <p className="text-text-secondary text-sm font-light">
-                  Email: <span className="font-medium">info@sirabaorganic.com</span>
+                  Email:{" "}
+                  <a
+                    href="mailto:info@sirabaorganic.com"
+                    data-placement="Contact Page - Vendor Enquiries"
+                    className="font-medium text-primary hover:text-accent transition-colors underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                  >
+                    info@sirabaorganic.com
+                  </a>
                 </p>
                 <p className="text-text-secondary text-sm font-light">
                   Subject Line: <span className="font-medium">Vendor Application</span>

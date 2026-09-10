@@ -109,8 +109,14 @@ const ShippingPolicy = () => {
             <P>
               If your order arrives damaged or with missing items, you must notify us within
               <span className="font-medium"> 48 hours of delivery</span>. Please email{" "}
-              <span className="font-medium">info@sirabaorganic.com</span> with your order
-              number and photos or videos of the issue. Claims made after this period may
+              <a
+                href="mailto:info@sirabaorganic.com"
+                data-placement="Shipping Policy - Damaged Items"
+                className="font-medium text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                info@sirabaorganic.com
+              </a>{" "}
+              with your order number and photos or videos of the issue. Claims made after this period may
               not be eligible for resolution.
             </P>
           </Section>
@@ -128,8 +134,26 @@ const ShippingPolicy = () => {
           <Section title="11. Contact for Shipping Enquiries">
             <P>For shipping-related questions, please contact:</P>
             <div className="space-y-1">
-              <p><span className="font-medium">Email:</span> info@sirabaorganic.com</p>
-              <p><span className="font-medium">Phone:</span> +91-8586836660</p>
+              <p>
+                <span className="font-medium">Email:</span>{" "}
+                <a
+                  href="mailto:info@sirabaorganic.com"
+                  data-placement="Shipping Policy - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  info@sirabaorganic.com
+                </a>
+              </p>
+              <p>
+                <span className="font-medium">Phone:</span>{" "}
+                <a
+                  href="tel:+918586836660"
+                  data-placement="Shipping Policy - Contact Info"
+                  className="text-accent hover:underline focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  +91-8586836660
+                </a>
+              </p>
             </div>
           </Section>
 
