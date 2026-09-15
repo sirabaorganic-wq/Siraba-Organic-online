@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock } from 'lucide-react';
 import client from '../api/client';
 import OTPModal from '../components/OTPModal';
+import SEO from '../components/SEO';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -61,6 +62,7 @@ const Login = () => {
 
     return (
         <div className="min-h-screen pt-24 bg-background flex items-center justify-center">
+            <SEO title={isRegistering ? "Create Account | Siraba Organic" : "Sign In | Siraba Organic"} noindex={true} />
             <div className="bg-surface p-8 max-w-sm w-full rounded-sm shadow-lg border border-secondary/10">
                 <div className="flex justify-center mb-6 text-primary">
                     {isRegistering ? <User size={48} /> : <Lock size={48} />}

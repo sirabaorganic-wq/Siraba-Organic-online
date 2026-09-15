@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, Home, Truck, Package, MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import SEO from '../components/SEO';
 
 const OrderSuccess = () => {
     const { formatPrice } = useCurrency();
@@ -21,6 +22,7 @@ const OrderSuccess = () => {
 
     return (
         <div className="min-h-screen bg-background pt-28 pb-16 flex items-center justify-center">
+            <SEO title="Order Success | Siraba Organic" noindex={true} />
             <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Success Animation & Header */}

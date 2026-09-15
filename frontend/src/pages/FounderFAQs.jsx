@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import SEO, { buildFaqSchema, getBreadcrumbSchema } from "../components/SEO";
 
-const faqs = [
+export const faqs = [
   {
     q: "Who is the founder of Siraba Organic?",
     a: `SIRABA ORGANIC was founded by Rajesh Kumar Thakur with the vision of building India’s Triple-Verified Organic Marketplace centered around trust, certification credibility, scientific documentation, and premium organic ecosystem standards.
@@ -97,6 +98,18 @@ const FounderFAQs = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Founder &amp; Branding FAQs | Siraba Organic"
+        description="Learn more about founder Rajesh Kumar Thakur's vision, philosophy, and brand identity behind SIRABA ORGANIC."
+        canonicalUrl="/founder-faqs"
+        schema={[
+          buildFaqSchema("/founder-faqs", faqs),
+          getBreadcrumbSchema([
+            { name: "Home", url: "/" },
+            { name: "Founder FAQs", url: "/founder-faqs" },
+          ]),
+        ]}
+      />
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
 
         {/* Header */}

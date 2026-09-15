@@ -1,0 +1,18 @@
+# SIRABA ORGANIC - robots.txt
+
+User-agent: *
+Allow: /
+
+# OpenAI search crawler
+User-agent: OAI-SearchBot
+Allow: /
+
+# OpenAI training crawler
+User-agent: GPTBot
+Allow: /
+
+# ChatGPT user-requested browsing
+User-agent: ChatGPT-User
+Allow: /
+
+Sitemap: https://www.sirabaorganic.com/sitemap.xml

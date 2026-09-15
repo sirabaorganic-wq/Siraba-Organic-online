@@ -6,6 +6,7 @@ import { useOrders } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
@@ -96,6 +97,7 @@ const Cart = () => {
     if (cartItems.length === 0) {
         return (
             <div className="min-h-screen bg-background pt-32 pb-16 px-4 flex flex-col items-center justify-center text-center">
+                <SEO title="Cart | Siraba Organic" noindex={true} />
                 <div className="w-24 h-24 bg-secondary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-fade-in-up">
                     <ShoppingBag size={48} />
                 </div>
@@ -116,6 +118,7 @@ const Cart = () => {
 
     return (
         <div className="min-h-screen bg-background pt-32 pb-16">
+            <SEO title="Cart | Siraba Organic" noindex={true} />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="font-heading text-4xl font-bold text-primary mb-12 text-center md:text-left border-b border-secondary/10 pb-6">
                     Shopping Cart

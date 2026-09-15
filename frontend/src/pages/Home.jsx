@@ -7,6 +7,7 @@ import AsafoetidaImg from "../assets/hing_jar_s.png";
 import BgImage2 from "../assets/bgimage2.png";
 import BgImage1 from "../assets/bgimage1.png"; // Fallback or extra usage
 import TextMarquee from "../components/TextMarquee";
+import SEO, { getHomepageSchema } from "../components/SEO";
 
 const Home = () => {
   const { homeContent, products } = useProducts();
@@ -25,6 +26,12 @@ const Home = () => {
 
   return (
     <div className="w-full pt-20">
+      <SEO
+        title="SIRABA ORGANIC™ | India's Triple-Verified Organic Marketplace™"
+        description="SIRABA ORGANIC™ is India's Triple-Verified Organic Marketplace™ built around international organic certifications, scientific laboratory evidence, batch traceability, and curated vendor qualification."
+        canonicalUrl="/"
+        schema={getHomepageSchema()}
+      />
 
       {/* ── HERO SECTION ── */}
       <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">

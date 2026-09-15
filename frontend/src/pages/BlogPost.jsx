@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import client from '../api/client';
 import parse from 'html-react-parser';
 import { Clock, Calendar, ChevronLeft, Share2, Tag } from 'lucide-react';
+import SEO, { getBlogPostingSchema, getBreadcrumbSchema } from '../components/SEO';
 
 const BlogPost = () => {
     const { slug } = useParams();
@@ -27,6 +28,7 @@ const BlogPost = () => {
 
     if (!blog) return (
         <div className="w-full h-screen flex flex-col items-center justify-center space-y-4 pt-20">
+            <SEO title="Blog Post Not Found | Siraba Organic" noindex={true} />
             <h2 className="text-2xl font-bold text-primary">Blog Post Not Found</h2>
             <Link to="/blog" className="text-accent underline">Return to Knowledge Hub</Link>
         </div>
@@ -34,6 +36,21 @@ const BlogPost = () => {
 
     return (
         <div className="w-full pt-28 pb-20 bg-background min-h-screen">
+            <SEO
+                title={blog.title}
+                description={blog.excerpt || blog.title}
+                canonicalUrl={`/blog/${blog.slug}`}
+                ogType="article"
+                ogImage={blog.image}
+                schema={[
+                    getBlogPostingSchema(blog),
+                    getBreadcrumbSchema([
+                        { name: "Home", url: "/" },
+                        { name: "Knowledge Hub", url: "/blog" },
+                        { name: blog.title, url: `/blog/${blog.slug}` },
+                    ]),
+                ]}
+            />
             <div className="max-w-4xl mx-auto px-6 md:px-8">
 
                 {/* Breadcrumb */}

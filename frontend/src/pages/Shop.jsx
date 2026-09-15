@@ -18,6 +18,7 @@ import { useProducts } from "../context/ProductContext";
 import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import BgImage1 from "../assets/bgimage1.png";
+import SEO, { getShopPageSchema } from "../components/SEO";
 
 const Shop = () => {
   const { addToCart } = useCart();
@@ -102,6 +103,12 @@ const Shop = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Shop Certified Organic Products | Siraba Organic"
+        description="Discover authenticated organic spices, wellness powders, pure honey, and supplements curated under international certification standards."
+        canonicalUrl="/shop"
+        schema={getShopPageSchema(products)}
+      />
 
       {/* ── HERO SECTION ── */}
       <section className="relative overflow-hidden">

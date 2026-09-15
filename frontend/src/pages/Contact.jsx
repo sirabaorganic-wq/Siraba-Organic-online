@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, Building2 } from "lucide-react";
 import client from "../api/client";
 import BgImage1 from "../assets/bgimage1.png";
-import { trackFormSubmission, trackLead, getAttributionSnapshot } from "../utils/analytics";
+import { getAttributionSnapshot } from "../utils/analytics";
+import SEO, { getContactPageSchema } from "../components/SEO";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -17,8 +18,11 @@ const Contact = () => {
     e.preventDefault();
     try {
       const attribution = getAttributionSnapshot();
-      await client.post("/contact", {
+      const response = await client.post("/contact", {
         ...formData,
+        source: attribution.utm_source || "direct",
+        medium: attribution.utm_medium || "none",
+        campaign: attribution.utm_campaign || "none",
         utmSource: attribution.last_touch_source,
         utmMedium: attribution.last_touch_medium,
         utmCampaign: attribution.last_touch_campaign,
@@ -29,34 +33,26 @@ const Contact = () => {
         lastTouchSource: attribution.last_touch_source,
       });
 
-      // Confirmed conversion tracking (Strictly non-PII)
-      trackFormSubmission({
-        formId: "contact_form",
-        formName: "Contact Us Form",
-        formType: "contact",
-        formSubject: formData.subject,
-      });
+      if (response && (response.status === 200 || response.status === 201 || response.data)) {
+        // Confirmed backend success conversion tracking
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "contact_form_success",
+          form_name: "contact_form",
+        });
 
-      trackLead({
-        leadType: "contact_inquiry",
-        formId: "contact_form",
-        formName: "Contact Us Form",
-        additionalMetadata: {
-          form_subject: formData.subject,
-        },
-      });
-
-      alert("Thank you! Your message has been sent successfully.");
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        subject: "General Inquiry",
-        message: "",
-      });
+        alert("Thank you! Your message has been sent successfully.");
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          subject: "General Inquiry",
+          message: "",
+        });
+      }
     } catch (error) {
-      console.error(error);
-      alert("Failed to send message. Please try again.");
+      console.error("Error submitting contact form:", error);
+      alert("Failed to send your message. Please try again later.");
     }
   };
 
@@ -66,6 +62,12 @@ const Contact = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Contact Us | Siraba Organic"
+        description="Get in touch with Siraba Organic for customer support, wholesale and B2B inquiries, or certified vendor onboarding."
+        canonicalUrl="/contact"
+        schema={getContactPageSchema()}
+      />
       {/* Header */}
       <div className="relative h-64 md:h-80 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">

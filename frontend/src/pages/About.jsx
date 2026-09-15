@@ -15,6 +15,7 @@ import CoFounderImage from "../assets/co-founderimage.png";
 import SaffronImage from "../assets/saffron_jar.png";
 import HingImage from "../assets/hing_jar_s.png";
 import { Sparkles as SparklesIcon } from "lucide-react";
+import SEO, { getOrganizationSchema, getBreadcrumbSchema } from "../components/SEO";
 
 const About = () => {
   useEffect(() => {
@@ -23,6 +24,18 @@ const About = () => {
 
   return (
     <div className="w-full bg-background text-primary selection:bg-accent selection:text-white">
+      <SEO
+        title="About Us &amp; Our Story | Siraba Organic"
+        description="Learn about Siraba Organic's mission to build India's Triple-Verified Organic Marketplace based on international certification standards and radical transparency."
+        canonicalUrl="/about"
+        schema={[
+          getOrganizationSchema(),
+          getBreadcrumbSchema([
+            { name: "Home", url: "/" },
+            { name: "About Us", url: "/about" },
+          ]),
+        ]}
+      />
       {/* Parallax Hero Section */}
       <div className="relative h-[80vh] flex items-center justify-center overflow-hidden">
         <div

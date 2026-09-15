@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-static-seo.js",
+    "build:local": "vite build && node scripts/generate-static-seo.js --local",
+    "generate:seo": "node scripts/generate-static-seo.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

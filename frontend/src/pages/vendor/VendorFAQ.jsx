@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Mail, ArrowRight } from "lucide-react";
+import SEO, { buildFaqSchema, buildBreadcrumbSchema } from "../../components/SEO";
 
-const faqs = [
+export const faqs = [
   {
     q: "What is the Siraba Organic Vendor Program?",
     a: "The SIRABA ORGANIC Vendor Program is a qualification-based onboarding ecosystem designed for vendors who meet internationally aligned organic certification and documentation standards. Unlike open marketplaces, SIRABA ORGANIC follows a selective approval framework built around certification, scientific documentation, traceability, and compliance-focused marketplace governance.",
@@ -174,6 +174,15 @@ const VendorFAQ = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Vendor FAQ | Siraba Organic"
+        description="Frequently asked questions for organic vendors seeking onboarding and qualification on SIRABA ORGANIC."
+        canonicalUrl="/vendor-faq"
+        schema={[
+          buildFaqSchema("https://www.sirabaorganic.com/vendor-faq", faqs),
+          buildBreadcrumbSchema("/vendor-faq"),
+        ]}
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

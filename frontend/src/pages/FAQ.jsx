@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import SEO, { buildFaqSchema, buildBreadcrumbSchema } from "../components/SEO";
 
-const faqs = [
+export const faqs = [
   {
     q: "What is Siraba Organic?",
     a: "SIRABA ORGANIC is India’s Triple-Verified Organic Marketplace built around internationally recognized certification standards, scientific documentation, and selective vendor qualification systems.",
@@ -48,86 +49,6 @@ const faqs = [
   {
     q: "How can businesses source products from Siraba Organic?",
     a: "Businesses may contact SIRABA ORGANIC for B2B sourcing, bulk procurement, premium organic ingredient partnerships, and qualification-aligned sourcing discussions.",
-  },
-  {
-    q: "How can I become a vendor on Siraba Organic?",
-    a: "Interested vendors may apply through the Vendor Qualification section on the official SIRABA ORGANIC website by submitting business information, certification records, product details, and qualification-related documentation.",
-  },
-  {
-    q: "How can customers contact Siraba Organic?",
-    a: "Customers may connect through the official Contact page, website inquiry forms, or marketplace communication channels available on the SIRABA ORGANIC platform.",
-  },
-  {
-    q: "Why are organic products sometimes more expensive?",
-    a: "Certified organic products may involve regulated cultivation standards, certification costs, documentation systems, traceability requirements, premium sourcing processes, and compliance-focused operations.",
-  },
-  {
-    q: "How can I verify that a product is truly organic?",
-    a: "Consumers should review certification details, product documentation, labeling standards, traceability information, and marketplace qualification systems.",
-  },
-  {
-    q: "How does Siraba Organic ensure product traceability?",
-    a: "SIRABA ORGANIC promotes traceability-oriented marketplace standards through vendor qualification systems, documentation review, certification validation, and sourcing transparency requirements.",
-  },
-  {
-    q: "Are Siraba Organic products safe for daily consumption?",
-    a: "Products listed on SIRABA ORGANIC are sourced through a qualification-led marketplace ecosystem built around internationally aligned certification standards, documentation-focused sourcing systems, and compliance-oriented vendor onboarding.",
-  },
-  {
-    q: "How are products packaged for delivery?",
-    a: "Packaging systems may vary depending on vendor operations, product category, logistics requirements, and food-grade packaging standards.",
-  },
-  {
-    q: "How long do organic spices stay fresh?",
-    a: "Shelf life may vary depending on storage conditions, packaging quality, spice type, and environmental exposure.",
-  },
-  {
-    q: "Can I return products if there is a quality issue?",
-    a: "Return, replacement, or quality-related support may depend on marketplace policies, vendor terms, and order-specific review processes.",
-  },
-  {
-    q: "Do organic spices taste different from regular spices?",
-    a: "Many consumers associate premium organic spices with stronger aroma, richer flavor, and improved ingredient integrity.",
-  },
-  {
-    q: "Does Siraba Organic support sustainable farming practices?",
-    a: "SIRABA ORGANIC supports marketplace philosophies aligned with certification-led agriculture, traceability systems, compliance-focused sourcing, and internationally recognized organic standards.",
-  },
-  {
-    q: "Are Siraba Organic products free from artificial additives?",
-    a: "SIRABA ORGANIC focuses on premium organic products sourced from qualified vendors operating under certification-led and documentation-supported marketplace standards.",
-  },
-  {
-    q: "Can I buy products in bulk from Siraba Organic?",
-    a: "Bulk sourcing and B2B inquiries may be supported depending on product availability, vendor capability, logistics arrangements, and operational requirements.",
-  },
-  {
-    q: "How often are products reviewed for quality?",
-    a: "Marketplace quality systems may involve documentation review, qualification reassessment, certification monitoring, and compliance-focused governance procedures where applicable.",
-  },
-  {
-    q: "What should I look for when buying saffron online?",
-    a: "Consumers should consider certification credibility, sourcing transparency, packaging quality, documentation support, vendor trust, and product authenticity indicators.",
-  },
-  {
-    q: "Can organic products lose certification?",
-    a: "Yes. Certification validity depends on ongoing compliance with applicable standards, inspections, documentation requirements, and certification body policies.",
-  },
-  {
-    q: "How can I stay updated about new products on Siraba Organic?",
-    a: "Customers may stay updated through the official website, marketplace announcements, future newsletter updates, blog content, and official communication channels.",
-  },
-  {
-    q: "What makes Siraba Organic different from other organic marketplaces?",
-    a: "SIRABA ORGANIC operates through a qualification-led ecosystem built around certification validation, scientific documentation, selective vendor onboarding, traceability-oriented governance, and internationally aligned organic standards.",
-  },
-  {
-    q: "Who founded Siraba Organic?",
-    a: "SIRABA ORGANIC was founded by Rajesh Thakur with the vision of building India’s Triple-Verified Organic Marketplace centered around certification credibility, scientific documentation, selective vendor qualification, and internationally aligned organic ecosystem standards.",
-  },
-  {
-    q: "What inspired the founder to start Siraba Organic?",
-    a: "SIRABA ORGANIC was developed around the vision of creating a more disciplined, trust-oriented, and qualification-focused organic marketplace ecosystem built on certification credibility, documentation standards, marketplace governance, and premium organic positioning.",
   },
 ];
 const FAQItem = ({ question, answer, index }) => {
@@ -185,6 +106,15 @@ const FAQ = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Frequently Asked Questions (FAQ) | Siraba Organic"
+        description="Find answers to common questions about Siraba Organic standards, organic certifications, lab evidence, vendor qualification, and shipping."
+        canonicalUrl="/faq"
+        schema={[
+          buildFaqSchema("https://www.sirabaorganic.com/faq", faqs),
+          buildBreadcrumbSchema("/faq"),
+        ]}
+      />
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         {/* Header */}
         <div className="mb-12">

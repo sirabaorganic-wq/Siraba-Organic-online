@@ -3,8 +3,10 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
   useLocation,
 } from "react-router-dom";
+import SEO from "./components/SEO";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -314,12 +316,21 @@ function App() {
                                 }
                               />
 
+                              {/* Legacy Redirect Fallback */}
+                              <Route
+                                path="/certification.html"
+                                element={<Navigate to="/certifications" replace />}
+                              />
+
                               {/* 404 Route */}
                               <Route
                                 path="*"
                                 element={
-                                  <div className="pt-32 text-center h-screen flex items-center justify-center text-xl font-heading text-primary">
-                                    404 - Page Not Found
+                                  <div className="pt-32 text-center h-screen flex flex-col items-center justify-center text-xl font-heading text-primary">
+                                    <SEO title="404 - Page Not Found | Siraba Organic" noindex={true} />
+                                    <h1 className="text-4xl font-bold mb-4">404</h1>
+                                    <p className="text-lg text-slate-600 font-sans mb-6">Page Not Found</p>
+                                    <a href="/" className="text-sm font-sans underline text-[#0F3D2E]">Return to Homepage</a>
                                   </div>
                                 }
                               />

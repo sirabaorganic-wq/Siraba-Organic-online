@@ -23,6 +23,7 @@ import MarketplaceApprovedImg from "../assets/marketplace_approvedbadge.png";
 import InternationalImg      from "../assets/international_badge.png";
 import Footer               from "../components/Footer";
 import Navbar               from "../components/Navbar";
+import SEO, { getVendorBadgesPageSchema } from "../components/SEO";
 
 // ── Watermark ────────────────────────────────────────────────────────────────
 const WatermarkBg = () => (
@@ -175,6 +176,12 @@ const MarketplaceBadges = () => {
 
   return (
     <div className="w-full bg-background min-h-screen relative overflow-x-hidden">
+      <SEO
+        title="Vendor Badges | SIRABA ORGANIC"
+        description="Explore the verification and qualification badges awarded to approved organic vendors on SIRABA ORGANIC."
+        canonicalUrl="/vendor/badges"
+        schema={getVendorBadgesPageSchema()}
+      />
       <Navbar />
       <WatermarkBg />
 

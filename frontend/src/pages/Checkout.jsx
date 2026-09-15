@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import SEO from "../components/SEO";
 
 const Checkout = () => {
   const { user, updateProfile } = useAuth();
@@ -340,6 +341,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-background pt-28 pb-16">
+      <SEO title="Checkout | Siraba Organic" noindex={true} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link

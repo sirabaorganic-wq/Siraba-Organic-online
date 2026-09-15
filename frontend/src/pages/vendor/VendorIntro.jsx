@@ -9,6 +9,7 @@ import {
     Clock, Eye, FileText, Truck, Leaf, Camera, MessageCircle
 } from "lucide-react";
 import { useAuth } from '../../context/AuthContext';
+import SEO, { getVendorPageSchema } from '../../components/SEO';
 
 const VendorIntro = () => {
     const { user, login } = useAuth();
@@ -275,6 +276,12 @@ const VendorIntro = () => {
 
     return (
         <div className="min-h-screen bg-background">
+            <SEO
+                title="Sell on SIRABA ORGANIC | Vendor Program"
+                description="Vendor program for eligible organic businesses to apply, submit certification documents, complete product verification, list products and sell through SIRABA ORGANIC."
+                canonicalUrl="/vendor"
+                schema={getVendorPageSchema()}
+            />
             {/* Hero Section */}
             <section className="relative overflow-hidden py-32 md:py-40 bg-gradient-to-br from-primary via-primary to-secondary">
                 {/* Animated Background */}

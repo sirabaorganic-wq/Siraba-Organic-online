@@ -34,6 +34,7 @@ import ProductShare from "../components/ProductShare";
 import TrustVerificationTab from "../components/TrustVerificationTab";
 import TraceabilityTab from "../components/TraceabilityTab";
 import DynamicTrustCards from "../components/DynamicTrustCards";
+import SEO, { buildProductSchema } from "../components/SEO";
 
 const ProductDetails = () => {
   const { slug } = useParams();
@@ -189,6 +190,14 @@ const ProductDetails = () => {
 
   return (
     <div className="bg-[#FAFAF7] min-h-screen pt-24 pb-20 font-body text-slate-800">
+      <SEO
+        title={product.name}
+        description={product.description || product.fullDescription}
+        canonicalUrl={`/product/${product.slug}`}
+        ogType="product"
+        ogImage={product.image}
+        schema={buildProductSchema(product)}
+      />
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* Back Button & Breadcrumb Navigation Header */}

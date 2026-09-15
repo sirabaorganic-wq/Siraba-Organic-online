@@ -4,6 +4,7 @@ import client from '../api/client';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
+import SEO from '../components/SEO';
 
 const TrackOrder = () => {
     const [searchParams] = useSearchParams();
@@ -99,6 +100,7 @@ const TrackOrder = () => {
 
     return (
         <div className="min-h-screen bg-background pt-24 pb-12 px-4">
+            <SEO title="Track Order | Siraba Organic" noindex={true} />
             <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-12 animate-fade-in-up">
                     <h1 className="font-heading text-4xl font-bold text-primary mb-4">Track Your Order</h1>
