@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck } from 'lucide-react';
 import SEO from '../components/SEO';
 
 const Cart = () => {
@@ -21,6 +21,21 @@ const Cart = () => {
     const [isApplying, setIsApplying] = useState(false);
 
     const [availableCoupons, setAvailableCoupons] = useState([]);
+    const [shippingConfig, setShippingConfig] = useState({ freeShippingThreshold: 999 });
+
+    useEffect(() => {
+        const fetchShippingConfig = async () => {
+            try {
+                const { data } = await client.get('/shipping/config');
+                if (data && data.freeShippingThreshold) {
+                    setShippingConfig(data);
+                }
+            } catch (e) {
+                // Fallback 999
+            }
+        };
+        fetchShippingConfig();
+    }, []);
 
     useEffect(() => {
         const fetchCoupons = async () => {
@@ -113,8 +128,11 @@ const Cart = () => {
     }
 
     const currentTotal = getCartTotal();
-    const shippingPrice = 0; // TEMPORARILY 0 FOR TESTING
-    const finalTotal = Math.max(0, currentTotal - discount.amount) + shippingPrice;
+    const threshold = shippingConfig.freeShippingThreshold || 999;
+    const isFreeShipping = currentTotal >= threshold;
+    const amountToFree = Math.max(0, threshold - currentTotal);
+    const discountedSubtotal = Math.max(0, currentTotal - discount.amount);
+    const finalTotal = discountedSubtotal;
 
     return (
         <div className="min-h-screen bg-background pt-32 pb-16">
@@ -212,14 +230,38 @@ const Cart = () => {
                                     <span>Subtotal</span>
                                     <span className="text-primary font-bold">{formatPrice(currentTotal)}</span>
                                 </div>
+                                {discount.amount > 0 && (
+                                    <div className="flex justify-between text-green-600 font-medium">
+                                        <span>Discount ({discount.code})</span>
+                                        <span>-{formatPrice(discount.amount)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
-                                    <span>Shipping</span>
-                                    <span className="text-primary">{formatPrice(shippingPrice)}</span>
+                                    <span className="flex items-center gap-1"><Truck size={14} /> Shipping</span>
+                                    <span className={isFreeShipping ? "text-green-600 font-bold" : "text-text-secondary text-xs italic"}>
+                                        {isFreeShipping ? "FREE" : "Calculated at checkout"}
+                                    </span>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span>Tax (Included)</span>
-                                    <span className="text-primary">{formatPrice(currentTotal * 0.18)}</span>
-                                </div>
+
+                                {/* Free shipping incentive / progress */}
+                                {!isFreeShipping && amountToFree > 0 && (
+                                    <div className="bg-green-50 border border-green-200 rounded-sm p-3 my-2">
+                                        <p className="text-[11px] text-green-800 font-semibold flex items-center gap-1 mb-1.5">
+                                            <Truck size={12} /> Add {formatPrice(amountToFree)} more for FREE shipping!
+                                        </p>
+                                        <div className="w-full bg-green-200 rounded-full h-1.5">
+                                            <div
+                                                className="bg-green-600 h-1.5 rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.min(100, ((currentTotal / threshold) * 100))}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {isFreeShipping && (
+                                    <div className="bg-green-50 border border-green-200 rounded-sm p-2 text-xs text-green-800 font-medium flex items-center gap-1">
+                                        <span>🎉</span> You unlocked <strong>FREE Shipping</strong> (Order ₹{threshold}+)!
+                                    </div>
+                                )}
 
                                 {/* Discount Section */}
                                 {discount.amount > 0 && (
@@ -279,17 +321,30 @@ const Cart = () => {
                                 </div>
                             </div>
 
-                            <div className="border-t border-secondary/10 pt-6 mb-8">
-                                <div className="flex justify-between items-center mb-2">
+                            <div className="border-t border-secondary/10 pt-6 mb-8 space-y-3">
+                                <div className="flex justify-between items-center text-sm">
                                     <span className="text-text-secondary">Subtotal</span>
                                     <span className="font-bold text-primary">{formatPrice(currentTotal)}</span>
                                 </div>
-                                <div className="flex justify-between items-center mb-4">
+                                {discount.amount > 0 && (
+                                    <div className="flex justify-between items-center text-sm text-green-600 font-medium">
+                                        <span>Discount ({discount.code})</span>
+                                        <span>-{formatPrice(discount.amount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center text-sm">
                                     <span className="text-text-secondary">Shipping</span>
-                                    <span className="font-bold text-primary">{formatPrice(shippingPrice)}</span>
+                                    <span className={isFreeShipping ? "font-bold text-green-600" : "text-text-secondary text-xs italic"}>
+                                        {isFreeShipping ? "FREE" : "Calculated at checkout"}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center border-t border-secondary/10 pt-4">
-                                    <span className="font-heading text-xl font-bold text-primary">Total</span>
+                                    <div>
+                                        <span className="font-heading text-xl font-bold text-primary block">Total</span>
+                                        <span className="text-[10px] text-text-secondary">
+                                            + Applicable taxes & shipping calculated at checkout
+                                        </span>
+                                    </div>
                                     <span className="font-heading text-2xl font-bold text-accent">{formatPrice(finalTotal)}</span>
                                 </div>
                             </div>

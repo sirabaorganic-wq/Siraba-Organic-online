@@ -146,6 +146,8 @@ router.post('/register', registerLimiter, validateRegistration, async (req, res)
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone || '',
+                addresses: user.addresses || [],
                 isAdmin: user.isAdmin,
                 role: user.role,
                 cart: user.cart,
@@ -212,14 +214,49 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
+            phone: user.phone || '',
+            addresses: user.addresses || [],
             isAdmin: user.isAdmin,
             role: user.role,
             cart: user.cart,
+            claim_gst: user.claim_gst,
+            user_gst_number: user.user_gst_number,
             token: generateToken(user._id)
         });
     } catch (error) {
         console.error(error);
         securityLogger.logError(error, 'Login', null, ip);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+// @access  Private
+router.get('/profile', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-password');
+        if (user) {
+            res.json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone || '',
+                altPhone: user.altPhone || '',
+                dob: user.dob,
+                gender: user.gender,
+                addresses: user.addresses || [],
+                isAdmin: user.isAdmin,
+                role: user.role,
+                cart: user.cart,
+                walletBalance: user.walletBalance || 0,
+                claim_gst: user.claim_gst,
+                user_gst_number: user.user_gst_number,
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
@@ -232,9 +269,12 @@ router.put('/profile', protect, async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            const { name, email, phone, emailOtp, phoneOtp, addresses, notificationPreferences } = req.body;
+            const { name, email, phone, altPhone, dob, gender, emailOtp, phoneOtp, addresses, notificationPreferences } = req.body;
 
             user.name = name || user.name;
+            if (altPhone !== undefined) user.altPhone = altPhone;
+            if (dob !== undefined) user.dob = dob;
+            if (gender !== undefined) user.gender = gender;
 
             // Handle email change with OTP verification
             if (email && email !== user.email) {
@@ -251,7 +291,7 @@ router.put('/profile', protect, async (req, res) => {
             }
 
             // Handle phone change with OTP verification
-            if (phone && phone !== user.phone) {
+            if (phone && phone !== user.phone && user.phone) {
                 if (!phoneOtp) {
                     return res.status(400).json({ message: 'Phone OTP is required to change phone number' });
                 }
@@ -262,6 +302,9 @@ router.put('/profile', protect, async (req, res) => {
                 }
                 user.phone = phone;
                 user.isPhoneVerified = true;
+            } else if (phone && !user.phone) {
+                // First-time setting phone without prior phone does not require OTP
+                user.phone = phone;
             }
 
             if (req.body.password) {
@@ -281,7 +324,7 @@ router.put('/profile', protect, async (req, res) => {
                 _id: updatedUser._id,
                 name: updatedUser.name,
                 email: updatedUser.email,
-                phone: updatedUser.phone,
+                phone: updatedUser.phone || '',
                 addresses: updatedUser.addresses,
                 isAdmin: updatedUser.isAdmin,
                 role: updatedUser.role,

@@ -17,10 +17,17 @@ const orderSchema = mongoose.Schema(
       },
     ],
     shippingAddress: {
-      address: { type: String },
-      city: { type: String },
-      postalCode: { type: String },
-      country: { type: String },
+      name: { type: String, trim: true },
+      phone: { type: String, trim: true },
+      address: { type: String, trim: true },
+      addressLine2: { type: String, trim: true },
+      landmark: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      postalCode: { type: String, trim: true },
+      country: { type: String, default: "India", trim: true },
+      addressType: { type: String },
+      addressId: { type: mongoose.Schema.Types.ObjectId },
     },
     paymentMethod: { type: String, default: "COD" }, // COD, Online
     itemsPrice: { type: Number, required: true, default: 0.0 },
@@ -54,7 +61,6 @@ const orderSchema = mongoose.Schema(
     razorpay_order_id: {
       type: String,
       sparse: true,
-      index: true,
     },
     // Payment result details stored for audit trail
     paymentResult: {

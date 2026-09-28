@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import client from "../../api/client";
 import { getDocumentViewUrl } from "../../utils/documentViewer";
+import AdminLegalAgreementsSection from "../../components/vendor/legal/AdminLegalAgreementsSection";
 
 const VendorOnboarderDashboard = () => {
   const { user, logout } = useAuth();
@@ -430,6 +431,17 @@ const VendorOnboarderDashboard = () => {
                     ) : (
                       <p className="text-sm text-text-secondary italic">No compliance documents uploaded yet.</p>
                     )}
+                  </div>
+
+                  {/* Legal Agreements & Mutual NDA Requirement (Phase 3 Integration) */}
+                  <div className="border-t border-secondary/10 pt-6">
+                    <AdminLegalAgreementsSection
+                      vendor={selectedVendor}
+                      onVendorUpdated={() => {
+                        handleVendorSelect(selectedVendor._id);
+                        fetchVendors();
+                      }}
+                    />
                   </div>
 
                   {/* Vendor Application Verdict */}

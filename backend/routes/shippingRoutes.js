@@ -11,13 +11,13 @@ const shiprocketService = require('../services/shiprocketService');
  * Mirrors the schema defaults in SiteSettings.js.
  */
 const DEFAULT_SHIPPING_CONFIG = {
-  freeShippingThreshold: 499,
+  freeShippingThreshold: 999,
   thresholdScope: 'PER_VENDOR_ORDER',
   belowThresholdMode: 'CUSTOMER_PAYS',
   platformHandlingFeeFlat: 25,
   platformHandlingFeePercent: 5,
   codSurcharge: 40,
-  flatRateFallback: 70,
+  flatRateFallback: 66,
   weightPerItem: 0.5,
   isEnabled: true,
 };
@@ -81,7 +81,7 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
 
     if (!vendorGroupMap.has(vendorId)) {
       const vendorName = vendorId === '__platform__'
-        ? 'Siraba Organic Direct'
+        ? 'Siraba Organic'
         : (product.vendor.businessName || 'Vendor');
 
       const pickupPincode = vendorId === '__platform__'
@@ -110,18 +110,31 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
     group.totalWeight += config.weightPerItem * cartItem.quantity;
   }
 
+  // Calculate total cart subtotal across all vendors
+  const totalCartSubtotal = Array.from(vendorGroupMap.values()).reduce(
+    (sum, g) => sum + g.vendorSubtotal,
+    0
+  );
+
+  const isCartLevelFree = (config.thresholdScope === 'PER_PARENT_ORDER')
+    ? (totalCartSubtotal >= config.freeShippingThreshold)
+    : false;
+
   // 3. Process each Vendor Fulfillment Group independently
   const vendorBreakdown = [];
   let totalCustomerShipping = 0;
   const isCOD = paymentMethod === 'COD';
 
   for (const [, group] of vendorGroupMap) {
+    // Determine free shipping eligibility
+    const isFreeShippingEligible = isCartLevelFree || (group.vendorSubtotal >= config.freeShippingThreshold);
+
     let courierRate = config.flatRateFallback;
     let courierName = 'Standard Delivery';
     let estimatedDays = '3-5 days';
 
-    // Query Shiprocket serviceability if pincodes available
-    if (group.pickupPincode && deliveryPincode) {
+    // Optimization: Skip live Shiprocket courier query if customer is already eligible for free shipping
+    if (!isFreeShippingEligible && group.pickupPincode && deliveryPincode) {
       try {
         const courier = await shiprocketService.checkServiceability({
           pickup_postcode: String(group.pickupPincode).trim(),
@@ -141,20 +154,23 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
         courierName = 'Standard Delivery (est.)';
         estimatedDays = '5-7 days';
       }
+    } else if (isFreeShippingEligible) {
+      courierRate = 0;
+      courierName = 'Free Delivery';
+      estimatedDays = '3-5 days';
     } else {
       courierRate = config.flatRateFallback;
     }
 
     // Calculate platform handling fee & total estimated logistics cost
-    const handlingFee = Math.round(
-      config.platformHandlingFeeFlat + (courierRate * config.platformHandlingFeePercent / 100)
-    );
-    const estimatedShippingCost = Math.round(courierRate + handlingFee);
-
-    // Apply PER_VENDOR_ORDER free shipping threshold rule
-    const isFreeShippingEligible = (group.vendorSubtotal >= config.freeShippingThreshold);
+    const handlingFee = isFreeShippingEligible
+      ? 0
+      : Math.round(
+          config.platformHandlingFeeFlat + (courierRate * config.platformHandlingFeePercent / 100)
+        );
+    const estimatedShippingCost = isFreeShippingEligible ? 0 : Math.round(courierRate + handlingFee);
     const customerShippingCharge = isFreeShippingEligible ? 0 : estimatedShippingCost;
-    const shippingSubsidy = Math.max(0, estimatedShippingCost - customerShippingCharge);
+    const shippingSubsidy = isFreeShippingEligible ? Math.round(config.flatRateFallback) : 0;
     const amountToFreeShipping = isFreeShippingEligible
       ? 0
       : Math.max(0, config.freeShippingThreshold - group.vendorSubtotal);
@@ -173,6 +189,7 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
       customerShippingCharge,
       shippingSubsidy,
       amountToFreeShipping: Math.round(amountToFreeShipping * 100) / 100,
+      subtotal: Math.round(customerShippingCharge), // alias for vendor shipping total
       courierName,
       estimatedDays,
     });
@@ -182,14 +199,39 @@ async function calculateShipping(cartItems, deliveryPincode, paymentMethod = 'On
   const codSurcharge = isCOD ? config.codSurcharge : 0;
   totalCustomerShipping += codSurcharge;
 
+  const isOverallFree = totalCustomerShipping === 0;
+  const rootAmountToFreeShipping = isOverallFree
+    ? 0
+    : Math.max(0, config.freeShippingThreshold - totalCartSubtotal);
+
   return {
     totalShipping: Math.round(totalCustomerShipping),
-    isFreeShipping: totalCustomerShipping === 0,
+    isFreeShipping: isOverallFree,
     freeShippingThreshold: config.freeShippingThreshold,
+    amountToFreeShipping: Math.round(rootAmountToFreeShipping * 100) / 100,
     codSurcharge,
     vendorBreakdown,
   };
 }
+
+// ─── ROUTE: GET /api/shipping/config ──────────────────────────
+// @desc    Get public shipping config (threshold, enabled, etc.)
+// @access  Public
+router.get('/config', async (req, res) => {
+  try {
+    const config = await getShippingConfig();
+    res.json({
+      freeShippingThreshold: config.freeShippingThreshold,
+      thresholdScope: config.thresholdScope,
+      belowThresholdMode: config.belowThresholdMode,
+      codSurcharge: config.codSurcharge,
+      isEnabled: config.isEnabled,
+    });
+  } catch (error) {
+    console.error('Failed to get shipping config:', error);
+    res.status(500).json({ message: 'Failed to get shipping config', error: error.message });
+  }
+});
 
 // ─── ROUTE: POST /api/shipping/estimate ───────────────────────
 // @desc    Calculate vendor-wise shipping charges for a cart + delivery address

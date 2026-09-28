@@ -1,5 +1,22 @@
 const mongoose = require("mongoose");
 
+const addressSchema = mongoose.Schema(
+  {
+    name: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    address: { type: String, required: true, trim: true },
+    addressLine2: { type: String, trim: true },
+    landmark: { type: String, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    postalCode: { type: String, required: true, trim: true },
+    country: { type: String, default: "India", trim: true },
+    addressType: { type: String, enum: ['Home', 'Work', 'Other'], default: 'Home' },
+    isDefault: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
 const userSchema = mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -13,16 +30,7 @@ const userSchema = mongoose.Schema(
     altPhone: { type: String }, // Alternate phone number
     dob: { type: Date }, // Date of birth
     gender: { type: String, enum: ['Male', 'Female', 'Other'], default: 'Male' }, // Gender
-    addresses: [
-      {
-        address: String,
-        city: String,
-        postalCode: String,
-        country: String,
-        state: String,
-        isDefault: { type: Boolean, default: false },
-      },
-    ],
+    addresses: [addressSchema],
     notificationPreferences: {
       orderUpdates: { type: Boolean, default: true },
       promotions: { type: Boolean, default: false },

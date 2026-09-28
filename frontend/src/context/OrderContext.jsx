@@ -91,8 +91,39 @@ export const OrderProvider = ({ children }) => {
         }
     };
 
+    const getOrderById = async (orderId) => {
+        try {
+            const { data } = await client.get(`/orders/${orderId}`);
+            return data;
+        } catch (error) {
+            console.error("Failed to get order", error);
+            throw error;
+        }
+    };
+
+    const getOrderTracking = async (orderId, live = false) => {
+        try {
+            const { data } = await client.get(`/orders/${orderId}/tracking${live ? '?live=true' : ''}`);
+            return data;
+        } catch (error) {
+            console.error("Failed to get order tracking", error);
+            throw error;
+        }
+    };
+
+    const refreshOrders = async () => {
+        if (!user) return;
+        try {
+            const url = isAdmin ? '/orders' : '/orders/myorders';
+            const { data } = await client.get(url);
+            setOrders(data);
+        } catch (error) {
+            console.error("Failed to refresh orders", error);
+        }
+    };
+
     return (
-        <OrderContext.Provider value={{ orders, createOrder, updateOrderStatus, cancelOrder }}>
+        <OrderContext.Provider value={{ orders, setOrders, refreshOrders, createOrder, updateOrderStatus, cancelOrder, getOrderById, getOrderTracking }}>
             {children}
         </OrderContext.Provider>
     );

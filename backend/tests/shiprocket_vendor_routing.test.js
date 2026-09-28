@@ -207,6 +207,7 @@ const _originalRequire = Module.prototype.require;
 const mockAxios    = buildMockAxios({
   '/auth/login': { token: MOCK_SHIPROCKET_TOKEN },
   '/orders/create/adhoc': MOCK_SHIPROCKET_ORDER_RESPONSE,
+  '/settings/company/pickup': { data: { shipping_address: [{ pickup_location: 'VEND_NOIDA_01' }, { pickup_location: 'Primary' }] } },
 });
 const mockRedisInst = new MockRedis();
 

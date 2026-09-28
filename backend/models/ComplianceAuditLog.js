@@ -4,7 +4,12 @@ const complianceAuditLogSchema = mongoose.Schema(
   {
     entityType: {
       type: String,
-      enum: ["product_compliance", "product_batch"],
+      enum: [
+        "product_compliance",
+        "product_batch",
+        "vendor_agreement",
+        "mutual_nda",
+      ],
       required: true,
     },
     entityId: {
@@ -14,7 +19,12 @@ const complianceAuditLogSchema = mongoose.Schema(
     productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true,
+      required: function () {
+        return (
+          this.entityType === "product_compliance" ||
+          this.entityType === "product_batch"
+        );
+      },
       index: true,
     },
     vendorId: {
@@ -36,6 +46,13 @@ const complianceAuditLogSchema = mongoose.Schema(
         "batch_created",
         "trace_id_generated",
         "revoked",
+        // Legal Document Audit Actions
+        "agreement_generated",
+        "agreement_accepted",
+        "nda_required",
+        "nda_waived",
+        "nda_accepted",
+        "executed_document_created",
       ],
       required: true,
     },

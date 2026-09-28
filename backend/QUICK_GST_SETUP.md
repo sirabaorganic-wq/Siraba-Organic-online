@@ -73,7 +73,7 @@ Should return:
 ## Important Notes
 
 - ⚠️ **Vendor GSTIN is MANDATORY** for Indian invoices when registered under GST
-- ⚠️ If no vendor GSTIN is set, invoices will show "Tax (Included)" instead
+- ⚠️ If no vendor GSTIN is set, invoices will show "GST / Tax" instead
 - ✅ The system now defaults to showing GST details when vendor GSTIN exists
 - ✅ Price remains same whether GST is claimed or not (this is correct!)
 

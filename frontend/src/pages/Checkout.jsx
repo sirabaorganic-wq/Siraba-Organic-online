@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrderContext";
 import { useCurrency } from "../context/CurrencyContext";
 import api from "../api/axios";
+import addressApi from "../api/address";
 import {
   MapPin,
   Phone,
@@ -18,11 +19,13 @@ import {
   Package,
   ChevronDown,
   ChevronUp,
+  Edit2,
+  Check,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
 const Checkout = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updateUserAddresses } = useAuth();
   const { cartItems, getCartTotal, clearCart } = useCart();
   const { createOrder } = useOrders();
   const { formatPrice } = useCurrency();
@@ -32,27 +35,66 @@ const Checkout = () => {
   // Get discount from navigation state
   const discount = location.state?.discount || { amount: 0, code: "" };
 
-  const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
-  const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("COD"); // COD or Online
-
-  // New Address Form State
-  const [newAddress, setNewAddress] = useState({
+  // Address State
+  const [addresses, setAddresses] = useState(user?.addresses || []);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [addressFormLoading, setAddressFormLoading] = useState(false);
+  const [addressFormError, setAddressFormError] = useState("");
+  const [addressForm, setAddressForm] = useState({
+    name: "",
+    phone: "",
     address: "",
+    addressLine2: "",
+    landmark: "",
     city: "",
     state: "",
     postalCode: "",
     country: "India",
-    phone: "",
+    addressType: "Home",
+    isDefault: false,
   });
+
+  const [loading, setLoading] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD"); // COD or Online
 
   // Shipping Estimation State
   const [shippingEstimate, setShippingEstimate] = useState(null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState("");
   const [showShippingBreakdown, setShowShippingBreakdown] = useState(false);
+  const [shippingConfig, setShippingConfig] = useState({ freeShippingThreshold: 999 });
+  const [gstPercentage, setGstPercentage] = useState(18);
+  const [gstEnabled, setGstEnabled] = useState(true);
+
+  // Load public authoritative shipping & GST config
+  useEffect(() => {
+    const loadShippingConfig = async () => {
+      try {
+        const { data } = await api.get("/shipping/config");
+        if (data && data.freeShippingThreshold) {
+          setShippingConfig(data);
+        }
+      } catch (err) {
+        // Fallback default threshold 999
+      }
+    };
+    const fetchGSTSettings = async () => {
+      try {
+        const { data } = await api.get("/gst/settings");
+        if (data) {
+          setGstEnabled(data.gst_enabled !== false);
+          setGstPercentage(data.default_gst_percentage !== undefined ? data.default_gst_percentage : 18);
+        }
+      } catch (e) {
+        // Fallback 18%
+      }
+    };
+    loadShippingConfig();
+    fetchGSTSettings();
+  }, []);
 
   // GST State
   const [gstClaimed, setGstClaimed] = useState(false);
@@ -87,21 +129,51 @@ const Checkout = () => {
     }
   }, [user, cartItems, navigate, orderSuccess]);
 
-  // Set default selected address if available
+  // Initial load and sync of addresses from backend
   useEffect(() => {
-    if (user?.addresses?.length > 0) {
-      const defaultIndex = user.addresses.findIndex((addr) => addr.isDefault);
-      setSelectedAddressIndex(defaultIndex >= 0 ? defaultIndex : 0);
-    } else {
-      setIsAddingNewAddress(true); // Force add address if none exist
+    if (user) {
+      const loadAddresses = async () => {
+        const res = await addressApi.getAddresses();
+        if (res.success && res.data.length > 0) {
+          setAddresses(res.data);
+          if (updateUserAddresses) updateUserAddresses(res.data);
+          // Auto select default or first
+          setSelectedAddressId((prev) => {
+            if (prev && res.data.some((a) => a._id === prev)) return prev;
+            const def = res.data.find((a) => a.isDefault);
+            return def ? def._id : res.data[0]._id;
+          });
+        } else if (res.success && res.data.length === 0) {
+          setAddresses([]);
+          setIsAddressFormOpen(true);
+        }
+      };
+      loadAddresses();
     }
-  }, [user]);
+  }, [user?._id]);
+
+  // Sync when user.addresses in context changes
+  useEffect(() => {
+    if (user?.addresses && user.addresses.length > 0) {
+      setAddresses(user.addresses);
+      setSelectedAddressId((prev) => {
+        if (prev && user.addresses.some((a) => a._id === prev)) return prev;
+        const def = user.addresses.find((a) => a.isDefault);
+        return def ? def._id : user.addresses[0]._id;
+      });
+    } else if (user && (!user.addresses || user.addresses.length === 0)) {
+      setIsAddressFormOpen(true);
+    }
+  }, [user?.addresses]);
+
+  const selectedAddress =
+    addresses.find((addr) => addr._id === selectedAddressId) ||
+    addresses[0] ||
+    null;
 
   // Fetch shipping estimate when address or payment method changes
   useEffect(() => {
     const fetchShippingEstimate = async () => {
-      if (!user?.addresses || user.addresses.length === 0) return;
-      const selectedAddress = user.addresses[selectedAddressIndex];
       if (!selectedAddress?.postalCode) return;
       if (cartItems.length === 0) return;
 
@@ -121,70 +193,147 @@ const Checkout = () => {
       } catch (err) {
         console.error("Shipping estimate failed:", err);
         setShippingError("Could not estimate shipping. A flat rate will apply.");
-        setShippingEstimate(null);
+        const sub = cartItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+        const disc = discount?.amount || 0;
+        const discSub = Math.max(0, sub - disc);
+        const isFree = discSub >= (shippingConfig.freeShippingThreshold || 999);
+        const fallbackRate = isFree ? 0 : 66;
+        setShippingEstimate({
+          totalShipping: fallbackRate,
+          isFreeShipping: isFree,
+          freeShippingThreshold: shippingConfig.freeShippingThreshold || 999,
+          amountToFreeShipping: Math.max(0, (shippingConfig.freeShippingThreshold || 999) - discSub),
+          vendorBreakdown: [],
+          _isFallback: true,
+        });
       } finally {
         setShippingLoading(false);
       }
     };
 
     fetchShippingEstimate();
-  }, [selectedAddressIndex, paymentMethod, user?.addresses, cartItems]);
+  }, [selectedAddressId, selectedAddress?.postalCode, paymentMethod, cartItems]);
 
-  const handleAddressChange = (e) => {
-    const { name, value } = e.target;
-    setNewAddress((prev) => ({ ...prev, [name]: value }));
+  const openAddNewAddress = () => {
+    setAddressFormError("");
+    setEditingAddressId(null);
+    setAddressForm({
+      name: user?.name || "",
+      phone: user?.phone || "",
+      address: "",
+      addressLine2: "",
+      landmark: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "India",
+      addressType: "Home",
+      isDefault: addresses.length === 0,
+    });
+    setIsAddressFormOpen(true);
+  };
+
+  const openEditAddress = (addr, e) => {
+    if (e) e.stopPropagation();
+    setAddressFormError("");
+    setEditingAddressId(addr._id);
+    setAddressForm({
+      name: addr.name || user?.name || "",
+      phone: addr.phone || user?.phone || "",
+      address: addr.address || "",
+      addressLine2: addr.addressLine2 || "",
+      landmark: addr.landmark || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      postalCode: addr.postalCode || "",
+      country: addr.country || "India",
+      addressType: addr.addressType || "Home",
+      isDefault: !!addr.isDefault,
+    });
+    setIsAddressFormOpen(true);
   };
 
   const handleSaveAddress = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setAddressFormError("");
+
+    if (!addressForm.name || addressForm.name.trim().length < 2) {
+      setAddressFormError("Recipient name must be at least 2 characters");
+      return;
+    }
+    const cleanPhone = String(addressForm.phone || "").replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      setAddressFormError("Please provide a valid 10-digit phone number");
+      return;
+    }
+    if (!addressForm.address || addressForm.address.trim().length < 5) {
+      setAddressFormError("Street address must be at least 5 characters");
+      return;
+    }
+    if (!addressForm.city || !addressForm.city.trim()) {
+      setAddressFormError("City is required");
+      return;
+    }
+    if (!addressForm.state || !addressForm.state.trim()) {
+      setAddressFormError("State is required");
+      return;
+    }
+    const cleanPostal = String(addressForm.postalCode || "").trim();
+    if (!/^[0-9]{6}$/.test(cleanPostal)) {
+      setAddressFormError("Postal/PIN code must be a 6-digit number");
+      return;
+    }
+
+    setAddressFormLoading(true);
     try {
-      // Create updated addresses array
-      const updatedAddresses = [
-        ...(user.addresses || []),
-        { ...newAddress, isDefault: user.addresses?.length === 0 },
-      ];
-
-      // If phone is not set on user profile, update it too
-      const profileUpdate = {
-        addresses: updatedAddresses,
-        phone: user.phone || newAddress.phone,
-      };
-
-      const res = await updateProfile(profileUpdate);
-      if (res.success) {
-        setIsAddingNewAddress(false);
-        setSelectedAddressIndex(updatedAddresses.length - 1); // Select the new address
-        // Reset form
-        const savedPhone = newAddress.phone; // Keep phone
-        setNewAddress({
-          address: "",
-          city: "",
-          state: "",
-          postalCode: "",
-          country: "India",
-          phone: savedPhone,
-        });
+      if (editingAddressId) {
+        const res = await addressApi.updateAddress(editingAddressId, addressForm);
+        if (res.success) {
+          const updated = addresses.map((a) => {
+            if (a._id === editingAddressId) return res.data;
+            if (res.data.isDefault) return { ...a, isDefault: false };
+            return a;
+          });
+          setAddresses(updated);
+          if (updateUserAddresses) updateUserAddresses(updated);
+          setSelectedAddressId(res.data._id);
+          setIsAddressFormOpen(false);
+        } else {
+          setAddressFormError(res.message);
+        }
       } else {
-        alert(res.message);
+        const res = await addressApi.addAddress(addressForm);
+        if (res.success) {
+          let updated = [...addresses];
+          if (res.data.isDefault) {
+            updated = updated.map((a) => ({ ...a, isDefault: false }));
+          }
+          updated.push(res.data);
+          setAddresses(updated);
+          if (updateUserAddresses) updateUserAddresses(updated);
+          setSelectedAddressId(res.data._id); // Auto-select the newly added address
+          setIsAddressFormOpen(false);
+        } else {
+          setAddressFormError(res.message);
+        }
       }
     } catch (error) {
       console.error("Error saving address:", error);
-      alert("Failed to save address");
+      setAddressFormError("Failed to save address. Please try again.");
     } finally {
-      setLoading(false);
+      setAddressFormLoading(false);
     }
   };
 
   const handlePlaceOrder = async () => {
-    if (user?.addresses?.length === 0 && !isAddingNewAddress) {
-      alert("Please add a shipping address");
-      setIsAddingNewAddress(true);
+    if (!selectedAddress || addresses.length === 0) {
+      alert("Please add or select a shipping address");
+      setIsAddressFormOpen(true);
       return;
     }
 
-    if (isAddingNewAddress) {
-      alert("Please save your address first");
+    if (isAddressFormOpen) {
+      alert("Please save your address details first or cancel address editing");
       return;
     }
 
@@ -197,12 +346,6 @@ const Checkout = () => {
         return;
       }
       setGstError("");
-    }
-
-    const selectedAddress = user.addresses[selectedAddressIndex];
-    if (!selectedAddress) {
-      alert("Please select a valid address");
-      return;
     }
 
     setLoading(true);
@@ -218,13 +361,20 @@ const Checkout = () => {
 
     const subtotal = getCartTotal();
     const discountedSubtotal = Math.max(0, subtotal - discount.amount);
-    const taxPrice = discountedSubtotal * 0.18; // 18% Tax
-    const shippingPrice = shippingEstimate?.totalShipping || 0;
-    const totalPrice = discountedSubtotal + taxPrice + shippingPrice;
+    const taxRate = gstEnabled ? (gstPercentage / 100) : 0;
+    const taxPrice = Math.round(discountedSubtotal * taxRate * 100) / 100;
+    const isFree = (discountedSubtotal >= (shippingEstimate?.freeShippingThreshold || shippingConfig.freeShippingThreshold || 999)) || shippingEstimate?.isFreeShipping;
+    const shippingPrice = isFree
+      ? 0
+      : (shippingEstimate?.totalShipping !== undefined
+          ? shippingEstimate.totalShipping
+          : (shippingError ? 66 : 0));
+    const totalPrice = Math.round((discountedSubtotal + taxPrice + shippingPrice) * 100) / 100;
 
-    // Base Order Data
+    // Base Order Data with validated shippingAddressId and snapshot
     const orderData = {
       orderItems,
+      shippingAddressId: selectedAddress._id,
       shippingAddress: selectedAddress,
       paymentMethod: paymentMethod === "Online" ? "Online" : "COD",
       itemsPrice: subtotal,
@@ -335,9 +485,15 @@ const Checkout = () => {
 
   const subtotal = getCartTotal();
   const discountedSubtotal = Math.max(0, subtotal - discount.amount);
-  const taxPrice = discountedSubtotal * 0.18;
-  const shippingPrice = shippingEstimate?.totalShipping || 0;
-  const totalPrice = discountedSubtotal + taxPrice + shippingPrice;
+  const taxRate = gstEnabled ? (gstPercentage / 100) : 0;
+  const taxPrice = Math.round(discountedSubtotal * taxRate * 100) / 100;
+  const isFree = (discountedSubtotal >= (shippingEstimate?.freeShippingThreshold || shippingConfig.freeShippingThreshold || 999)) || shippingEstimate?.isFreeShipping;
+  const shippingPrice = isFree
+    ? 0
+    : (shippingEstimate?.totalShipping !== undefined
+        ? shippingEstimate.totalShipping
+        : (shippingError ? 66 : 0));
+  const totalPrice = Math.round((discountedSubtotal + taxPrice + shippingPrice) * 100) / 100;
 
   return (
     <div className="min-h-screen bg-background pt-28 pb-16">
@@ -360,160 +516,355 @@ const Checkout = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Shipping Address Section */}
             <div className="bg-surface p-8 rounded-sm shadow-sm border border-secondary/10">
-              <h2 className="font-heading text-xl font-bold text-primary mb-6 flex items-center">
-                <MapPin className="mr-2" size={20} /> Shipping Address
-              </h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-heading text-xl font-bold text-primary flex items-center">
+                  <MapPin className="mr-2" size={20} /> Shipping Address
+                </h2>
+                {!isAddressFormOpen && addresses && addresses.length > 0 && (
+                  <button
+                    onClick={openAddNewAddress}
+                    className="flex items-center text-xs font-bold text-secondary hover:text-primary transition-colors uppercase tracking-wider gap-1"
+                  >
+                    <Plus size={14} /> Add Address
+                  </button>
+                )}
+              </div>
 
-              {!isAddingNewAddress &&
-              user.addresses &&
-              user.addresses.length > 0 ? (
+              {!isAddressFormOpen && addresses && addresses.length > 0 ? (
                 <div className="space-y-4">
-                  {user.addresses.map((addr, index) => (
-                    <div
-                      key={index}
-                      className={`relative border p-4 rounded-sm cursor-pointer transition-all ${
-                        selectedAddressIndex === index
-                          ? "border-primary bg-primary/5"
-                          : "border-secondary/20 hover:border-secondary/40"
-                      }`}
-                      onClick={() => setSelectedAddressIndex(index)}
-                    >
-                      <div className="flex items-start">
-                        <div className="mt-1 mr-3">
-                          <div
-                            className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${
-                              selectedAddressIndex === index
-                                ? "bg-primary"
-                                : "bg-transparent"
-                            }`}
-                          >
-                            {selectedAddressIndex === index && (
-                              <div className="w-2 h-2 rounded-full bg-white"></div>
-                            )}
+                  {addresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr._id;
+                    return (
+                      <div
+                        key={addr._id}
+                        className={`relative border p-5 rounded-sm cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-xs"
+                            : "border-secondary/20 hover:border-secondary/40 bg-background"
+                        }`}
+                        onClick={() => setSelectedAddressId(addr._id)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1">
+                              <div
+                                className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${
+                                  isSelected ? "bg-primary" : "bg-transparent"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-primary text-sm">
+                                  {addr.name || user.name}
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary bg-secondary/10 px-1.5 py-0.5 rounded-sm">
+                                  {addr.addressType || "Home"}
+                                </span>
+                                {addr.isDefault && (
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-sm">
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-text-secondary">
+                                {addr.address}
+                              </p>
+                              {addr.addressLine2 && (
+                                <p className="text-sm text-text-secondary">
+                                  {addr.addressLine2}
+                                </p>
+                              )}
+                              {addr.landmark && (
+                                <p className="text-xs text-text-secondary italic">
+                                  Landmark: {addr.landmark}
+                                </p>
+                              )}
+                              <p className="text-sm text-text-secondary font-medium">
+                                {addr.city}, {addr.state} {addr.postalCode}
+                              </p>
+                              <p className="text-sm text-text-secondary">
+                                {addr.country || "India"}
+                              </p>
+                              <p className="text-xs text-primary font-medium mt-1 flex items-center gap-1">
+                                <Phone size={11} className="text-secondary" />{" "}
+                                {addr.phone || user.phone || "N/A"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-grow">
-                          <p className="font-bold text-primary text-sm">
-                            {user.name}
-                          </p>
-                          <p className="text-sm text-text-secondary">
-                            {addr.address}
-                          </p>
-                          <p className="text-sm text-text-secondary">
-                            {addr.city}, {addr.state} {addr.postalCode}
-                          </p>
-                          <p className="text-sm text-text-secondary">
-                            {addr.country}
-                          </p>
-                          <p className="text-sm text-text-secondary mt-1 flex items-center">
-                            <Phone size={12} className="mr-1" />{" "}
-                            {user.phone || addr.phone || "N/A"}
-                          </p>
+
+                          <button
+                            type="button"
+                            onClick={(e) => openEditAddress(addr, e)}
+                            className="text-xs font-bold uppercase text-primary hover:text-accent transition-colors flex items-center gap-1 p-1 hover:bg-secondary/10 rounded-sm"
+                            title="Edit this address"
+                          >
+                            <Edit2 size={13} />
+                            <span>Edit</span>
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   <button
-                    onClick={() => setIsAddingNewAddress(true)}
-                    className="mt-4 flex items-center text-sm font-bold text-secondary hover:text-primary transition-colors uppercase tracking-wider"
+                    type="button"
+                    onClick={openAddNewAddress}
+                    className="mt-4 inline-flex items-center text-xs font-bold text-primary hover:text-accent transition-colors uppercase tracking-wider gap-1.5 py-2 px-3 border border-secondary/20 rounded-sm hover:border-primary"
                   >
-                    <Plus size={16} className="mr-1" /> Add New Address
+                    <Plus size={14} /> Add Another Delivery Address
                   </button>
                 </div>
               ) : (
-                <form
-                  onSubmit={handleSaveAddress}
-                  className="space-y-4 animate-fade-in"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
-                        Street Address
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        name="address"
-                        value={newAddress.address}
-                        onChange={handleAddressChange}
-                        className="w-full bg-background border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
-                        placeholder="123 Organic Lane"
-                      />
+                <div className="bg-background p-6 rounded-sm border border-secondary/20 animate-fade-in shadow-sm">
+                  <h3 className="font-heading text-lg font-bold text-primary mb-4">
+                    {editingAddressId
+                      ? "Edit Delivery Address"
+                      : "Add New Delivery Address"}
+                  </h3>
+
+                  {addressFormError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-sm mb-4 flex items-center gap-2">
+                      <AlertCircle size={16} className="text-red-500" />
+                      <span>{addressFormError}</span>
                     </div>
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
-                        City
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        name="city"
-                        value={newAddress.city}
-                        onChange={handleAddressChange}
-                        className="w-full bg-background border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
-                      />
+                  )}
+
+                  <form onSubmit={handleSaveAddress} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          Full Name *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={addressForm.name}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              name: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="e.g. Ramesh Kumar"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          Phone Number (10 digits) *
+                        </label>
+                        <input
+                          required
+                          type="tel"
+                          value={addressForm.phone}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              phone: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="9876543210"
+                        />
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          Street Address *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={addressForm.address}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              address: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="House/Flat No., Building Name, Street"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          Apartment, Suite, Unit, etc. (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={addressForm.addressLine2}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              addressLine2: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="Apt 4B"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          Landmark (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={addressForm.landmark}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              landmark: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="Near City Park"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          City *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={addressForm.city}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              city: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="Jaipur"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          State / Province *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={addressForm.state}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              state: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="Rajasthan"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          PIN / Postal Code (6 Digits) *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          maxLength={6}
+                          value={addressForm.postalCode}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              postalCode: e.target.value,
+                            })
+                          }
+                          className="w-full bg-surface border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
+                          placeholder="302001"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
+                          Address Type
+                        </label>
+                        <div className="flex gap-4 pt-2">
+                          {["Home", "Work", "Other"].map((type) => (
+                            <label
+                              key={type}
+                              className="flex items-center gap-2 cursor-pointer text-sm"
+                            >
+                              <input
+                                type="radio"
+                                name="checkoutAddressType"
+                                value={type}
+                                checked={addressForm.addressType === type}
+                                onChange={(e) =>
+                                  setAddressForm({
+                                    ...addressForm,
+                                    addressType: e.target.value,
+                                  })
+                                }
+                                className="accent-primary"
+                              />
+                              <span className="text-primary font-medium">
+                                {type}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 pt-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={addressForm.isDefault}
+                            onChange={(e) =>
+                              setAddressForm({
+                                ...addressForm,
+                                isDefault: e.target.checked,
+                              })
+                            }
+                            className="rounded accent-primary w-4 h-4"
+                          />
+                          <span className="text-text-secondary">
+                            Set as default delivery address
+                          </span>
+                        </label>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
-                        State / Province
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        name="state"
-                        value={newAddress.state}
-                        onChange={handleAddressChange}
-                        className="w-full bg-background border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
-                        Postal Code
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        name="postalCode"
-                        value={newAddress.postalCode}
-                        onChange={handleAddressChange}
-                        className="w-full bg-background border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-text-secondary mb-1">
-                        Phone Number
-                      </label>
-                      <input
-                        required
-                        type="tel"
-                        name="phone"
-                        value={newAddress.phone}
-                        onChange={handleAddressChange}
-                        className="w-full bg-background border border-secondary/20 rounded-sm p-3 text-sm focus:outline-none focus:border-primary"
-                        placeholder="+91 98765 43210"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-4 pt-4">
-                    {user?.addresses?.length > 0 && (
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-secondary/10">
+                      {addresses && addresses.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddressFormOpen(false)}
+                          className="text-text-secondary text-sm hover:text-primary transition-colors px-4 py-2"
+                        >
+                          Cancel
+                        </button>
+                      )}
                       <button
-                        type="button"
-                        onClick={() => setIsAddingNewAddress(false)}
-                        className="text-text-secondary text-sm hover:text-primary transition-colors"
+                        type="submit"
+                        disabled={addressFormLoading}
+                        className="bg-primary text-white px-6 py-2.5 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-2"
                       >
-                        Cancel
+                        {addressFormLoading && (
+                          <Loader2 size={14} className="animate-spin" />
+                        )}
+                        {addressFormLoading
+                          ? "Saving..."
+                          : editingAddressId
+                          ? "Update Address"
+                          : "Save & Deliver Here"}
                       </button>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="bg-primary text-white px-6 py-2 rounded-sm text-sm font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-colors disabled:opacity-50"
-                    >
-                      {loading ? "Saving..." : "Save Address"}
-                    </button>
-                  </div>
-                </form>
+                    </div>
+                  </form>
+                </div>
               )}
             </div>
 
@@ -608,7 +959,7 @@ const Checkout = () => {
                   <div className="text-xs text-blue-800 space-y-1">
                     <p className="font-semibold">About GST Invoicing:</p>
                     <ul className="list-disc ml-4 space-y-1">
-                      <li>All orders include 18% GST as per Indian tax laws</li>
+                      <li>{gstPercentage}% GST is calculated and charged on all orders as per Indian tax laws</li>
                       <li>Enable GST claim if you have a registered GSTIN</li>
                       <li>Invoice will show your GSTIN for input tax credit</li>
                       <li>
@@ -705,7 +1056,7 @@ const Checkout = () => {
                         Standard Invoice:
                       </strong>{" "}
                       If not claiming GST, your invoice will show the vendor's
-                      GST number. GST of 18% will be included in your total
+                      GST number. GST of {gstPercentage}% will be added to your total
                       amount.
                     </p>
                   </div>
@@ -769,12 +1120,16 @@ const Checkout = () => {
                       <span className="flex items-center gap-1 text-xs text-secondary">
                         <Loader2 size={12} className="animate-spin" /> Calculating...
                       </span>
-                    ) : shippingEstimate?.isFreeShipping ? (
+                    ) : (discountedSubtotal >= (shippingEstimate?.freeShippingThreshold || shippingConfig.freeShippingThreshold || 999) || shippingEstimate?.isFreeShipping) ? (
                       <span className="text-green-600 font-semibold">FREE</span>
                     ) : shippingPrice > 0 ? (
                       formatPrice(shippingPrice)
+                    ) : shippingError ? (
+                      formatPrice(66)
+                    ) : !selectedAddress?.postalCode ? (
+                      <span className="text-xs text-text-secondary italic">Calculated with address</span>
                     ) : (
-                      "Free"
+                      <span className="text-xs text-text-secondary italic">Calculated at checkout</span>
                     )}
                   </span>
                 </div>
@@ -795,9 +1150,13 @@ const Checkout = () => {
                             <span className="flex items-center gap-1">
                               <Package size={10} />
                               {v.vendorName}
-                              <span className="text-[9px] text-secondary">({v.courierName}, {v.estimatedDays})</span>
+                              <span className="text-[9px] text-secondary">({v.courierName || 'Standard Delivery'}, {v.estimatedDays || '3-5 days'})</span>
                             </span>
-                            <span>{formatPrice(v.subtotal)}</span>
+                            <span className="font-medium text-primary">
+                              {v.isFreeShippingEligible || v.customerShippingCharge === 0
+                                ? <span className="text-green-600">FREE</span>
+                                : formatPrice(v.customerShippingCharge !== undefined ? v.customerShippingCharge : (v.subtotal || 0))}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -812,16 +1171,16 @@ const Checkout = () => {
                   </div>
                 )}
                 {/* Free shipping progress bar */}
-                {shippingEstimate && !shippingEstimate.isFreeShipping && shippingEstimate.amountToFreeShipping > 0 && (
+                {discountedSubtotal < (shippingEstimate?.freeShippingThreshold || shippingConfig.freeShippingThreshold || 999) && (
                   <div className="bg-green-50 border border-green-200 rounded-sm p-3 -mx-1">
                     <p className="text-[11px] text-green-800 font-semibold flex items-center gap-1 mb-1.5">
-                      <Truck size={12} /> Add {formatPrice(shippingEstimate.amountToFreeShipping)} more for FREE shipping!
+                      <Truck size={12} /> Add {formatPrice(Math.max(0, (shippingEstimate?.freeShippingThreshold || shippingConfig.freeShippingThreshold || 999) - discountedSubtotal))} more for FREE shipping!
                     </p>
                     <div className="w-full bg-green-200 rounded-full h-1.5">
                       <div
                         className="bg-green-600 h-1.5 rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.min(100, ((subtotal / shippingEstimate.freeShippingThreshold) * 100))}%`,
+                          width: `${Math.min(100, ((discountedSubtotal / (shippingEstimate?.freeShippingThreshold || shippingConfig.freeShippingThreshold || 999)) * 100))}%`,
                         }}
                       />
                     </div>
@@ -835,14 +1194,14 @@ const Checkout = () => {
                 )}
                 <div className="flex justify-between text-text-secondary">
                   <span className="flex items-center gap-1">
-                    Tax (18% GST)
+                    GST / Tax ({gstPercentage}%)
                     {gstClaimed && buyerGstNumber && !gstError && (
                       <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">
                         CLAIMABLE
                       </span>
                     )}
                   </span>
-                  <span>{formatPrice(taxPrice)}</span>
+                  <span className="font-medium text-primary">+{formatPrice(taxPrice)}</span>
                 </div>
                 {gstClaimed && buyerGstNumber && !gstError && (
                   <div className="bg-green-50 border border-green-200 rounded p-2 -mx-2">

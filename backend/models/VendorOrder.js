@@ -35,7 +35,7 @@ const vendorOrderSchema = mongoose.Schema(
     netAmount: { type: Number, required: true }, // subtotal - commission
 
     // Shipping Economics Snapshot
-    shippingThresholdAtOrder: { type: Number, default: 499 },
+    shippingThresholdAtOrder: { type: Number, default: 999 },
     isFreeShippingEligible: { type: Boolean, default: false },
     customerShippingCharge: { type: Number, default: 0 },
     estimatedShippingCost: { type: Number, default: 0 },

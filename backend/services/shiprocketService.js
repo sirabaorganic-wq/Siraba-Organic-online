@@ -101,12 +101,15 @@ class ShiprocketService {
 
     const token = await this.login();
 
-    // Unique, deterministic location nickname
-    const sanitizeName = (str) => (str || '').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 30);
-    const locationName =
+    // Unique, deterministic location nickname (Shiprocket hard limit: 36 characters, alphanumeric & underscores)
+    const sanitizeName = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 36);
+    let locationName =
       vendor.shiprocket_pickup_code ||
       addr.shiprocketLocationName ||
-      `V_${sanitizeName(vendor.businessName)}_${vendor._id.toString().substring(18)}`;
+      `V_${sanitizeName(vendor.businessName).substring(0, 20)}_${vendor._id.toString().substring(18)}`;
+    
+    // Ensure final locationName never exceeds 36 chars and has valid chars
+    locationName = sanitizeName(locationName);
 
     const payload = {
       pickup_location: locationName,
@@ -358,7 +361,7 @@ class ShiprocketService {
       order_id: vendorOrder._id.toString(),
       order_date: new Date(vendorOrder.createdAt || Date.now()).toISOString().split('T')[0],
       pickup_location: verification.locationName || pickupLocation,
-      billing_customer_name: vendorOrder.shippingAddress?.name || order.shippingAddress?.fullName || order.user?.name || 'Customer',
+      billing_customer_name: vendorOrder.shippingAddress?.name || order.shippingAddress?.name || order.shippingAddress?.fullName || order.user?.name || 'Customer',
       billing_last_name: '',
       billing_address: vendorOrder.shippingAddress?.address || order.shippingAddress?.address || 'Main Street',
       billing_city: vendorOrder.shippingAddress?.city || order.shippingAddress?.city || 'Jaipur',

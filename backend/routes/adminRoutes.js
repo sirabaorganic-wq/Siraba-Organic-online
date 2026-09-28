@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const fs = require("fs");
+const path = require("path");
 const Vendor = require("../models/Vendor");
+const LegalAgreement = require("../models/LegalAgreement");
 const VendorOrder = require("../models/VendorOrder");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
@@ -449,6 +452,137 @@ router.post("/vendors/:id/notes", protect, admin, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// @desc    Set or update vendor Mutual NDA requirement
+// @route   PUT /api/admin/vendors/:id/nda-requirement
+// @access  Private/Admin or Vendor Onboarder
+router.put(
+  "/vendors/:id/nda-requirement",
+  protect,
+  adminOrVendorOnboarder,
+  async (req, res) => {
+    try {
+      const { isRequired, reason } = req.body;
+
+      if (typeof isRequired !== "boolean") {
+        return res.status(400).json({ message: "isRequired boolean field is required." });
+      }
+
+      const vendor = await Vendor.findById(req.params.id);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+
+      if (!vendor.agreements) {
+        vendor.agreements = {};
+      }
+      if (!vendor.agreements.mutualNda) {
+        vendor.agreements.mutualNda = {
+          isRequired: false,
+          status: "not_applicable",
+        };
+      }
+
+      const previousRequired = vendor.agreements.mutualNda.isRequired;
+      const currentStatus = vendor.agreements.mutualNda.status;
+
+      vendor.agreements.mutualNda.isRequired = isRequired;
+
+      // Adjust status transitions if needed
+      if (isRequired) {
+        if (currentStatus === "not_applicable" || !currentStatus) {
+          vendor.agreements.mutualNda.status = "pending";
+        }
+      } else {
+        if (currentStatus === "pending") {
+          vendor.agreements.mutualNda.status = "not_applicable";
+        }
+      }
+
+      await vendor.save();
+
+      // Log compliance audit entry
+      try {
+        await ComplianceAuditLog.create({
+          entityType: "mutual_nda",
+          entityId: vendor._id,
+          vendorId: vendor._id,
+          action: isRequired ? "nda_required" : "nda_waived",
+          newStatus: vendor.agreements.mutualNda.status,
+          performedBy: req.user._id,
+          userModel: "User",
+          reason: reason || (isRequired ? "Admin mandated Mutual NDA requirement" : "Admin waived Mutual NDA requirement"),
+          metadata: {
+            previousRequired,
+            newRequired: isRequired,
+            setBy: req.user.email || req.user._id,
+          },
+        });
+      } catch (auditErr) {
+        console.error("Compliance audit log error on nda-requirement:", auditErr.message);
+      }
+
+      res.json({
+        message: `Mutual NDA requirement ${isRequired ? "mandated" : "waived"} successfully`,
+        vendorId: vendor._id,
+        mutualNda: vendor.agreements.mutualNda,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+// @desc    Admin secure download of executed vendor agreement
+// @route   GET /api/admin/vendors/:id/agreements/:type/download
+// @access  Private/Admin or Vendor Onboarder
+router.get(
+  "/vendors/:id/agreements/:type/download",
+  protect,
+  adminOrVendorOnboarder,
+  async (req, res) => {
+    try {
+      const { id, type } = req.params;
+
+      if (!["VENDOR_MARKETPLACE_AGREEMENT", "MUTUAL_NDA"].includes(type)) {
+        return res.status(400).json({
+          message: "Invalid document type. Allowed types: VENDOR_MARKETPLACE_AGREEMENT, MUTUAL_NDA",
+        });
+      }
+
+      const vendor = await Vendor.findById(id);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+
+      const agreement = await LegalAgreement.findOne({
+        vendor: vendor._id,
+        documentType: type,
+        "execution.status": "executed",
+      }).sort({ "execution.acceptedAt": -1 });
+
+      if (!agreement || !agreement.artifact?.documentUrl) {
+        return res.status(404).json({
+          message: "No executed agreement found for this vendor and document type.",
+        });
+      }
+
+      const docUrl = agreement.artifact.documentUrl;
+
+      if (docUrl.startsWith("/uploads/")) {
+        const localFilePath = path.join(__dirname, "..", docUrl);
+        if (fs.existsSync(localFilePath)) {
+          const downloadFileName = `${type.toLowerCase()}-${agreement.template.version}-${vendor._id}.pdf`;
+          return res.download(localFilePath, downloadFileName);
+        }
+      }
+
+      return res.redirect(docUrl);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
 
 // @desc    Verify/Update vendor certifications
 // @route   PUT /api/admin/vendors/:id/certifications

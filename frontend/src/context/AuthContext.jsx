@@ -60,6 +60,41 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const fetchProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return null;
+            const { data } = await client.get('/auth/profile');
+            if (data) {
+                setUser((prev) => {
+                    const merged = { ...(prev || {}), ...data };
+                    localStorage.setItem('userInfo', JSON.stringify(merged));
+                    return merged;
+                });
+                return data;
+            }
+        } catch (error) {
+            console.error('Failed to fetch profile:', error);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetchProfile();
+        }
+    }, []);
+
+    const updateUserAddresses = (addresses) => {
+        setUser((prev) => {
+            if (!prev) return prev;
+            const updated = { ...prev, addresses };
+            localStorage.setItem('userInfo', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
     const logout = () => {
         setUser(null);
         localStorage.removeItem('userInfo');
@@ -108,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateProfile, toggleWishlist, fetchWishlist, loading, isAdmin: user?.isAdmin }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateProfile, fetchProfile, updateUserAddresses, toggleWishlist, fetchWishlist, loading, isAdmin: user?.isAdmin }}>
             {children}
         </AuthContext.Provider>
     );

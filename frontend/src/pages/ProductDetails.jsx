@@ -357,7 +357,7 @@ const ProductDetails = () => {
                 )}
               </div>
               <p className="text-[11px] text-slate-500">
-                Inclusive of all applicable taxes • Free shipping on orders above ₹499
+                + Applicable GST calculated at checkout • Free shipping on orders above ₹999
               </p>
 
               {/* Weight / Size Variants */}
@@ -448,7 +448,7 @@ const ProductDetails = () => {
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 pt-3 border-t border-slate-200/80">
               <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200/60">
                 <Truck className="w-4 h-4 text-[#0F3D2E] shrink-0" />
-                <span>Free Express Shipping &gt; ₹499</span>
+                <span>Free Express Shipping &gt; ₹999</span>
               </div>
               <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200/60">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -605,7 +605,7 @@ const ProductDetails = () => {
                     <Truck className="w-4 h-4 text-[#0F3D2E]" />
                     Delivery Timelines & Shipping Rates
                   </h4>
-                  <p>• <strong>Free Shipping:</strong> On vendor orders above ₹499 across India.</p>
+                  <p>• <strong>Free Shipping:</strong> On orders of ₹999 or more across India.</p>
                   <p>• <strong>Standard Delivery:</strong> 3–5 Business Days.</p>
                   <p>• <strong>Express Delivery:</strong> 1–2 Days available for select metro locations.</p>
                 </div>

@@ -357,6 +357,40 @@ const vendorSchema = mongoose.Schema(
     onboardingStep: { type: Number, default: 1 }, // Track onboarding progress (1-7)
     onboardingComplete: { type: Boolean, default: false },
 
+    // Legal Agreements Execution Tracking (Additive Foundation)
+    agreements: {
+      marketplaceAgreement: {
+        status: {
+          type: String,
+          enum: ["pending", "executed"],
+          default: "pending",
+        },
+        currentAgreement: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "LegalAgreement",
+        },
+        executedVersion: { type: String },
+        executedAt: { type: Date },
+      },
+      mutualNda: {
+        isRequired: {
+          type: Boolean,
+          default: false,
+        },
+        status: {
+          type: String,
+          enum: ["not_applicable", "pending", "executed"],
+          default: "not_applicable",
+        },
+        currentAgreement: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "LegalAgreement",
+        },
+        executedVersion: { type: String },
+        executedAt: { type: Date },
+      },
+    },
+
     // Performance Metrics
     metrics: {
       totalOrders: { type: Number, default: 0 },

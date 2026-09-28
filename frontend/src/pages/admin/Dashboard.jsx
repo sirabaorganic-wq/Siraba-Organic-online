@@ -44,6 +44,7 @@ import {
 import client from "../../api/client";
 import { downloadInvoice, previewInvoice } from "../../utils/invoiceUtils";
 import { History as HistoryIcon } from "lucide-react";
+import AdminLegalAgreementsSection from "../../components/vendor/legal/AdminLegalAgreementsSection";
 
 const AdminDashboard = () => {
   const { isAdmin, logout } = useAuth();
@@ -1059,11 +1060,11 @@ const AdminDashboard = () => {
                         <div class="totals-box">
                             <div class="total-row">
                                 <span>Subtotal</span>
-                                <span>₹${order.totalPrice.toFixed(2)}</span>
+                                <span>₹${(order.itemsPrice || (order.totalPrice - (order.shippingPrice || 0) - (order.taxPrice || 0))).toFixed(2)}</span>
                             </div>
                             <div class="total-row">
-                                <span>Tax (Included)</span>
-                                <span>₹0.00</span>
+                                <span>GST / Tax</span>
+                                <span>₹${(order.taxPrice || 0).toFixed(2)}</span>
                             </div>
                             <div class="total-row">
                                 <span>Shipping</span>
@@ -1495,6 +1496,15 @@ const AdminDashboard = () => {
                                             <div><span className="font-medium text-text-primary">Courier:</span> {vo.courierName || 'Pending'}</div>
                                           </div>
 
+                                          {/* Logistics Economics & Settlement Reconciliation */}
+                                          <div className="text-xs text-text-secondary grid grid-cols-2 md:grid-cols-5 gap-x-3 gap-y-1 mt-2.5 pt-2 border-t border-secondary/10 bg-white/80 p-2.5 rounded-sm">
+                                            <div><span className="text-text-secondary">Customer Paid:</span> <span className="font-semibold text-primary block">₹{vo.customerShippingCharge ?? 0}</span></div>
+                                            <div><span className="text-text-secondary">Courier Cost:</span> <span className="font-semibold text-primary block">₹{vo.estimatedShippingCost ?? 0}</span></div>
+                                            <div><span className="text-text-secondary">Platform Subsidy:</span> <span className="font-semibold text-amber-700 block">₹{vo.shippingSubsidy ?? 0}</span></div>
+                                            <div><span className="text-text-secondary">Vendor Deduction:</span> <span className="font-semibold text-emerald-700 block">₹0 (Platform)</span></div>
+                                            <div><span className="text-text-secondary">Vendor Payout:</span> <span className="font-semibold text-primary block">₹{vo.netAmount ?? (vo.subtotal - (vo.commission || 0))}</span></div>
+                                          </div>
+
                                           {vo.shipmentError?.message && (
                                             <div className="text-xs text-red-600 bg-red-50 p-2 rounded-sm border border-red-100 mt-2">
                                               <span className="font-bold">Error:</span> {vo.shipmentError.message}
@@ -1551,6 +1561,36 @@ const AdminDashboard = () => {
                                     </p>
                                   </div>
                                 ))}
+                              </div>
+                            </div>
+
+                            {/* Order Financial & Logistics Summary */}
+                            <div className="bg-white rounded-sm border border-secondary/10 p-4 flex flex-wrap justify-between items-center gap-4 text-xs">
+                              <div className="flex items-center gap-6">
+                                <div>
+                                  <span className="text-text-secondary block">Items Subtotal</span>
+                                  <span className="font-semibold text-primary">{formatPrice(order.itemsPrice || (order.totalPrice - (order.shippingPrice || 0) - (order.taxPrice || 0)))}</span>
+                                </div>
+                                <div>
+                                  <span className="text-text-secondary block">GST / Tax</span>
+                                  <span className="font-semibold text-primary">+{formatPrice(order.taxPrice || 0)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-text-secondary block">Customer Shipping</span>
+                                  <span className="font-semibold text-primary">
+                                    {(order.shippingPrice || 0) > 0 ? formatPrice(order.shippingPrice) : <span className="text-emerald-600 font-bold">FREE (₹0)</span>}
+                                  </span>
+                                </div>
+                                {(order.couponDiscount || 0) > 0 && (
+                                  <div>
+                                    <span className="text-text-secondary block">Coupon Discount</span>
+                                    <span className="font-semibold text-rose-600">-{formatPrice(order.couponDiscount)}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <span className="text-text-secondary block">Total Paid by Consumer</span>
+                                <span className="text-base font-bold text-primary">{formatPrice(order.totalPrice)}</span>
                               </div>
                             </div>
                           </div>
@@ -4280,6 +4320,23 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Legal Agreements & Mutual NDA Requirement (Phase 3 Integration) */}
+                  <AdminLegalAgreementsSection
+                    vendor={selectedVendor}
+                    onVendorUpdated={async () => {
+                      try {
+                        const { data } = await client.get(`/admin/vendors/${selectedVendor._id}`);
+                        setSelectedVendor(data.vendor || data);
+                        const params = new URLSearchParams();
+                        if (vendorFilter) params.append("status", vendorFilter);
+                        const vendorsList = await client.get(`/admin/vendors?${params.toString()}`);
+                        setVendors(vendorsList.data.vendors);
+                      } catch (err) {
+                        console.error("Failed to refresh vendor after NDA update", err);
+                      }
+                    }}
+                  />
 
                   {/* Actions */}
                   <div className="flex gap-3 pt-4 border-t">

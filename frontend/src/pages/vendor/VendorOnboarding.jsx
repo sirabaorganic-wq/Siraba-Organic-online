@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useVendor } from "../../context/VendorContext";
 import { useNavigate, Link } from "react-router-dom";
-import { Upload, Check, AlertCircle, LogOut, ArrowRight, Save, Trash2, Eye } from "lucide-react";
+import { Upload, Check, AlertCircle, AlertTriangle, LogOut, ArrowRight, Save, Trash2, Eye } from "lucide-react";
 import Logo from "../../assets/SIRABALOGO.png";
 import client from "../../api/client";
 import { getDocumentViewUrl } from "../../utils/documentViewer";
+import LegalAgreementsSection from "../../components/vendor/legal/LegalAgreementsSection";
 
 const ACTIVE_DOCUMENTS = [
   {
@@ -116,6 +117,12 @@ const VendorOnboarding = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeStep, setActiveStep] = useState(1); // 1: Business, 2: Bank, 3: Pickup Address, 4: Cert, 5: Product, 6: Quality, 7: Submit
+  const legalSectionRef = useRef(null);
+  const [legalStatus, setLegalStatus] = useState(null);
+
+  const handleLegalStatusChange = useCallback((status) => {
+    setLegalStatus(status);
+  }, []);
 
   // Form State matching Prototype
   const [isBusinessRegistered, setIsBusinessRegistered] = useState(vendor?.isBusinessRegistered || "yes");
@@ -148,7 +155,7 @@ const VendorOnboarding = () => {
 
   // Certification Details
   const [certificationRoute, setCertificationRoute] = useState(vendor?.organicCertification?.certificationRoute || "npop");
-  
+
   // Certifications By Route map state
   const [certificationsByRoute, setCertificationsByRoute] = useState(() => {
     const initialMap = {
@@ -200,9 +207,9 @@ const VendorOnboarding = () => {
   );
   const [certificateValidUntil, setCertificateValidUntil] = useState(
     activeRouteData.certificateValidUntil ||
-      (vendor?.organicCertification?.certificateValidUntil
-        ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
-        : "")
+    (vendor?.organicCertification?.certificateValidUntil
+      ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
+      : "")
   );
 
   const handleCertInputChange = (field, value) => {
@@ -254,12 +261,12 @@ const VendorOnboarding = () => {
       routeToSave === "npop"
         ? "NPOP / India Organic"
         : routeToSave === "usda"
-        ? "USDA Organic"
-        : routeToSave === "pgs"
-        ? "PGS-India"
-        : routeToSave === "eu"
-        ? "EU Organic"
-        : "Other";
+          ? "USDA Organic"
+          : routeToSave === "pgs"
+            ? "PGS-India"
+            : routeToSave === "eu"
+              ? "EU Organic"
+              : "Other";
 
     try {
       const res = await updateOnboarding(2, {
@@ -571,10 +578,14 @@ const VendorOnboarding = () => {
       return Boolean(uploadedDocs.representative_product_image || productName || vendor?.representativeProduct?.productName);
     }
     if (stepNum === 6) {
-      return Boolean(maintainsTraceabilityRecords && canProvideBatchSourceEvidence);
+      return Boolean(vendor?.maintainsTraceabilityRecords && vendor?.canProvideBatchSourceEvidence);
     }
     if (stepNum === 7) {
-      return Boolean(vendor?.onboardingComplete);
+      const existingComplete = Boolean(vendor?.onboardingComplete);
+      const isVmaExecuted = legalStatus?.marketplaceAgreement?.status === "executed";
+      const isNdaSatisfied =
+        !legalStatus?.mutualNda?.isRequired || legalStatus?.mutualNda?.status === "executed";
+      return existingComplete && isVmaExecuted && isNdaSatisfied;
     }
     return false;
   };
@@ -645,10 +656,20 @@ const VendorOnboarding = () => {
         await refreshVendorStatus();
         navigate("/vendor/under-review");
       } else {
-        setError(res.message);
+        setError(res.message || "Failed to submit onboarding application.");
+        // Refresh authoritative agreement status if backend rejected due to legal compliance
+        if (legalSectionRef.current?.refreshStatus) {
+          await legalSectionRef.current.refreshStatus();
+        }
       }
     } catch (err) {
-      setError("Submission failed. Please check required fields and uploads.");
+      console.error("Final submit error:", err);
+      setError(
+        err?.response?.data?.message || "Submission failed. Please check required fields and uploads."
+      );
+      if (legalSectionRef.current?.refreshStatus) {
+        legalSectionRef.current.refreshStatus();
+      }
     } finally {
       setLoading(false);
     }
@@ -709,23 +730,21 @@ const VendorOnboarding = () => {
               <React.Fragment key={st.num}>
                 <div
                   onClick={() => setActiveStep(st.num)}
-                  className={`flex items-center gap-1.5 text-[11px] cursor-pointer whitespace-nowrap transition-all ${
-                    active
+                  className={`flex items-center gap-1.5 text-[11px] cursor-pointer whitespace-nowrap transition-all ${active
                       ? "font-bold text-[#24302a]"
                       : completed
-                      ? "font-semibold text-emerald-800"
-                      : "text-[#8a908c]"
-                  }`}
+                        ? "font-semibold text-emerald-800"
+                        : "text-[#8a908c]"
+                    }`}
                   title={`Step ${st.num}: ${st.name} ${completed ? "(Completed)" : ""}`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold transition-all ${
-                      completed
+                    className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold transition-all ${completed
                         ? "bg-[#6d8a72] border-[#6d8a72] text-white shadow-sm"
                         : active
-                        ? "bg-[#24302a] border-[#24302a] text-white shadow-sm ring-2 ring-[#6d8a72]/30"
-                        : "bg-white border-[#c8cec9] text-[#24302a]"
-                    }`}
+                          ? "bg-[#24302a] border-[#24302a] text-white shadow-sm ring-2 ring-[#6d8a72]/30"
+                          : "bg-white border-[#c8cec9] text-[#24302a]"
+                      }`}
                   >
                     {completed ? "✓" : st.num}
                   </div>
@@ -733,9 +752,8 @@ const VendorOnboarding = () => {
                 </div>
                 {idx < arr.length - 1 && (
                   <div
-                    className={`w-4 md:w-8 h-[2px] mx-1 transition-all ${
-                      connectorDone ? "bg-[#6d8a72]" : "bg-[#bfc7c0]"
-                    }`}
+                    className={`w-4 md:w-8 h-[2px] mx-1 transition-all ${connectorDone ? "bg-[#6d8a72]" : "bg-[#bfc7c0]"
+                      }`}
                   ></div>
                 )}
               </React.Fragment>
@@ -802,9 +820,8 @@ const VendorOnboarding = () => {
                   {["yes", "no", "other"].map((val) => (
                     <label
                       key={val}
-                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
-                        isBusinessRegistered === val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
-                      }`}
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${isBusinessRegistered === val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
+                        }`}
                     >
                       <input
                         type="radio"
@@ -1265,18 +1282,17 @@ const VendorOnboarding = () => {
                     <label
                       key={route.val}
                       onClick={() => handleRouteSwitch(route.val)}
-                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] transition-all ${
-                        certificationRoute === route.val
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] transition-all ${certificationRoute === route.val
                           ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold shadow-sm"
                           : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700 hover:bg-slate-50"
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
                         name="organicRoute"
                         value={route.val}
                         checked={certificationRoute === route.val}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         className="accent-[#6d8a72]"
                       />
                       {route.label}
@@ -1366,136 +1382,136 @@ const VendorOnboarding = () => {
               </div>
             </div>
 
-              {/* Upload 4a: NPOP Certificate (Mandatory) */}
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
-                  NPOP / India Organic Certificate <span className="text-[#a04b42]">* Mandatory</span>
-                </div>
-                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload NPOP Certificate</div>
-                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
-                    {uploadedDocs.npop_certificate && (
-                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
-                        ✓ {uploadedDocs.npop_certificate.name || "Uploaded"}
-                      </div>
-                    )}
-                  </div>
-                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
-                    {uploadingState.npop_certificate ? "Uploading..." : uploadedDocs.npop_certificate ? "Replace" : "Upload"}
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "npop_certificate"), e.target.files[0])}
-                    />
-                  </label>
-                </div>
+            {/* Upload 4a: NPOP Certificate (Mandatory) */}
+            <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+              <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
+                NPOP / India Organic Certificate <span className="text-[#a04b42]">* Mandatory</span>
               </div>
-
-              {/* Upload 4b: USDA Organic Certificate (Mandatory) */}
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
-                <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
-                  USDA Organic Certificate <span className="text-[#a04b42]">* Mandatory</span>
-                </div>
-                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload USDA Certificate</div>
-                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
-                    {uploadedDocs.usda_organic_certificate && (
-                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
-                        ✓ {uploadedDocs.usda_organic_certificate.name || "Uploaded"}
-                      </div>
-                    )}
-                  </div>
-                  <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
-                    {uploadingState.usda_organic_certificate ? "Uploading..." : uploadedDocs.usda_organic_certificate ? "Replace" : "Upload"}
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "usda_organic_certificate"), e.target.files[0])}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Upload 4c: Other Organic Certificate (Optional - Up to 5 files) */}
-              <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="text-[12px] font-bold text-[#24302a] font-serif">
-                    Other Organic Certificates (EU, PGS-India, etc.) <span className="text-[#6e806f] font-normal">• Optional (Up to 5 files)</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-[#6d8a72] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    {(uploadedDocs.other_organic_certificates || []).length} / 5 files uploaded
-                  </span>
-                </div>
-
-                <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb]">
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <div className="min-w-0">
-                      <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload Additional Certificates</div>
-                      <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB per file (Upload up to 5 certificates)</div>
-                    </div>
-                    {(uploadedDocs.other_organic_certificates || []).length < 5 ? (
-                      <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
-                        {uploadingState.other_organic_certificate ? "Uploading..." : "+ Add Certificate File"}
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png,.webp"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files[0]) {
-                              handleOtherCertFileUpload(e.target.files[0]);
-                              e.target.value = "";
-                            }
-                          }}
-                        />
-                      </label>
-                    ) : (
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
-                        Limit Reached (5/5)
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Uploaded files list */}
-                  {(uploadedDocs.other_organic_certificates || []).length > 0 && (
-                    <div className="mt-2.5 pt-2 border-t border-slate-200 space-y-1.5">
-                      <div className="text-[10px] font-bold text-[#24302a] uppercase tracking-wider">Uploaded Documents:</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {uploadedDocs.other_organic_certificates.map((doc, idx) => (
-                          <div key={doc.id || idx} className="flex items-center justify-between bg-white border border-[#d5dad6] rounded p-2 text-xs">
-                            <div className="flex items-center gap-1.5 min-w-0 pr-2">
-                              <span className="text-emerald-700 font-bold">✓</span>
-                              <span className="truncate text-[11px] text-slate-800 font-medium">{doc.name || `Certificate ${idx + 1}`}</span>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <a
-                                href={getDocumentViewUrl(doc.url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded"
-                                title="View document"
-                              >
-                                <Eye size={13} />
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteOtherCertDoc(doc.id)}
-                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
-                                title="Delete document"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+              <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload NPOP Certificate</div>
+                  <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                  {uploadedDocs.npop_certificate && (
+                    <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                      ✓ {uploadedDocs.npop_certificate.name || "Uploaded"}
                     </div>
                   )}
                 </div>
+                <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                  {uploadingState.npop_certificate ? "Uploading..." : uploadedDocs.npop_certificate ? "Replace" : "Upload"}
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "npop_certificate"), e.target.files[0])}
+                  />
+                </label>
               </div>
+            </div>
+
+            {/* Upload 4b: USDA Organic Certificate (Mandatory) */}
+            <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+              <div className="text-[12px] font-bold text-[#24302a] mb-1 font-serif">
+                USDA Organic Certificate <span className="text-[#a04b42]">* Mandatory</span>
+              </div>
+              <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb] flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload USDA Certificate</div>
+                  <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
+                  {uploadedDocs.usda_organic_certificate && (
+                    <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate">
+                      ✓ {uploadedDocs.usda_organic_certificate.name || "Uploaded"}
+                    </div>
+                  )}
+                </div>
+                <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                  {uploadingState.usda_organic_certificate ? "Uploading..." : uploadedDocs.usda_organic_certificate ? "Replace" : "Upload"}
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "usda_organic_certificate"), e.target.files[0])}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Upload 4c: Other Organic Certificate (Optional - Up to 5 files) */}
+            <div className="border border-[#d9ddd9] rounded-lg p-3 bg-white sm:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-[12px] font-bold text-[#24302a] font-serif">
+                  Other Organic Certificates (EU, PGS-India, etc.) <span className="text-[#6e806f] font-normal">• Optional (Up to 5 files)</span>
+                </div>
+                <span className="text-[10px] font-bold text-[#6d8a72] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  {(uploadedDocs.other_organic_certificates || []).length} / 5 files uploaded
+                </span>
+              </div>
+
+              <div className="border border-dashed border-[#c8cec9] rounded-lg p-3 bg-[#fbfcfb]">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload Additional Certificates</div>
+                    <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB per file (Upload up to 5 certificates)</div>
+                  </div>
+                  {(uploadedDocs.other_organic_certificates || []).length < 5 ? (
+                    <label className="border border-[#4d5b52] rounded-md bg-white px-3 py-1.5 text-[10px] font-medium text-[#24302a] cursor-pointer hover:bg-slate-50 flex-shrink-0">
+                      {uploadingState.other_organic_certificate ? "Uploading..." : "+ Add Certificate File"}
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files[0]) {
+                            handleOtherCertFileUpload(e.target.files[0]);
+                            e.target.value = "";
+                          }
+                        }}
+                      />
+                    </label>
+                  ) : (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
+                      Limit Reached (5/5)
+                    </span>
+                  )}
+                </div>
+
+                {/* Uploaded files list */}
+                {(uploadedDocs.other_organic_certificates || []).length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-slate-200 space-y-1.5">
+                    <div className="text-[10px] font-bold text-[#24302a] uppercase tracking-wider">Uploaded Documents:</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {uploadedDocs.other_organic_certificates.map((doc, idx) => (
+                        <div key={doc.id || idx} className="flex items-center justify-between bg-white border border-[#d5dad6] rounded p-2 text-xs">
+                          <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                            <span className="text-emerald-700 font-bold">✓</span>
+                            <span className="truncate text-[11px] text-slate-800 font-medium">{doc.name || `Certificate ${idx + 1}`}</span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <a
+                              href={getDocumentViewUrl(doc.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded"
+                              title="View document"
+                            >
+                              <Eye size={13} />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOtherCertDoc(doc.id)}
+                              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
+                              title="Delete document"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="bg-[#f7f8f6] border-l-4 border-[#b99a57] p-3 text-[11px] text-[#5f6862] leading-relaxed rounded-r-md">
               <b>No duplicate upload:</b> You do not need to upload a separate Product Scope Certificate if the submitted certification already establishes that the representative product is covered. SIRABA may request scope/supporting documentation only where product coverage is unclear or additional verification is required.
@@ -1554,9 +1570,8 @@ const VendorOnboarding = () => {
                   ].map((item) => (
                     <label
                       key={item.val}
-                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${
-                        certificationCoverage === item.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
-                      }`}
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] ${certificationCoverage === item.val ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold" : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700"
+                        }`}
                     >
                       <input
                         type="radio"
@@ -1751,6 +1766,13 @@ const VendorOnboarding = () => {
           </div>
         </section>
 
+        {/* Legal & Compliance Agreements (Phase 3 Integration) */}
+        <LegalAgreementsSection
+          ref={legalSectionRef}
+          vendor={vendor}
+          onStatusChange={handleLegalStatusChange}
+        />
+
         {/* Summary Box */}
         <div className="mt-5 border border-[#cfd5d0] rounded-xl p-4 sm:p-5 bg-white shadow-sm font-sans">
           <h3 className="text-sm font-bold text-[#24302a] font-serif mb-2">
@@ -1779,9 +1801,58 @@ const VendorOnboarding = () => {
               Representative Product (Label + Product Image) {uploadedDocs.product_label_packaging && uploadedDocs.representative_product_image ? "✓" : "(Required)"}
             </li>
             <li>Traceability &amp; Verification declarations</li>
-            <li>Laboratory Report / CoA — recommended, not mandatory</li>
+            <li>Laboratory Report / CoA — recommended, mandatory</li>
+            <li className={legalStatus?.marketplaceAgreement?.status === "executed" ? "text-emerald-800 font-medium" : "text-amber-800 font-medium"}>
+              Vendor Marketplace Agreement {legalStatus?.marketplaceAgreement?.status === "executed" ? "✓ (Executed)" : "(Required before submission)"}
+            </li>
+            {legalStatus?.mutualNda?.isRequired && (
+              <li className={legalStatus?.mutualNda?.status === "executed" ? "text-emerald-800 font-medium" : "text-amber-800 font-medium"}>
+                Mutual Non-Disclosure Agreement {legalStatus?.mutualNda?.status === "executed" ? "✓ (Executed)" : "(Required for your account)"}
+              </li>
+            )}
           </ul>
         </div>
+
+        {/* Legal Action Required Warning Banner (User Adjustment 7) */}
+        {legalStatus &&
+          (legalStatus.marketplaceAgreement?.status !== "executed" ||
+            (legalStatus.mutualNda?.isRequired &&
+              legalStatus.mutualNda?.status !== "executed")) && (
+            <div className="mt-6 p-4 rounded-xl border border-amber-300 bg-amber-50/90 font-sans flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-amber-900 tracking-wide uppercase">
+                    ⚠ Legal Action Required
+                  </div>
+                  <p className="text-xs text-amber-900 mt-1 leading-relaxed max-w-xl">
+                    {legalStatus.marketplaceAgreement?.status !== "executed"
+                      ? "Please review and accept the SIRABA ORGANIC Vendor Marketplace Agreement before submitting your onboarding application."
+                      : "Please review and accept the SIRABA ORGANIC Mutual NDA & Confidentiality Agreement mandated for your account before submitting your onboarding application."}
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 self-start sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (legalStatus.marketplaceAgreement?.status !== "executed") {
+                      legalSectionRef.current?.openModal("vendor-agreement");
+                    } else {
+                      legalSectionRef.current?.openModal("mutual-nda");
+                    }
+                  }}
+                  className="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-lg text-xs font-bold transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  {legalStatus.marketplaceAgreement?.status !== "executed"
+                    ? "Review & Sign Agreement"
+                    : "Review & Sign Mutual NDA"}
+                </button>
+              </div>
+            </div>
+          )}
 
         {/* Actions Bar */}
         <div className="flex justify-between items-center mt-6 font-sans">
@@ -1795,8 +1866,33 @@ const VendorOnboarding = () => {
 
           <button
             onClick={handleFinalSubmit}
-            disabled={loading}
-            className="bg-[#6d8a72] border border-[#6d8a72] text-white rounded-lg px-6 py-2.5 text-xs font-bold hover:bg-[#5c7760] transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+            disabled={
+              loading ||
+              Boolean(
+                legalStatus &&
+                (legalStatus.marketplaceAgreement?.status !== "executed" ||
+                  (legalStatus.mutualNda?.isRequired &&
+                    legalStatus.mutualNda?.status !== "executed"))
+              )
+            }
+            className={`border rounded-lg px-6 py-2.5 text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 ${loading ||
+                Boolean(
+                  legalStatus &&
+                  (legalStatus.marketplaceAgreement?.status !== "executed" ||
+                    (legalStatus.mutualNda?.isRequired &&
+                      legalStatus.mutualNda?.status !== "executed"))
+                )
+                ? "bg-slate-300 border-slate-300 text-slate-500 cursor-not-allowed"
+                : "bg-[#6d8a72] border-[#6d8a72] text-white hover:bg-[#5c7760] cursor-pointer"
+              }`}
+            title={
+              legalStatus &&
+                (legalStatus.marketplaceAgreement?.status !== "executed" ||
+                  (legalStatus.mutualNda?.isRequired &&
+                    legalStatus.mutualNda?.status !== "executed"))
+                ? "Please complete legal agreement acceptance before submitting"
+                : ""
+            }
           >
             {loading ? "Submitting..." : "Review & Submit →"}
           </button>

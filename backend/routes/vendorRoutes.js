@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
 const Vendor = require("../models/Vendor");
+const LegalAgreement = require("../models/LegalAgreement");
+const agreementService = require("../services/agreementService");
+const { getActiveTemplateConfig } = require("../config/legalTemplates");
 const VendorOrder = require("../models/VendorOrder");
 const Product = require("../models/Product");
 const { upsertProductBatch } = require("../services/complianceService");
@@ -674,10 +679,11 @@ router.put("/pickup-address", protectVendor, async (req, res) => {
       return res.status(400).json({ message: "Address line 1 and 6-digit Pincode are required." });
     }
 
-    const locName =
+    const sanitizeLoc = (str) => (str || '').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 36);
+    const locName = sanitizeLoc(
       pickupAddress.shiprocketLocationName ||
-      pickupAddress.facilityName ||
-      `V_${(pickupAddress.facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15)}_${vendor._id.toString().substring(18)}`;
+      `V_${(pickupAddress.facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15)}_${vendor._id.toString().substring(18)}`
+    );
 
     vendor.pickupAddress = {
       facilityName: pickupAddress.facilityName || vendor.pickupAddress?.facilityName,
@@ -697,12 +703,31 @@ router.put("/pickup-address", protectVendor, async (req, res) => {
     try {
       const shiprocketService = require("../services/shiprocketService");
       const regResult = await shiprocketService.registerPickupLocation(vendor);
+      if (!vendor.shiprocketPickup) vendor.shiprocketPickup = {};
       if (regResult.success) {
         vendor.shiprocket_pickup_code = regResult.locationName;
         vendor.pickupAddress.shiprocketLocationName = regResult.locationName;
+        vendor.shiprocketPickup = {
+          status: "registered",
+          locationName: regResult.locationName,
+          registeredAt: new Date(),
+          lastVerifiedAt: new Date(),
+        };
+      } else {
+        vendor.shiprocketPickup = {
+          status: "failed",
+          locationName: regResult.locationName,
+          lastError: regResult.error,
+          lastVerifiedAt: new Date(),
+        };
       }
     } catch (shipErr) {
       console.error("Shiprocket location registration error:", shipErr.message);
+      vendor.shiprocketPickup = {
+        status: "failed",
+        lastError: shipErr.message,
+        lastVerifiedAt: new Date(),
+      };
     }
 
     await vendor.save();
@@ -960,6 +985,34 @@ router.put("/onboarding", protectVendor, async (req, res) => {
           return res.status(400).json({ message: "Representative Product Image is required." });
         }
 
+        // 7. Mandatory Vendor Marketplace Agreement Check
+        const hasExecutedAgreement = await LegalAgreement.findOne({
+          vendor: vendor._id,
+          documentType: "VENDOR_MARKETPLACE_AGREEMENT",
+          "execution.status": "executed",
+        });
+
+        if (!hasExecutedAgreement && vendor.agreements?.marketplaceAgreement?.status !== "executed") {
+          return res.status(400).json({
+            message: "The SIRABA ORGANIC Vendor Marketplace Agreement must be reviewed and accepted before submitting the application.",
+          });
+        }
+
+        // 8. Conditional Mutual NDA Check (Required only if NDA is required for this vendor)
+        if (vendor.agreements?.mutualNda?.isRequired) {
+          const hasExecutedNda = await LegalAgreement.findOne({
+            vendor: vendor._id,
+            documentType: "MUTUAL_NDA",
+            "execution.status": "executed",
+          });
+
+          if (!hasExecutedNda && vendor.agreements?.mutualNda?.status !== "executed") {
+            return res.status(400).json({
+              message: "The Mutual Non-Disclosure Agreement (NDA) is required for your account and must be accepted before submitting.",
+            });
+          }
+        }
+
         // All checks passed! Update vendor state
         vendor.onboardingComplete = true;
         vendor.status = "under_review";
@@ -1037,6 +1090,198 @@ router.delete("/compliance/:docId", protectVendor, async (req, res) => {
     await vendor.save();
     res.json({ message: "Document removed" });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ================== LEGAL AGREEMENT ROUTES ==================
+
+// Helper to map route parameter or payload to internal documentType
+const mapRouteTypeToDocType = (typeParam) => {
+  const normalized = (typeParam || "").toUpperCase().replace(/-/g, "_").trim();
+  if (
+    normalized === "VENDOR_AGREEMENT" ||
+    normalized === "VENDOR_MARKETPLACE_AGREEMENT"
+  ) {
+    return "VENDOR_MARKETPLACE_AGREEMENT";
+  }
+  if (normalized === "MUTUAL_NDA" || normalized === "NDA") {
+    return "MUTUAL_NDA";
+  }
+  return null;
+};
+
+// @desc    Get vendor's legal agreements status & execution references
+// @route   GET /api/vendors/agreements/status
+// @access  Private/Vendor
+router.get("/agreements/status", protectVendor, async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.vendor._id).lean();
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const agreementsStatus = {
+      marketplaceAgreement: vendor.agreements?.marketplaceAgreement || {
+        status: "pending",
+      },
+      mutualNda: vendor.agreements?.mutualNda || {
+        isRequired: false,
+        status: "not_applicable",
+      },
+    };
+
+    res.json(agreementsStatus);
+  } catch (error) {
+    console.error("Error fetching agreements status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Preview vendor-specific legal agreement draft
+// @route   GET /api/vendors/agreements/preview/:type
+// @access  Private/Vendor
+router.get("/agreements/preview/:type", protectVendor, async (req, res) => {
+  try {
+    const docType = mapRouteTypeToDocType(req.params.type);
+    if (!docType) {
+      return res.status(400).json({
+        message: "Invalid agreement type. Supported: 'vendor-agreement', 'mutual-nda', 'VENDOR_MARKETPLACE_AGREEMENT', 'MUTUAL_NDA'",
+      });
+    }
+
+    const vendor = await Vendor.findById(req.vendor._id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const preview = await agreementService.generateAgreementPreview(vendor, docType);
+    res.json(preview);
+  } catch (error) {
+    console.error("Agreement preview error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Accept and execute legal agreement electronically
+// @route   POST /api/vendors/agreements/accept
+// @access  Private/Vendor
+router.post("/agreements/accept", protectVendor, async (req, res) => {
+  try {
+    const {
+      agreementType,
+      documentType,
+      signatoryName,
+      signatoryDesignation,
+      agreed,
+    } = req.body;
+
+    const docType = mapRouteTypeToDocType(agreementType || documentType);
+    if (!docType) {
+      return res.status(400).json({
+        message: "Valid agreementType or documentType ('vendor-agreement', 'mutual-nda', 'VENDOR_MARKETPLACE_AGREEMENT', 'MUTUAL_NDA') is required.",
+      });
+    }
+
+    if (!agreed) {
+      return res.status(400).json({
+        message: "You must explicitly confirm acceptance (agreed: true) to execute the agreement.",
+      });
+    }
+
+    if (!signatoryName || typeof signatoryName !== "string" || !signatoryName.trim()) {
+      return res.status(400).json({
+        message: "Signatory legal name is required.",
+      });
+    }
+
+    if (!signatoryDesignation || typeof signatoryDesignation !== "string" || !signatoryDesignation.trim()) {
+      return res.status(400).json({
+        message: "Signatory designation / title is required.",
+      });
+    }
+
+    const result = await agreementService.executeAgreement({
+      vendorId: req.vendor._id,
+      documentType: docType,
+      signatoryName: signatoryName.trim(),
+      signatoryDesignation: signatoryDesignation.trim(),
+      agreed: Boolean(agreed),
+      req,
+    });
+
+    res.status(result.isAlreadyExecuted ? 200 : 201).json({
+      success: true,
+      message: result.isAlreadyExecuted
+        ? "Agreement was already executed. Returning existing execution record."
+        : "Agreement successfully executed and cryptographically sealed.",
+      agreement: {
+        _id: result.agreement._id,
+        documentType: result.agreement.documentType,
+        templateVersion: result.agreement.template?.version,
+        templateHash: result.agreement.template?.templateHash,
+        status: result.agreement.execution?.status,
+        acceptedAt: result.agreement.execution?.acceptedAt,
+        signatoryName: result.agreement.execution?.signatoryName,
+        signatoryDesignation: result.agreement.execution?.signatoryDesignation,
+        documentUrl: result.agreement.artifact?.documentUrl,
+        documentHash: result.agreement.artifact?.documentHash,
+      },
+    });
+  } catch (error) {
+    console.error("Agreement execution error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Securely download executed agreement PDF (strict vendor isolation)
+// @route   GET /api/vendors/agreements/:type/download
+// @access  Private/Vendor
+router.get("/agreements/:type/download", protectVendor, async (req, res) => {
+  try {
+    const docType = mapRouteTypeToDocType(req.params.type);
+    if (!docType) {
+      return res.status(400).json({
+        message: "Invalid agreement type. Supported: 'vendor-agreement', 'mutual-nda'",
+      });
+    }
+
+    // Strict vendor isolation: query enforces vendor = req.vendor._id
+    const agreement = await LegalAgreement.findOne({
+      vendor: req.vendor._id,
+      documentType: docType,
+      "execution.status": "executed",
+    }).sort({ createdAt: -1 });
+
+    if (!agreement || !agreement.artifact?.documentUrl) {
+      return res.status(404).json({
+        message: "No executed agreement found for this document type.",
+      });
+    }
+
+    const docUrl = agreement.artifact.documentUrl;
+
+    // If local file path
+    if (docUrl.startsWith("/uploads/")) {
+      const path = require("path");
+      const fs = require("fs");
+      const relativePath = docUrl.replace("/uploads/", "");
+      const fullPath = path.join(__dirname, "../uploads", relativePath);
+
+      if (fs.existsSync(fullPath)) {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${docType.toLowerCase()}-${agreement.template.version}.pdf"`
+        );
+        return res.sendFile(fullPath);
+      }
+    }
+
+    // If remote URL (Cloudinary)
+    return res.redirect(docUrl);
+  } catch (error) {
+    console.error("Agreement download error:", error);
     res.status(500).json({ message: error.message });
   }
 });

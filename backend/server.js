@@ -165,6 +165,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/addresses", require("./routes/addressRoutes"));
 app.use("/api/upload", uploadRoutes);
 app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/coupons", couponRoutes);

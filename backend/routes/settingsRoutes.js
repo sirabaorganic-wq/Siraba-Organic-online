@@ -104,4 +104,24 @@ router.put('/certifications', async (req, res) => {
     }
 });
 
+// @desc    Get Shipping Settings (Public)
+// @route   GET /api/settings/shipping
+// @access  Public
+router.get('/shipping', async (req, res) => {
+    try {
+        const { getShippingConfig } = require('./shippingRoutes');
+        const config = await getShippingConfig();
+        res.json({
+            freeShippingThreshold: config.freeShippingThreshold,
+            thresholdScope: config.thresholdScope,
+            belowThresholdMode: config.belowThresholdMode,
+            codSurcharge: config.codSurcharge,
+            isEnabled: config.isEnabled,
+        });
+    } catch (error) {
+        console.error('Failed to get shipping settings:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

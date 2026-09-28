@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const VendorOrder = require("../models/VendorOrder");
@@ -8,6 +9,8 @@ const { protect, admin } = require("../middleware/authMiddleware");
 const { invalidateCache } = require("../config/cache");
 const { enqueueShipment } = require("../jobs/shiprocketQueue");
 const { getCommissionRate } = require("../config/vendorPlans");
+const { calculateShipping } = require("./shippingRoutes");
+const shiprocketService = require("../services/shiprocketService");
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -16,6 +19,7 @@ router.post("/", protect, async (req, res) => {
   const {
     orderItems,
     shippingAddress,
+    shippingAddressId,
     paymentMethod,
     itemsPrice,
     taxPrice,
@@ -27,6 +31,59 @@ router.post("/", protect, async (req, res) => {
 
   if (orderItems && orderItems.length === 0) {
     return res.status(400).json({ message: "No order items" });
+  }
+
+  // ===== RESOLVE & VALIDATE SHIPPING ADDRESS WITH OWNERSHIP CHECK =====
+  let resolvedAddress = null;
+  const user = req.user;
+
+  if (shippingAddressId) {
+    resolvedAddress = user.addresses?.id(shippingAddressId);
+    if (!resolvedAddress) {
+      return res.status(400).json({ message: "Selected delivery address does not exist or does not belong to you" });
+    }
+  } else if (shippingAddress?._id) {
+    resolvedAddress = user.addresses?.id(shippingAddress._id);
+    if (!resolvedAddress) {
+      return res.status(400).json({ message: "Selected delivery address does not exist or does not belong to you" });
+    }
+  } else if (shippingAddress && shippingAddress.address) {
+    resolvedAddress = shippingAddress;
+  } else {
+    return res.status(400).json({ message: "Shipping address is required" });
+  }
+
+  const cleanPhone = String(resolvedAddress.phone || user.phone || "").replace(/\D/g, "");
+  const formattedPhone = cleanPhone.length > 10 ? cleanPhone.slice(-10) : cleanPhone;
+
+  const verifiedShippingAddress = {
+    name: (resolvedAddress.name || user.name || "").trim(),
+    phone: formattedPhone,
+    address: (resolvedAddress.address || "").trim(),
+    addressLine2: (resolvedAddress.addressLine2 || "").trim(),
+    landmark: (resolvedAddress.landmark || "").trim(),
+    city: (resolvedAddress.city || "").trim(),
+    state: (resolvedAddress.state || "").trim(),
+    postalCode: String(resolvedAddress.postalCode || "").trim(),
+    country: (resolvedAddress.country || "India").trim(),
+    addressType: resolvedAddress.addressType || "Home",
+    addressId: resolvedAddress._id || undefined,
+  };
+
+  if (!verifiedShippingAddress.address || !verifiedShippingAddress.city || !verifiedShippingAddress.state || !verifiedShippingAddress.postalCode) {
+    return res.status(400).json({ message: "Invalid shipping address details. Street address, city, state, and postal code are required." });
+  }
+
+  if (!verifiedShippingAddress.name || verifiedShippingAddress.name.length < 2) {
+    return res.status(400).json({ message: "Recipient name is required for delivery (minimum 2 characters)" });
+  }
+
+  if (!verifiedShippingAddress.phone || verifiedShippingAddress.phone.length < 10) {
+    return res.status(400).json({ message: "A valid 10-digit phone number is required for delivery" });
+  }
+
+  if (!/^[0-9]{6}$/.test(verifiedShippingAddress.postalCode)) {
+    return res.status(400).json({ message: "A valid 6-digit postal/PIN code is required" });
   }
 
   try {
@@ -56,7 +113,7 @@ router.post("/", protect, async (req, res) => {
       verifiedOrderItems.push({
         name: dbProduct.name,
         quantity: item.quantity,
-        image: item.image || dbProduct.image,
+        image: item.image || dbProduct.image || (dbProduct.images && dbProduct.images[0]) || "/placeholder.png",
         price: itemPrice,
         product: dbProduct._id,
         sku: dbProduct.sku || "",
@@ -79,7 +136,14 @@ router.post("/", protect, async (req, res) => {
     const verifiedItemsPrice = calculatedItemsPrice;
     const verifiedDiscountAmount = discountAmount || 0;
     const discountedSubtotal = Math.max(0, verifiedItemsPrice - verifiedDiscountAmount);
-    const verifiedTaxPrice = Math.round(discountedSubtotal * 0.18 * 100) / 100; // 18% GST
+
+    // GST Logic & Dynamic Rate from GSTSettings
+    const GSTSettings = require("../models/GSTSettings");
+    const gstSettings = await GSTSettings.getInstance();
+    const effectiveGstRate = gstSettings.gst_enabled
+      ? ((gstSettings.default_gst_percentage !== undefined ? gstSettings.default_gst_percentage : 18) / 100)
+      : 0;
+    const verifiedTaxPrice = Math.round(discountedSubtotal * effectiveGstRate * 100) / 100;
 
     // Handle Coupon Logic
     if (couponCode) {
@@ -115,10 +179,6 @@ router.post("/", protect, async (req, res) => {
       await coupon.save();
     }
 
-    // GST Logic
-    const GSTSettings = require("../models/GSTSettings");
-    const gstSettings = await GSTSettings.getInstance();
-
     let gstClaimed = false;
     let buyerGstNumber = null;
     let sellerGstNumber = null;
@@ -145,7 +205,7 @@ router.post("/", protect, async (req, res) => {
     let shippingBreakdownMap = new Map();
 
     try {
-      const deliveryPincode = shippingAddress?.postalCode;
+      const deliveryPincode = verifiedShippingAddress.postalCode;
       if (deliveryPincode) {
         const shippingResult = await calculateShipping(
           verifiedOrderItems.map(item => ({
@@ -165,17 +225,22 @@ router.post("/", protect, async (req, res) => {
         }
       }
     } catch (shippingErr) {
-      console.error('Server-side shipping calculation failed, using frontend value as fallback:', shippingErr.message);
-      verifiedShippingPrice = shippingPrice || 0;
+      console.error('Server-side shipping calculation failed:', shippingErr.message);
+      // Security boundary: Never allow ₹0 shipping if discountedSubtotal is under threshold
+      if (discountedSubtotal >= 999) {
+        verifiedShippingPrice = 0;
+      } else {
+        verifiedShippingPrice = (shippingPrice && shippingPrice > 0) ? shippingPrice : 66;
+      }
     }
 
-    const verifiedTotalPrice = discountedSubtotal + verifiedTaxPrice + verifiedShippingPrice;
+    const verifiedTotalPrice = Math.round((discountedSubtotal + verifiedTaxPrice + verifiedShippingPrice) * 100) / 100;
 
     // Create main order with authoritative verified prices
     const order = new Order({
       user: req.user._id,
       orderItems: verifiedOrderItems,
-      shippingAddress,
+      shippingAddress: verifiedShippingAddress,
       paymentMethod,
       itemsPrice: verifiedItemsPrice,
       taxPrice: verifiedTaxPrice,
@@ -244,16 +309,16 @@ router.post("/", protect, async (req, res) => {
       const netAmount = vendorData.subtotal - commission;
 
       const vendorTax =
-        itemsPrice > 0
-          ? (vendorData.subtotal / itemsPrice) * (taxPrice || 0)
+        verifiedItemsPrice > 0
+          ? Math.round(((vendorData.subtotal / verifiedItemsPrice) * verifiedTaxPrice) * 100) / 100
           : 0;
 
       // Extract vendor shipping breakdown
       const vBreakdown = shippingBreakdownMap.get(vendorId);
-      const shippingThresholdAtOrder = vBreakdown?.threshold || 499;
+      const shippingThresholdAtOrder = vBreakdown?.threshold || 999;
       const isFreeShippingEligible = vBreakdown?.isFreeShippingEligible || (vendorData.subtotal >= shippingThresholdAtOrder);
-      const customerShippingCharge = vBreakdown?.customerShippingCharge !== undefined ? vBreakdown.customerShippingCharge : (isFreeShippingEligible ? 0 : 70);
-      const estimatedShippingCost = vBreakdown?.estimatedShippingCost || 70;
+      const customerShippingCharge = vBreakdown?.customerShippingCharge !== undefined ? vBreakdown.customerShippingCharge : (isFreeShippingEligible ? 0 : 66);
+      const estimatedShippingCost = vBreakdown?.estimatedShippingCost || 66;
       const shippingSubsidy = vBreakdown?.shippingSubsidy !== undefined ? vBreakdown.shippingSubsidy : Math.max(0, estimatedShippingCost - customerShippingCharge);
       const estimatedGatewayFee = Math.round(vendorData.subtotal * 0.0236 * 100) / 100;
       const expectedNetContribution = Math.round((customerShippingCharge + commission - estimatedShippingCost - estimatedGatewayFee) * 100) / 100;
@@ -280,13 +345,13 @@ router.post("/", protect, async (req, res) => {
 
         status: "pending",
         shippingAddress: {
-          name: shippingAddress.name || "",
-          address: shippingAddress.address || "",
-          city: shippingAddress.city || "",
-          state: shippingAddress.state || "",
-          postalCode: shippingAddress.postalCode || "",
-          country: shippingAddress.country || "",
-          phone: shippingAddress.phone || "",
+          name: verifiedShippingAddress.name || "",
+          address: verifiedShippingAddress.address || "",
+          city: verifiedShippingAddress.city || "",
+          state: verifiedShippingAddress.state || "",
+          postalCode: verifiedShippingAddress.postalCode || "",
+          country: verifiedShippingAddress.country || "",
+          phone: verifiedShippingAddress.phone || "",
         },
       });
 
@@ -345,12 +410,207 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
+// Helper: normalize and construct consumer-facing tracking and order data
+const formatOrderTrackingData = (order, vendorOrders = [], liveCourierTracking = null, liveTrackingError = null) => {
+  const shipments = vendorOrders.map((vo) => ({
+    _id: vo._id,
+    vendorOrderId: vo._id,
+    vendorName: vo.vendor?.businessName || "Direct Seller",
+    items: (vo.items || []).map((i) => ({
+      name: i.name,
+      quantity: i.quantity,
+      price: i.price,
+      image: i.image,
+      sku: i.sku,
+    })),
+    status: vo.status || "pending",
+    shipmentId: vo.shipmentId || null,
+    awbCode: vo.awbCode || null,
+    courierName: vo.courierName || null,
+    trackingNumber: vo.trackingNumber || null,
+    shippingRoutingCode: vo.shippingRoutingCode || null,
+    shippedAt: vo.shippedAt || null,
+    deliveredAt: vo.deliveredAt || null,
+    trackingUrl: vo.awbCode ? `https://shiprocket.co/tracking/${vo.awbCode}` : null,
+    trackingAvailable: Boolean(vo.awbCode || vo.shipmentId),
+  }));
+
+  const anyTrackingAvailable = shipments.some((s) => s.trackingAvailable);
+  const allDelivered = shipments.length > 0 && shipments.every((s) => s.status === "delivered");
+  const anyInTransit = shipments.some((s) => ["in_transit", "out_for_delivery", "shipped"].includes(s.status));
+  const isCancelled = order.status === "Cancelled" || order.status === "cancelled";
+
+  // Build canonical timeline
+  const timeline = [
+    {
+      title: "Order Placed",
+      statusKey: "placed",
+      description: "Your order has been placed successfully.",
+      timestamp: order.createdAt,
+      completed: true,
+      current: order.status === "Pending" && !order.isPaid,
+    },
+    {
+      title: "Payment Confirmed",
+      statusKey: "payment_confirmed",
+      description:
+        order.paymentMethod === "COD"
+          ? "Cash on Delivery chosen"
+          : order.isPaid
+          ? "Payment received and verified"
+          : "Awaiting payment verification",
+      timestamp: order.paidAt || (order.isPaid ? order.createdAt : null),
+      completed: order.isPaid || order.paymentMethod === "COD",
+      current:
+        (order.isPaid || order.paymentMethod === "COD") &&
+        ["Pending", "Approved"].includes(order.status) &&
+        !anyInTransit &&
+        !anyTrackingAvailable,
+    },
+    {
+      title: "Processing",
+      statusKey: "processing",
+      description: anyTrackingAvailable
+        ? "Shipment created and courier assigned"
+        : "Order is being packed and prepared for pickup",
+      timestamp: shipments.find((s) => s.shippedAt)?.shippedAt || null,
+      completed:
+        anyTrackingAvailable ||
+        ["Processing", "Shipped", "Delivered"].includes(order.status),
+      current:
+        (order.status === "Processing" || order.status === "Approved") &&
+        !anyInTransit &&
+        !order.isDelivered,
+    },
+    {
+      title: "In Transit",
+      statusKey: "in_transit",
+      description: shipments.find((s) => s.courierName)
+        ? `In transit with ${shipments.find((s) => s.courierName).courierName}`
+        : "Package has been dispatched and is moving towards destination facility",
+      timestamp: shipments.find((s) => s.shippedAt)?.shippedAt || null,
+      completed:
+        anyInTransit ||
+        allDelivered ||
+        order.isDelivered ||
+        order.status === "Delivered",
+      current: anyInTransit && !allDelivered && !order.isDelivered,
+    },
+    {
+      title: "Out for Delivery",
+      statusKey: "out_for_delivery",
+      description: "Package is out for delivery with courier executive",
+      timestamp: null,
+      completed:
+        shipments.some((s) => s.status === "out_for_delivery") ||
+        allDelivered ||
+        order.isDelivered ||
+        order.status === "Delivered",
+      current:
+        shipments.some((s) => s.status === "out_for_delivery") &&
+        !allDelivered &&
+        !order.isDelivered,
+    },
+    {
+      title: "Delivered",
+      statusKey: "delivered",
+      description:
+        order.isDelivered || order.status === "Delivered" || allDelivered
+          ? "Package has been delivered"
+          : "Pending delivery completion",
+      timestamp:
+        order.deliveredAt ||
+        shipments.find((s) => s.deliveredAt)?.deliveredAt ||
+        null,
+      completed: Boolean(
+        order.isDelivered || order.status === "Delivered" || allDelivered
+      ),
+      current: Boolean(
+        order.isDelivered || order.status === "Delivered" || allDelivered
+      ),
+    },
+  ];
+
+  return {
+    _id: order._id,
+    orderId: order._id,
+    user: order.user,
+    status: order.status,
+    isDelivered: order.isDelivered || false,
+    deliveredAt: order.deliveredAt || null,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    orderItems: order.orderItems || [],
+    shippingAddress: order.shippingAddress || {},
+    paymentMethod: order.paymentMethod || "COD",
+    paymentStatus:
+      order.paymentStatus ||
+      (order.isPaid
+        ? "captured"
+        : order.paymentMethod === "COD"
+        ? "not_applicable"
+        : "created"),
+    isPaid: order.isPaid || false,
+    paidAt: order.paidAt || null,
+    itemsPrice: order.itemsPrice || 0,
+    taxPrice: order.taxPrice || 0,
+    shippingPrice: order.shippingPrice || 0,
+    totalPrice: order.totalPrice || 0,
+    discountAmount: order.discountAmount || 0,
+    couponCode: order.couponCode || null,
+    returnStatus: order.returnStatus || "None",
+    returnReason: order.returnReason || null,
+    returnRequestedAt: order.returnRequestedAt || null,
+    isRefunded: order.isRefunded || false,
+    refundAmount: order.refundAmount || 0,
+    refundDate: order.refundDate || null,
+    cancelledAt: order.cancelledAt || null,
+    vendorOrders: shipments,
+    trackingAvailable: anyTrackingAvailable,
+    liveCourierTracking: liveCourierTracking || null,
+    liveTrackingError: liveTrackingError || null,
+    canCancel:
+      ["Pending", "Approved", "Processing"].includes(order.status) &&
+      !order.isDelivered &&
+      !isCancelled,
+    canReturn:
+      (order.status === "Delivered" || order.isDelivered) &&
+      (!order.returnStatus || order.returnStatus === "None"),
+    timeline: isCancelled ? [] : timeline,
+    isCancelled,
+  };
+};
+
 // @desc    Get logged in user orders
 // @route   GET /api/orders/myorders
 // @access  Private
 router.get("/myorders", protect, async (req, res) => {
-  const orders = await Order.find({ user: req.user._id });
-  res.json(orders);
+  try {
+    const orders = await Order.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const orderIds = orders.map((o) => o._id);
+    const vendorOrders = await VendorOrder.find({ order: { $in: orderIds } })
+      .populate("vendor", "businessName")
+      .lean();
+
+    const vendorOrdersMap = {};
+    vendorOrders.forEach((vo) => {
+      const parentId = vo.order.toString();
+      if (!vendorOrdersMap[parentId]) vendorOrdersMap[parentId] = [];
+      vendorOrdersMap[parentId].push(vo);
+    });
+
+    const formattedOrders = orders.map((o) =>
+      formatOrderTrackingData(o, vendorOrdersMap[o._id.toString()] || [])
+    );
+
+    res.json(formattedOrders);
+  } catch (error) {
+    console.error("Get My Orders Error:", error);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
 });
 
 // @desc    Get all orders
@@ -731,21 +991,116 @@ router.put("/:id/status", protect, admin, async (req, res) => {
   }
 });
 
-// @desc    Track order by ID (Public/Protected via ID knowledge)
-// @route   GET /api/orders/track/:id
-// @access  Public
-router.get("/track/:id", async (req, res) => {
+// Shared handler for tracking endpoints
+const getOrderTrackingHandler = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).select(
-      "status totalPrice orderItems createdAt isDelivered deliveredAt",
-    );
-    if (order) {
-      res.json(order);
-    } else {
-      res.status(404).json({ message: "Order not found" });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID format" });
     }
+
+    const order = await Order.findById(id).lean();
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Multi-tenant authorization check
+    if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to access tracking for this order" });
+    }
+
+    const vendorOrders = await VendorOrder.find({ order: order._id })
+      .populate("vendor", "businessName")
+      .lean();
+
+    let liveCourierTracking = null;
+    let liveTrackingError = null;
+
+    // Check if live tracking requested and an AWB is available
+    if (req.query.live === "true" || req.query.realtime === "true") {
+      const awbToTrack = vendorOrders.find((vo) => vo.awbCode)?.awbCode;
+      if (awbToTrack) {
+        try {
+          liveCourierTracking = await shiprocketService.trackOrder(awbToTrack);
+        } catch (liveErr) {
+          liveTrackingError = "Carrier live tracking service is temporarily unavailable. Showing latest confirmed status.";
+        }
+      }
+    }
+
+    const trackingData = formatOrderTrackingData(
+      order,
+      vendorOrders,
+      liveCourierTracking,
+      liveTrackingError
+    );
+
+    res.json(trackingData);
   } catch (error) {
-    res.status(404).json({ message: "Order not found (Invalid ID)" });
+    console.error("Tracking endpoint error:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch tracking details" });
+  }
+};
+
+// @desc    Track order shipment by ID (Private/Authenticated)
+// @route   GET /api/orders/:id/tracking
+// @access  Private
+router.get("/:id/tracking", protect, getOrderTrackingHandler);
+
+// @desc    Track order by ID (Backwards compatibility with authentication)
+// @route   GET /api/orders/track/:id
+// @access  Private
+router.get("/track/:id", protect, getOrderTrackingHandler);
+
+// @desc    Get order details by ID
+// @route   GET /api/orders/:id
+// @access  Private (Owner or Admin)
+router.get("/:id", protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID format" });
+    }
+
+    const order = await Order.findById(id).lean();
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Strict multi-tenant security verification
+    if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to access this order" });
+    }
+
+    const vendorOrders = await VendorOrder.find({ order: order._id })
+      .populate("vendor", "businessName")
+      .lean();
+
+    let liveCourierTracking = null;
+    let liveTrackingError = null;
+
+    if (req.query.live === "true") {
+      const awbToTrack = vendorOrders.find((vo) => vo.awbCode)?.awbCode;
+      if (awbToTrack) {
+        try {
+          liveCourierTracking = await shiprocketService.trackOrder(awbToTrack);
+        } catch (liveErr) {
+          liveTrackingError = "Carrier live tracking service is temporarily unavailable. Showing latest confirmed status.";
+        }
+      }
+    }
+
+    const responseData = formatOrderTrackingData(
+      order,
+      vendorOrders,
+      liveCourierTracking,
+      liveTrackingError
+    );
+
+    res.json(responseData);
+  } catch (error) {
+    console.error("Get Order Error:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch order details" });
   }
 });
 

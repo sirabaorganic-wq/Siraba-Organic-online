@@ -68,6 +68,7 @@ import NotificationDropdown from "../../components/vendor/NotificationDropdown";
 import client from "../../api/client";
 import { getDocumentViewUrl } from "../../utils/documentViewer";
 import VendorContactUpdateModal from "../../components/vendor/VendorContactUpdateModal";
+import LegalAgreementsSection from "../../components/vendor/legal/LegalAgreementsSection";
 
 // Sidebar Component
 const VendorSidebar = ({
@@ -1071,22 +1072,31 @@ const OrdersContent = ({ orders, fetchOrders, updateOrderStatus }) => {
           <table className="w-full">
             <thead className="bg-background/80 border-b border-secondary/10">
               <tr>
-                <th className="text-left px-6 py-5 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
                   Order ID
                 </th>
-                <th className="text-left px-6 py-5 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
                   Items
                 </th>
-                <th className="text-left px-6 py-5 text-xs font-bold uppercase tracking-wider text-text-secondary">
-                  Amount
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  Subtotal
                 </th>
-                <th className="text-left px-6 py-5 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  Commission
+                </th>
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  Logistics
+                </th>
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  Net Payout
+                </th>
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
                   Status
                 </th>
-                <th className="text-left px-6 py-5 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
                   Date
                 </th>
-                <th className="text-left px-6 py-5 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                <th className="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">
                   Actions
                 </th>
               </tr>
@@ -1105,6 +1115,17 @@ const OrdersContent = ({ orders, fetchOrders, updateOrderStatus }) => {
                   </td>
                   <td className="px-6 py-5 text-sm font-medium text-primary">
                     ₹{order.subtotal}
+                  </td>
+                  <td className="px-6 py-5 text-sm text-text-secondary font-light">
+                    -₹{order.commission || 0}
+                  </td>
+                  <td className="px-6 py-5 text-sm font-light">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200" title="Logistics handled by platform; ₹0 deducted from vendor">
+                      ₹0 (Platform)
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-sm font-semibold text-emerald-600">
+                    ₹{order.netAmount ?? (order.subtotal - (order.commission || 0))}
                   </td>
                   <td className="px-6 py-5">
                     <span
@@ -1193,10 +1214,33 @@ const OrdersContent = ({ orders, fetchOrders, updateOrderStatus }) => {
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-surface rounded-sm p-8 max-w-md w-full shadow-2xl border border-secondary/10">
-            <h3 className="text-xl font-heading font-medium mb-6 text-primary flex items-center gap-3">
+            <h3 className="text-xl font-heading font-medium mb-4 text-primary flex items-center gap-3">
               <Package className="w-5 h-5 text-accent" />
-              Update Order #{selectedOrder._id.slice(-8)}
+              Order #{selectedOrder._id.slice(-8)}
             </h3>
+
+            {/* Financial Settlement Breakdown */}
+            <div className="mb-6 p-3.5 bg-background/60 rounded border border-secondary/15 text-xs space-y-1.5">
+              <div className="flex justify-between text-text-secondary">
+                <span>Product Subtotal:</span>
+                <span className="font-medium text-primary">₹{selectedOrder.subtotal}</span>
+              </div>
+              <div className="flex justify-between text-text-secondary">
+                <span>Platform Commission:</span>
+                <span className="font-medium text-rose-600">-₹{selectedOrder.commission || 0}</span>
+              </div>
+              <div className="flex justify-between text-text-secondary items-center">
+                <span>Logistics / Shipping:</span>
+                <span className="font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px] border border-emerald-200">
+                  ₹0 (Platform Borne)
+                </span>
+              </div>
+              <div className="border-t border-secondary/10 pt-1.5 flex justify-between font-semibold text-primary">
+                <span>Net Vendor Payout:</span>
+                <span className="text-emerald-600">₹{selectedOrder.netAmount ?? (selectedOrder.subtotal - (selectedOrder.commission || 0))}</span>
+              </div>
+            </div>
+
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium mb-2 text-text-secondary uppercase tracking-wide">
@@ -2314,6 +2358,9 @@ const ComplianceContent = ({
           Upload Document
         </button>
       </div>
+
+      {/* Marketplace Legal Agreements (Phase 3 Integration) */}
+      <LegalAgreementsSection vendor={vendor} className="mb-6" />
 
       {/* Documents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
