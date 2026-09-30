@@ -84,7 +84,6 @@ app.use(cors(corsOptions));
 // CRITICAL: Webhooks must be mounted BEFORE express.json() is called 
 // so that the raw body middleware can preserve the payload for signature validation.
 app.use("/webhooks/razorpay", razorpayWebhookRoutes);
-app.use("/api/shiprocket", shiprocketRoutes);
 
 // Body parser with size limits to prevent DoS
 app.use(express.json({ limit: "10mb" }));
@@ -187,7 +186,7 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/refunds", require("./routes/refundRoutes"));
 app.use("/api/gst", require("./routes/publicGSTRoutes"));
 app.use("/api/cache", require("./routes/cacheRoutes"));
-app.use("/api/shiprocket", require("./routes/shiprocketRoutes"));
+app.use("/api/shiprocket", shiprocketRoutes);
 const shiprocketWebhookRoutes = require("./routes/shiprocketWebhookRoutes");
 app.use("/api/fulfillment/status", shiprocketWebhookRoutes);
 app.use("/api/shiprocket/webhook", shiprocketWebhookRoutes);

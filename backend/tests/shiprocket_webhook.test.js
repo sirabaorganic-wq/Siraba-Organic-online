@@ -87,6 +87,13 @@ async function runTests() {
   const resC = await client({}).post({ shipment_id: '123456789', current_status: 'DELIVERED', event_id: 'evt_auth_c' });
   assert('Test C: Missing header returns HTTP 401', resC.status === 401);
 
+  // Test C2: Server secret not configured fails closed with HTTP 500
+  const origSecret = process.env.SHIPROCKET_WEBHOOK_SECRET;
+  delete process.env.SHIPROCKET_WEBHOOK_SECRET;
+  const resC2 = await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'DELIVERED', event_id: 'evt_auth_c2' });
+  assert('Test C2: Unset server secret fails closed (HTTP 500)', resC2.status === 500);
+  process.env.SHIPROCKET_WEBHOOK_SECRET = origSecret; // restore
+
   // Test D: Legacy x-shiprocket-secret header
   const resD = await client({ 'x-shiprocket-secret': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'OUT FOR DELIVERY', event_id: 'evt_auth_d' });
   assert('Test D: Legacy x-shiprocket-secret header accepted (HTTP 200)', resD.status === 200);
@@ -106,15 +113,35 @@ async function runTests() {
   // Reset status to processing in DB
   await VendorOrder.findByIdAndUpdate(mockVendorOrder._id, { status: 'processing' });
 
-  // Test 1: processing -> in_transit
+  // Test 0A: PICKUP FAILED does NOT become pickup_scheduled
+  await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'PICKUP FAILED', event_id: 'st_t0a' });
+  let vo0a = await VendorOrder.findById(mockVendorOrder._id);
+  assert('Test 0A: PICKUP FAILED maps to pickup_failed (not pickup_scheduled)', vo0a.status === 'pickup_failed');
+
+  // Test 0B: Pickup retry after failure
+  await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'PICKUP SCHEDULED', event_id: 'st_t0b' });
+  let vo0b = await VendorOrder.findById(mockVendorOrder._id);
+  assert('Test 0B: pickup_failed -> pickup_scheduled retry allowed', vo0b.status === 'pickup_scheduled');
+
+  // Test 1: pickup_scheduled -> in_transit
   await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'IN TRANSIT', event_id: 'st_t1' });
   let vo1 = await VendorOrder.findById(mockVendorOrder._id);
-  assert('Test 1: processing -> in_transit', vo1.status === 'in_transit');
+  assert('Test 1: pickup_scheduled -> in_transit', vo1.status === 'in_transit');
 
   // Test 2: in_transit -> out_for_delivery
   await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'OUT FOR DELIVERY', event_id: 'st_t2' });
   let vo2 = await VendorOrder.findById(mockVendorOrder._id);
   assert('Test 2: in_transit -> out_for_delivery', vo2.status === 'out_for_delivery');
+
+  // Test 2B: DELIVERY FAILED maps to delivery_failed
+  await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'DELIVERY FAILED', event_id: 'st_t2b' });
+  let vo2b = await VendorOrder.findById(mockVendorOrder._id);
+  assert('Test 2B: DELIVERY FAILED maps to delivery_failed (not delivered)', vo2b.status === 'delivery_failed');
+
+  // Test 2C: Delivery retry from delivery_failed -> out_for_delivery allowed
+  await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'OUT FOR DELIVERY', event_id: 'st_t2c' });
+  let vo2c = await VendorOrder.findById(mockVendorOrder._id);
+  assert('Test 2C: delivery_failed -> out_for_delivery retry allowed', vo2c.status === 'out_for_delivery');
 
   // Test 3: out_for_delivery -> delivered
   await client({ 'x-api-key': TEST_SECRET }).post({ shipment_id: '123456789', current_status: 'DELIVERED', event_id: 'st_t3' });

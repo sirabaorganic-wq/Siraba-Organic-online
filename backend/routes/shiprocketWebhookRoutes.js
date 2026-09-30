@@ -9,9 +9,12 @@ const { invalidateCache } = require("../config/cache");
 const STATUS_PRIORITY = {
   pending: 1,
   processing: 2,
+  pickup_pending: 2.5,
   pickup_scheduled: 3,
+  pickup_failed: 3.1,
   in_transit: 4,
   out_for_delivery: 5,
+  delivery_failed: 5.1,
   delivered: 6,
   cancelled: 7,
   rto: 7,
@@ -21,44 +24,134 @@ const mapShiprocketStatus = (srStatus) => {
   if (!srStatus) return "processing";
   const s = String(srStatus).trim().toUpperCase();
 
-  if (s === "RTO DELIVERED" || s === "RTO INITIATED" || s === "RTO ACKNOWLEDGED" || s === "RTO OFD" || s === "RTO") return "rto";
-  if (s === "DELIVERED" || (s.includes("DELIVERED") && !s.includes("RTO"))) return "delivered";
-  if (s === "OUT FOR DELIVERY" || s.includes("OUT FOR DELIVERY")) return "out_for_delivery";
-  if (s === "IN TRANSIT" || s === "PICKED UP" || s.includes("IN TRANSIT") || s.includes("PICKED UP") || s.includes("REACHED")) return "in_transit";
-  if (s === "PICKUP SCHEDULED" || s === "MANIFEST GENERATED" || s.includes("MANIFEST") || s.includes("PICKUP")) return "pickup_scheduled";
-  if (s === "CANCELLED" || s === "CANCELED" || s.includes("CANCEL")) return "cancelled";
+  // 1. RTO statuses
+  if (
+    s === "RTO DELIVERED" ||
+    s === "RTO INITIATED" ||
+    s === "RTO ACKNOWLEDGED" ||
+    s === "RTO OFD" ||
+    s === "RTO IN TRANSIT" ||
+    s === "RTO" ||
+    s.startsWith("RTO")
+  ) {
+    return "rto";
+  }
+
+  // 2. Cancellation
+  if (s === "CANCELLED" || s === "CANCELED" || s.includes("CANCEL")) {
+    return "cancelled";
+  }
+
+  // 3. Delivered
+  if (
+    s === "DELIVERED" ||
+    (s.includes("DELIVERED") && !s.includes("RTO") && !s.includes("UNDELIVERED") && !s.includes("FAILED"))
+  ) {
+    return "delivered";
+  }
+
+  // 4. Delivery Failures & Undelivered
+  if (
+    s === "DELIVERY FAILED" ||
+    s === "UNDELIVERED" ||
+    s.includes("DELIVERY FAILED") ||
+    s.includes("UNDELIVERED")
+  ) {
+    return "delivery_failed";
+  }
+
+  // 5. Out For Delivery
+  if (s === "OUT FOR DELIVERY" || s.includes("OUT FOR DELIVERY")) {
+    return "out_for_delivery";
+  }
+
+  // 6. In Transit / Picked up
+  if (
+    s === "IN TRANSIT" ||
+    s === "PICKED UP" ||
+    s.includes("IN TRANSIT") ||
+    s.includes("PICKED UP") ||
+    s.includes("REACHED")
+  ) {
+    return "in_transit";
+  }
+
+  // 7. Pickup Failures & Exceptions (MUST NOT be treated as pickup_scheduled!)
+  if (
+    s === "PICKUP FAILED" ||
+    s === "PICKUP EXCEPTION" ||
+    s.includes("PICKUP FAILED") ||
+    s.includes("PICKUP EXCEPTION")
+  ) {
+    return "pickup_failed";
+  }
+
+  // 8. Pickup Pending / Rescheduled
+  if (
+    s === "PICKUP PENDING" ||
+    s === "PICKUP RESCHEDULED" ||
+    s.includes("PICKUP PENDING") ||
+    s.includes("PICKUP RESCHEDULED")
+  ) {
+    return "pickup_pending";
+  }
+
+  // 9. Pickup Scheduled / Manifest Generated
+  if (
+    s === "PICKUP SCHEDULED" ||
+    s === "MANIFEST GENERATED" ||
+    s.includes("MANIFEST") ||
+    s.includes("PICKUP SCHEDULED")
+  ) {
+    return "pickup_scheduled";
+  }
 
   return "processing";
 };
 
-// Explicit status transition rules (terminal state protection)
+// Explicit status transition rules (terminal state protection & retry handling)
 const isTransitionAllowed = (currentStatus, newStatus) => {
   if (currentStatus === newStatus) return true;
 
   // 1. Terminal State: DELIVERED cannot be reverted to pre-delivery statuses
   if (currentStatus === "delivered") {
-    if (["pending", "processing", "pickup_scheduled", "in_transit", "out_for_delivery"].includes(newStatus)) {
-      return false;
-    }
     if (newStatus === "rto" || newStatus === "returned") return true;
     return false;
   }
 
   // 2. Terminal State: RTO cannot revert to pre-RTO or active transit statuses
   if (currentStatus === "rto" || currentStatus === "returned") {
-    if (["pending", "processing", "pickup_scheduled", "in_transit", "out_for_delivery"].includes(newStatus)) {
-      return false;
-    }
+    return false;
   }
 
   // 3. Terminal State: CANCELLED cannot revert to active transit
   if (currentStatus === "cancelled") {
-    if (["pending", "processing", "pickup_scheduled", "in_transit", "out_for_delivery"].includes(newStatus)) {
-      return false;
+    return false;
+  }
+
+  // 4. Retry flows & Exception states:
+  // If delivery failed, courier can attempt again: out_for_delivery, in_transit, delivered, rto, cancelled
+  if (currentStatus === "delivery_failed") {
+    if (["out_for_delivery", "in_transit", "delivered", "rto", "cancelled"].includes(newStatus)) {
+      return true;
     }
   }
 
-  // 4. Priority hierarchy protection
+  // If pickup failed or pickup pending, pickup can be rescheduled or succeed: pickup_scheduled, in_transit, cancelled
+  if (currentStatus === "pickup_failed" || currentStatus === "pickup_pending") {
+    if (["pickup_scheduled", "in_transit", "cancelled", "pickup_pending", "pickup_failed"].includes(newStatus)) {
+      return true;
+    }
+  }
+
+  // If pickup_scheduled, it can transition to in_transit, or exception states like pickup_failed, pickup_pending, cancelled
+  if (currentStatus === "pickup_scheduled") {
+    if (["in_transit", "out_for_delivery", "delivered", "pickup_failed", "pickup_pending", "cancelled", "rto"].includes(newStatus)) {
+      return true;
+    }
+  }
+
+  // 5. Priority hierarchy protection
   const currentPriority = STATUS_PRIORITY[currentStatus] || 0;
   const newPriority = STATUS_PRIORITY[newStatus] || 0;
   return newPriority >= currentPriority;
@@ -81,15 +174,20 @@ const sanitizePayload = (body) => {
 // @access  Public (x-api-key header verified)
 router.post("/", async (req, res) => {
   try {
-    // 1. Authentication Header Check (Prioritizes x-api-key configured in Shiprocket Panel)
+    // 1. Authentication Header Check (FAIL-CLOSED: MUST be configured & match)
     const incomingToken =
       req.headers["x-api-key"] ||
       req.headers["x-shiprocket-secret"] ||
       req.headers["shiprocket-secret"];
     const expectedSecret = process.env.SHIPROCKET_WEBHOOK_SECRET;
 
-    if (expectedSecret && incomingToken !== expectedSecret) {
-      console.warn("Shiprocket Webhook blocked: Invalid secret token");
+    if (!expectedSecret) {
+      console.error("Shiprocket Webhook blocked: SHIPROCKET_WEBHOOK_SECRET is not configured on server.");
+      return res.status(500).json({ message: "Webhook endpoint unavailable: secret not configured" });
+    }
+
+    if (!incomingToken || incomingToken !== expectedSecret) {
+      console.warn("Shiprocket Webhook blocked: Invalid or missing secret token");
       return res.status(401).json({ message: "Invalid webhook secret" });
     }
 
@@ -152,8 +250,29 @@ router.post("/", async (req, res) => {
       if (newInternalStatus === "delivered" && !vendorOrder.deliveredAt) {
         vendorOrder.deliveredAt = new Date();
       }
-      if (newInternalStatus === "in_transit" && !vendorOrder.shippedAt) {
-        vendorOrder.shippedAt = new Date();
+      if (newInternalStatus === "in_transit") {
+        if (!vendorOrder.shippedAt) vendorOrder.shippedAt = new Date();
+        if (!vendorOrder.pickedUpAt) vendorOrder.pickedUpAt = new Date();
+      }
+      if (newInternalStatus === "pickup_scheduled" && !vendorOrder.pickupScheduledAt) {
+        vendorOrder.pickupScheduledAt = new Date();
+      }
+      if (newInternalStatus === "pickup_failed") {
+        vendorOrder.shipmentError = {
+          code: "PICKUP_FAILED",
+          message: typeof payload.activity === "string" ? payload.activity : "Pickup failed by courier",
+          timestamp: new Date(),
+        };
+      } else if (newInternalStatus === "delivery_failed") {
+        vendorOrder.shipmentError = {
+          code: "DELIVERY_FAILED",
+          message: typeof payload.activity === "string" ? payload.activity : "Delivery attempt failed",
+          timestamp: new Date(),
+        };
+      } else if (["in_transit", "out_for_delivery", "delivered"].includes(newInternalStatus)) {
+        if (vendorOrder.shipmentError && vendorOrder.shipmentError.code) {
+          vendorOrder.shipmentError = undefined;
+        }
       }
 
       await vendorOrder.save();

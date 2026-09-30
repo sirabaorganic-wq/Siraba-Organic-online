@@ -2785,7 +2785,7 @@ const SettingsContent = ({ vendor, updateProfile, getProfile }) => {
                 Address: {[profileData.pickupAddress?.addressLine1, profileData.pickupAddress?.addressLine2, profileData.pickupAddress?.city, profileData.pickupAddress?.state].filter(Boolean).join(", ")} {profileData.pickupAddress?.pincode ? `- ${profileData.pickupAddress.pincode}` : ""}
               </p>
               <p className="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block font-mono mt-1 font-semibold">
-                Shiprocket Pickup Code: {profileData.pickupAddress?.shiprocketLocationName || profileData.shiprocket_pickup_code || "Primary"}
+                Shiprocket Pickup Code: {profileData.pickupAddress?.shiprocketLocationName || profileData.shiprocket_pickup_code || "Not Registered"}
               </p>
             </div>
             <button

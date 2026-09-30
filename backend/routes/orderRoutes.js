@@ -1335,13 +1335,15 @@ router.post("/:id/cancel", protect, async (req, res) => {
             await vendor.save();
           }
 
-          // Cancel Shiprocket Order if exists
-          if (vendorOrder.trackingNumber) {
+          // Cancel Shiprocket shipment if AWB exists and not yet in-transit/delivered
+          const cancellableStatuses = ["pending", "processing", "pickup_pending", "pickup_scheduled", "pickup_failed"];
+          const awbToCancel = vendorOrder.awbCode || vendorOrder.trackingNumber;
+          if (awbToCancel && cancellableStatuses.includes(vendorOrder.status)) {
             try {
               const shiprocketService = require("../services/shiprocketService");
-              await shiprocketService.cancelOrder(vendorOrder.trackingNumber);
+              await shiprocketService.cancelShipment(awbToCancel);
             } catch (err) {
-              console.error("Shiprocket Cancel Failed", err);
+              console.error(`Shiprocket Cancel Failed for AWB ${awbToCancel}:`, err.message);
             }
           }
 

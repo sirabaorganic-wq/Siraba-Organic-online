@@ -19,6 +19,7 @@ const enqueueShipment = async (vendorOrderId, orderId, vendorId) => {
   await shipmentQueue.add('create-shipment', {
     vendorOrderId, orderId, vendorId
   }, {
+    jobId: `shipment_${vendorOrderId}`,
     attempts: 3,
     backoff: {
       type: 'exponential',
@@ -36,20 +37,27 @@ const shipmentWorker = new Worker('shiprocket-shipments', async job => {
   let vendor = vendorId ? await Vendor.findById(vendorId) : null;
 
   if (!vendor && !vendorId) {
-    // Platform / Admin direct product
+    // Platform / Admin direct product - strictly requires configured location
+    const platformLocation = (process.env.SHIPROCKET_PRIMARY_LOCATION || "").trim();
+    if (!platformLocation) {
+      const err = new Error('Platform pickup location is not configured (SHIPROCKET_PRIMARY_LOCATION missing in environment). Cannot route shipment.');
+      err.code = 'PLATFORM_PICKUP_LOCATION_NOT_CONFIGURED';
+      throw err;
+    }
+
     vendor = {
       _id: null,
       businessName: "SIRABA Organic Direct",
-      phone: process.env.PLATFORM_PHONE || "9876543210",
+      phone: process.env.PLATFORM_PHONE || "8586836660",
       email: process.env.PLATFORM_EMAIL || "support@sirabaorganic.com",
-      shiprocket_pickup_code: process.env.SHIPROCKET_PRIMARY_LOCATION || "Primary",
+      shiprocket_pickup_code: platformLocation,
       pickupAddress: {
-        facilityName: "Primary",
-        shiprocketLocationName: process.env.SHIPROCKET_PRIMARY_LOCATION || "Primary",
-        addressLine1: "SIRABA Organic Fulfillment Center",
-        city: "Jaipur",
-        state: "Rajasthan",
-        pincode: "302001",
+        facilityName: platformLocation,
+        shiprocketLocationName: platformLocation,
+        addressLine1: "SIRABA Fulfillment Facility",
+        city: "Gurugram",
+        state: "Haryana",
+        pincode: "122102",
         country: "India",
       },
     };
@@ -64,7 +72,7 @@ const shipmentWorker = new Worker('shiprocket-shipments', async job => {
     return { skipped: true, reason: 'Shipment already exists for this VendorOrder' };
   }
 
-  // Generate shipment via service
+  // Generate shipment via service (creates shipment, assigns AWB, and automatically requests pickup)
   const shipmentResult = await shiprocketService.createShipment(vendorOrder, order, vendor);
 
   // Update VendorOrder
@@ -75,7 +83,24 @@ const shipmentWorker = new Worker('shiprocket-shipments', async job => {
   vendorOrder.courierId = shipmentResult.courierId;
   vendorOrder.shippingRoutingCode = shipmentResult.routingCode;
   vendorOrder.labelUrl = shipmentResult.labelUrl;
-  vendorOrder.status = 'processing'; // Moved from pending to processing as it's now sent
+
+  // Persist pickup scheduling outcome (BUG-01 Fix)
+  if (shipmentResult.pickupScheduled) {
+    vendorOrder.status = 'pickup_scheduled';
+    vendorOrder.pickupScheduledAt = shipmentResult.pickupScheduledAt || new Date();
+    if (shipmentResult.pickupTokenNumber) {
+      vendorOrder.pickupTokenNumber = String(shipmentResult.pickupTokenNumber);
+    }
+  } else {
+    vendorOrder.status = 'processing';
+    if (shipmentResult.pickupError) {
+      vendorOrder.shipmentError = {
+        code: 'PICKUP_SCHEDULING_FAILED',
+        message: shipmentResult.pickupError,
+        timestamp: new Date()
+      };
+    }
+  }
 
   await vendorOrder.save();
   return shipmentResult;
@@ -89,7 +114,7 @@ shipmentWorker.on('completed', (job, returnvalue) => {
 shipmentWorker.on('failed', async (job, err) => {
   console.error(`Shipment Job ${job.id} failed with error: ${err.message}`);
 
-  const isPickupUnverified = err.code === 'PICKUP_LOCATION_NOT_REGISTERED';
+  const isPickupUnverified = err.code === 'PICKUP_LOCATION_NOT_REGISTERED' || err.code === 'PLATFORM_PICKUP_LOCATION_NOT_CONFIGURED';
   
   // If unverified pickup location OR max attempts reached
   if (isPickupUnverified || job.attemptsMade >= job.opts.attempts) {

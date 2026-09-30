@@ -33,19 +33,73 @@ class ShiprocketService {
       baseURL: this.baseUrl,
       timeout: 10000,
     });
+
+    this.authPromise = null;
+
+    // Safe 401 Token Recovery Interceptor (BUG-05)
+    if (this.client?.interceptors?.response?.use) {
+      this.client.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+        const originalRequest = error.config;
+        if (
+          error.response &&
+          error.response.status === 401 &&
+          originalRequest &&
+          !originalRequest._retry &&
+          !originalRequest.url?.includes('/auth/login')
+        ) {
+          originalRequest._retry = true;
+          await this.clearCachedToken();
+          try {
+            const newToken = await this.login(true);
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            return typeof this.client.request === 'function'
+              ? this.client.request(originalRequest)
+              : this.client(originalRequest);
+          } catch (authError) {
+            return Promise.reject(authError);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    }
+  }
+
+  /**
+   * Clears cached token in both memory and Redis
+   */
+  async clearCachedToken() {
+    this.inMemoryToken = null;
+    this.inMemoryTokenExpiry = 0;
+    if (this.redis && this.redis.status === 'ready') {
+      try {
+        await this.redis.del('shiprocket_token');
+      } catch (e) {}
+    }
+  }
+
+  /**
+   * Alias for login() to preserve backwards-compatibility with scripts
+   */
+  async authenticate() {
+    return this.login();
   }
 
   /**
    * Authenticates with Shiprocket API and caches the JWT token
+   * @param {boolean} forceRefresh - Bypass cache and fetch fresh token from API
    */
-  async login() {
+  async login(forceRefresh = false) {
     // 1. Check in-memory cache
-    if (this.inMemoryToken && Date.now() < this.inMemoryTokenExpiry) {
+    if (!forceRefresh && this.inMemoryToken && Date.now() < this.inMemoryTokenExpiry) {
       return this.inMemoryToken;
     }
 
     // 2. Check Redis cache if connected
-    if (this.redis && this.redis.status === 'ready') {
+    if (!forceRefresh && this.redis && this.redis.status === 'ready') {
       try {
         const cachedToken = await this.redis.get('shiprocket_token');
         if (cachedToken) {
@@ -58,31 +112,42 @@ class ShiprocketService {
       }
     }
 
-    try {
-      const response = await this.client.post('/auth/login', {
-        email: process.env.SHIPROCKET_API_EMAIL,
-        password: process.env.SHIPROCKET_API_PASSWORD,
-      });
-
-      const token = response.data.token;
-      if (!token) {
-        throw new Error('No token returned from Shiprocket API');
-      }
-
-      this.inMemoryToken = token;
-      this.inMemoryTokenExpiry = Date.now() + 8 * 24 * 60 * 60 * 1000;
-
-      if (this.redis && this.redis.status === 'ready') {
-        try {
-          await this.redis.set('shiprocket_token', token, 'EX', 8 * 24 * 60 * 60);
-        } catch (e) {}
-      }
-
-      return token;
-    } catch (error) {
-      console.error('Shiprocket Auth Error:', error.response?.data || error.message);
-      throw new Error('Failed to authenticate with Shiprocket');
+    // Prevent concurrent auth storms under load
+    if (this.authPromise) {
+      return this.authPromise;
     }
+
+    this.authPromise = (async () => {
+      try {
+        const response = await this.client.post('/auth/login', {
+          email: process.env.SHIPROCKET_API_EMAIL,
+          password: process.env.SHIPROCKET_API_PASSWORD,
+        });
+
+        const token = response.data?.token;
+        if (!token) {
+          throw new Error('No token returned from Shiprocket API');
+        }
+
+        this.inMemoryToken = token;
+        this.inMemoryTokenExpiry = Date.now() + 8 * 24 * 60 * 60 * 1000;
+
+        if (this.redis && this.redis.status === 'ready') {
+          try {
+            await this.redis.set('shiprocket_token', token, 'EX', 8 * 24 * 60 * 60);
+          } catch (e) {}
+        }
+
+        return token;
+      } catch (error) {
+        console.error('Shiprocket Auth Error:', error.response?.data?.message || error.message);
+        throw new Error('Failed to authenticate with Shiprocket');
+      } finally {
+        this.authPromise = null;
+      }
+    })();
+
+    return this.authPromise;
   }
 
   /**
@@ -259,6 +324,10 @@ class ShiprocketService {
    * Request / Generate Pickup for a shipment
    */
   async generatePickup(shipmentId) {
+    if (!shipmentId) {
+      throw new Error('Shipment ID is required to generate pickup');
+    }
+
     const token = await this.login();
     try {
       const response = await this.client.post('/courier/generate/pickup', {
@@ -267,8 +336,30 @@ class ShiprocketService {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return response.data;
+      const data = response.data;
+      const isSuccess = data?.pickup_status === 1 ||
+        Boolean(data?.response?.pickup_token_number) ||
+        Boolean(data?.response?.pickup_scheduled_date) ||
+        (typeof data?.message === 'string' && data.message.toLowerCase().includes('already'));
+
+      return {
+        success: isSuccess,
+        pickupStatus: data?.pickup_status,
+        pickupScheduledDate: data?.response?.pickup_scheduled_date || null,
+        pickupTokenNumber: data?.response?.pickup_token_number || null,
+        message: data?.response?.data || data?.message || '',
+        rawResponse: data,
+      };
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      if (typeof errorMsg === 'string' && (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('scheduled'))) {
+        return {
+          success: true,
+          alreadyScheduled: true,
+          message: errorMsg,
+          rawResponse: error.response?.data,
+        };
+      }
       console.error('Shiprocket Generate Pickup Error:', error.response?.data || error.message);
       throw error;
     }
@@ -324,13 +415,28 @@ class ShiprocketService {
         }
       }
 
-      if (shipmentData.awbCode) {
+      const isAlreadyScheduled = Boolean(vendorOrder.pickupScheduledAt || vendorOrder.status === 'pickup_scheduled');
+      if (shipmentData.awbCode && !isAlreadyScheduled) {
         try {
-          await this.generatePickup(shipmentData.shipmentId);
-          shipmentData.pickupScheduled = true;
+          const pickupRes = await this.generatePickup(shipmentData.shipmentId);
+          shipmentData.pickup = pickupRes;
+          if (pickupRes.success) {
+            shipmentData.pickupScheduled = true;
+            shipmentData.pickupScheduledAt = pickupRes.pickupScheduledDate ? new Date(pickupRes.pickupScheduledDate) : new Date();
+            shipmentData.pickupTokenNumber = pickupRes.pickupTokenNumber || '';
+          } else {
+            shipmentData.pickupScheduled = false;
+            shipmentData.pickupError = pickupRes.message || 'Pickup scheduling pending';
+          }
         } catch (pErr) {
           console.warn(`Pickup generation notice for shipment ${shipmentData.shipmentId}:`, pErr.response?.data?.message || pErr.message);
+          shipmentData.pickupScheduled = false;
+          shipmentData.pickupError = pErr.response?.data?.message || pErr.message;
         }
+      } else if (isAlreadyScheduled) {
+        shipmentData.pickupScheduled = true;
+        shipmentData.pickupScheduledAt = vendorOrder.pickupScheduledAt;
+        shipmentData.pickupTokenNumber = vendorOrder.pickupTokenNumber;
       }
 
       return shipmentData;
@@ -417,6 +523,26 @@ class ShiprocketService {
         }
       }
 
+      // Auto-attempt Pickup Scheduling once AWB is assigned on fresh shipment (BUG-01 Fix)
+      if (shipmentData.awbCode && shipmentData.shipmentId) {
+        try {
+          const pickupRes = await this.generatePickup(shipmentData.shipmentId);
+          shipmentData.pickup = pickupRes;
+          if (pickupRes.success) {
+            shipmentData.pickupScheduled = true;
+            shipmentData.pickupScheduledAt = pickupRes.pickupScheduledDate ? new Date(pickupRes.pickupScheduledDate) : new Date();
+            shipmentData.pickupTokenNumber = pickupRes.pickupTokenNumber || '';
+          } else {
+            shipmentData.pickupScheduled = false;
+            shipmentData.pickupError = pickupRes.message || 'Pickup scheduling pending';
+          }
+        } catch (pickupErr) {
+          console.warn(`Auto pickup generation notice for shipment ${shipmentData.shipmentId}:`, pickupErr.response?.data?.message || pickupErr.message);
+          shipmentData.pickupScheduled = false;
+          shipmentData.pickupError = pickupErr.response?.data?.message || pickupErr.message;
+        }
+      }
+
       return shipmentData;
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
@@ -444,6 +570,13 @@ class ShiprocketService {
       console.error('Shiprocket Cancel Shipment Error:', error.response?.data || error.message);
       throw error;
     }
+  }
+
+  /**
+   * Alias for cancelShipment to preserve compatibility
+   */
+  async cancelOrder(awbCode) {
+    return this.cancelShipment(awbCode);
   }
 
   /**

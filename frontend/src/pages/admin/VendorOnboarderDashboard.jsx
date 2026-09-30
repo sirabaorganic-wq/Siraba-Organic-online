@@ -346,7 +346,7 @@ const VendorOnboarderDashboard = () => {
                             <div><strong>Facility Name:</strong> {selectedVendor.pickupAddress.facilityName || "N/A"}</div>
                             <div><strong>Contact Person:</strong> {selectedVendor.pickupAddress.contactPerson || "N/A"} ({selectedVendor.pickupAddress.phone || "N/A"})</div>
                             <div className="col-span-2"><strong>Address:</strong> {[selectedVendor.pickupAddress.addressLine1, selectedVendor.pickupAddress.addressLine2, selectedVendor.pickupAddress.city, selectedVendor.pickupAddress.state].filter(Boolean).join(", ")} - {selectedVendor.pickupAddress.pincode || ""}</div>
-                            <div><strong>Shiprocket Pickup Location:</strong> {selectedVendor.pickupAddress.shiprocketLocationName || selectedVendor.shiprocket_pickup_code || "Primary"}</div>
+                            <div><strong>Shiprocket Pickup Location:</strong> {selectedVendor.pickupAddress.shiprocketLocationName || selectedVendor.shiprocket_pickup_code || "Not Registered"}</div>
                           </div>
                         </div>
                       )}

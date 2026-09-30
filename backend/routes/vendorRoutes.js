@@ -1815,52 +1815,19 @@ router.put(
       // SHIPROCKET INTEGRATION
       const shiprocketService = require("../services/shiprocketService");
 
-      if (status === "confirmed" && previousStatus !== "confirmed") {
-        try {
-          const srOrder = await shiprocketService.createOrder({
-            order_id: vendorOrder._id,
-            order_date: vendorOrder.createdAt,
-            pickup_location: "Primary",
-            billing_customer_name:
-              vendorOrder.shippingAddress?.name || "Customer",
-            billing_address: vendorOrder.shippingAddress?.address || "Address",
-            billing_city: vendorOrder.shippingAddress?.city || "City",
-            billing_pincode:
-              vendorOrder.shippingAddress?.postalCode || "000000",
-            billing_state: vendorOrder.shippingAddress?.state || "State",
-            billing_country: "India",
-            billing_email: "user@example.com", // Should get from user if possible
-            billing_phone: vendorOrder.shippingAddress?.phone || "9999999999",
-            payment_method: "Prepaid",
-            sub_total: vendorOrder.subtotal,
-            length: 10,
-            breadth: 10,
-            height: 10,
-            weight: 0.5,
-          });
-
-          if (srOrder) {
-            vendorOrder.shiprocketOrderId = srOrder.order_id;
-            vendorOrder.shipmentId = srOrder.shipment_id;
-            vendorOrder.trackingNumber = srOrder.awb_code;
-            vendorOrder.shippingCarrier = srOrder.courier_name;
-          }
-        } catch (err) {
-          console.error("Shiprocket Create Order Failed", err);
-        }
-      }
-
       if (status === "shipped") {
         vendorOrder.shippedAt = new Date();
       } else if (status === "cancelled" && previousStatus !== "cancelled") {
         vendorOrder.cancelledAt = new Date();
 
-        // 1. Cancel in Shiprocket if exists
-        if (vendorOrder.trackingNumber) {
+        // 1. Cancel in Shiprocket if shipment exists and is not yet in-transit/delivered
+        const cancellableStatuses = ["pending", "processing", "pickup_pending", "pickup_scheduled", "pickup_failed"];
+        const awbToCancel = vendorOrder.awbCode || vendorOrder.trackingNumber;
+        if (awbToCancel && cancellableStatuses.includes(previousStatus)) {
           try {
-            await shiprocketService.cancelOrder(vendorOrder.trackingNumber);
+            await shiprocketService.cancelShipment(awbToCancel);
           } catch (err) {
-            console.error("Shiprocket Cancel Failed", err);
+            console.error(`Shiprocket Cancel Failed for AWB ${awbToCancel}:`, err.message);
           }
         }
 

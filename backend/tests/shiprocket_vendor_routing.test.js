@@ -208,6 +208,13 @@ const mockAxios    = buildMockAxios({
   '/auth/login': { token: MOCK_SHIPROCKET_TOKEN },
   '/orders/create/adhoc': MOCK_SHIPROCKET_ORDER_RESPONSE,
   '/settings/company/pickup': { data: { shipping_address: [{ pickup_location: 'VEND_NOIDA_01' }, { pickup_location: 'Primary' }] } },
+  '/courier/generate/pickup': {
+    pickup_status: 1,
+    response: {
+      pickup_token_number: 'PKP_TEST_TOKEN_999',
+      pickup_scheduled_date: '2026-05-17',
+    },
+  },
 });
 const mockRedisInst = new MockRedis();
 
@@ -488,6 +495,19 @@ async function runTests() {
       !!shipmentResult.labelUrl,
       `Got "${shipmentResult.labelUrl}"`
     );
+
+    const pickupCall = capturedRequests.find(r => r.method === 'POST' && r.url.includes('/courier/generate/pickup'));
+    assert(
+      '✦ generatePickup() was automatically invoked after AWB assignment on fresh shipment creation',
+      !!pickupCall && String(pickupCall.data?.shipment_id?.[0]) === String(MOCK_SHIPROCKET_ORDER_RESPONSE.shipment_id),
+      `Captured pickup call: ${JSON.stringify(pickupCall)}`
+    );
+
+    assert(
+      '✦ Pickup scheduling token & date are persisted in shipmentResult.pickup',
+      shipmentResult.pickup?.success === true && shipmentResult.pickup?.pickupTokenNumber === 'PKP_TEST_TOKEN_999',
+      `Got pickup: ${JSON.stringify(shipmentResult.pickup)}`
+    );
   }
 
   console.log();
@@ -531,13 +551,12 @@ async function runTests() {
   }
 
   assert(
-    '⚠ When pickup_code is missing, system falls back to "Primary" (code gracefully degrades)',
-    fallbackPayload?.pickup_location === 'Primary',
-    `Got "${fallbackPayload?.pickup_location}" – service may have thrown instead (also acceptable)`
+    '✦ When vendor pickup_code is missing, system fails closed and rejects shipment creation',
+    fallbackError !== null && (!fallbackPayload || fallbackPayload.pickup_location !== 'Primary'),
+    `Expected failure, got payload: ${JSON.stringify(fallbackPayload)}`
   );
 
-  console.log(`  ${WARN}  This fallback to "Primary" means a VENDOR SETUP ISSUE, not a code bug.`);
-  console.log(`         Ensure every approved vendor has shiprocket_pickup_code set in the DB.`);
+  console.log(`  ${INFO}  Failing closed prevents cross-vendor dispatch contamination or silent routing to invalid locations.`);
 
   console.log();
 
