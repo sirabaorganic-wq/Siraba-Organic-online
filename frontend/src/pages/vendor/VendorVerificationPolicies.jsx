@@ -12,6 +12,7 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
+import SEO, { buildBreadcrumbSchema } from "../../components/SEO";
 
 const sections = [
   {
@@ -214,6 +215,12 @@ const VendorVerificationPolicies = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Vendor Verification Policies | Siraba Organic"
+        description="Official verification and compliance policies governing organic certificate validation, periodic lab re-testing, and vendor listing standards."
+        canonicalUrl="/vendor-verification-policies"
+        schema={buildBreadcrumbSchema("/vendor-verification-policies")}
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

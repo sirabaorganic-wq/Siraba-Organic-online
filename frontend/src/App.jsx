@@ -130,9 +130,9 @@ function App() {
 
                               <Route path="/quality-promise" element={<QualityPromise />} />
                               <Route path="/verify/:traceId" element={<ProductVerification />} />
-                              <Route path="/about-us" element={<About />} />
                               <Route path="/about" element={<About />} />
-                              <Route path="/our-story" element={<About />} />
+                              <Route path="/about-us" element={<Navigate to="/about" replace />} />
+                              <Route path="/our-story" element={<Navigate to="/about" replace />} />
                               <Route
                                 path="/founder-faqs"
                                 element={<FounderFAQs />}
@@ -151,7 +151,7 @@ function App() {
                               />
                               <Route
                                 path="/certification"
-                                element={<Certification />}
+                                element={<Navigate to="/certifications" replace />}
                               />
                               <Route path="/b2b" element={<B2B />} />
                               <Route path="/blog" element={<Blog />} />
@@ -160,7 +160,7 @@ function App() {
                                 element={<BlogPost />}
                               />
                               <Route path="/contact" element={<Contact />} />
-                              <Route path="/contact-us" element={<Contact />} />
+                              <Route path="/contact-us" element={<Navigate to="/contact" replace />} />
                               <Route
                                 path="/privacy-policy"
                                 element={<PrivacyPolicy />}
@@ -175,10 +175,6 @@ function App() {
                                 element={<RefundPolicy />}
                               />
                               <Route path="/faq" element={<FAQ />} />
-                              <Route
-                                path="/quality-promise"
-                                element={<QualityPromise />}
-                              />
                               <Route path="/account" element={<Account />} />
                               <Route path="/login" element={<Login />} />
                               <Route
@@ -230,7 +226,11 @@ function App() {
                               <Route path="/vendor" element={<VendorIntro />} />
                               <Route
                                 path="/vendor/intro"
-                                element={<VendorIntro />}
+                                element={<Navigate to="/vendor" replace />}
+                              />
+                              <Route
+                                path="/vendor-intro"
+                                element={<Navigate to="/vendor" replace />}
                               />
                               <Route
                                 path="/vendor/login"
@@ -269,6 +269,10 @@ function App() {
                                 element={<VendorQualification />}
                               />
                               <Route
+                                path="/vendor/qualification"
+                                element={<Navigate to="/vendor-qualification" replace />}
+                              />
+                              <Route
                                 path="/vendor-onboarding-guide"
                                 element={<VendorOnboardingGuide />}
                               />
@@ -289,6 +293,10 @@ function App() {
                                 element={<VendorFAQ />}
                               />
                               <Route path="/vendor/badges" element={<MarketplaceBadges />} />
+                              <Route
+                                path="/marketplace-badges"
+                                element={<Navigate to="/vendor/badges" replace />}
+                              />
 
                               {/* Placeholder Routes - To be implemented */}
                               <Route

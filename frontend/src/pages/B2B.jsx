@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Container, Globe, Truck, Package, FileText, Send, Calculator, Download, Users, CheckCircle, ArrowRight, Building, Factory, Coffee } from 'lucide-react';
 import BgImage1 from '../assets/bgimage1.png';
 import { useCurrency } from '../context/CurrencyContext';
+import SEO, { getBreadcrumbSchema } from '../components/SEO';
 
 import client from '../api/client';
 import { trackFormSubmission, trackLead, getAttributionSnapshot } from '../utils/analytics';
@@ -154,6 +155,15 @@ const B2B = () => {
 
     return (
         <div className="w-full pt-20 bg-background text-primary">
+            <SEO
+                title="B2B Wholesale & Bulk Organic Sourcing | Siraba Organic"
+                description="Partner with Siraba Organic for bulk certified organic supply, export-grade spices, wholesale ingredients, and institutional procurement."
+                canonicalUrl="/b2b"
+                schema={getBreadcrumbSchema([
+                    { name: "Home", url: "/" },
+                    { name: "B2B", url: "/b2b" },
+                ])}
+            />
             {/* Hero Section */}
             <div className="relative h-[60vh] flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0">

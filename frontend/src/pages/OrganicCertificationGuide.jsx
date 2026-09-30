@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Shield, CheckCircle, Globe, ArrowRight } from "lucide-react";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const certifications = [
   {
@@ -134,6 +135,12 @@ const OrganicCertificationGuide = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Guide to Organic Certifications (NPOP, USDA, EU) | Siraba Organic"
+        description="Comprehensive educational guide explaining how NPOP India, USDA Organic, EU Organic, and Jaivik Bharat certifications work, standards, and verification."
+        canonicalUrl="/organic-certification-guide"
+        schema={buildBreadcrumbSchema("/organic-certification-guide")}
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

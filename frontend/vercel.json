@@ -4,6 +4,46 @@
       "source": "/certification.html",
       "destination": "/certifications",
       "permanent": true
+    },
+    {
+      "source": "/certification",
+      "destination": "/certifications",
+      "permanent": true
+    },
+    {
+      "source": "/vendor/qualification",
+      "destination": "/vendor-qualification",
+      "permanent": true
+    },
+    {
+      "source": "/vendor-intro",
+      "destination": "/vendor",
+      "permanent": true
+    },
+    {
+      "source": "/vendor/intro",
+      "destination": "/vendor",
+      "permanent": true
+    },
+    {
+      "source": "/marketplace-badges",
+      "destination": "/vendor/badges",
+      "permanent": true
+    },
+    {
+      "source": "/our-story",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/about-us",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/contact-us",
+      "destination": "/contact",
+      "permanent": true
     }
   ],
   "rewrites": [

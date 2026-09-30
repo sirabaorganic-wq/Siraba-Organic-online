@@ -102,7 +102,7 @@ const Navbar = () => {
         {
             label: 'Why Siraba',
             children: [
-                { label: 'Our Story', path: '/our-story' },
+                { label: 'Our Story', path: '/about' },
                 { label: 'Why Our Marketplace is Different', path: '/why-siraba' },
                 { label: 'Certifications & Standards', path: '/certifications' },
             ]

@@ -11,6 +11,7 @@ import { useOrders } from '../context/OrderContext';
 import { useCurrency } from '../context/CurrencyContext';
 import PhoneInput from '../components/PhoneInput';
 import OTPModal from '../components/OTPModal';
+import SEO from '../components/SEO';
 
 // Subcode for Wishlist Grid to handle fetching
 const WishlistGrid = () => {
@@ -720,6 +721,7 @@ const Account = () => {
     if (!user) {
         return (
             <div className="w-full pt-20 bg-background min-h-screen flex items-center justify-center px-4">
+                <SEO title={isRegistering ? "Create Account | Siraba Organic" : "Sign In | Siraba Organic"} noindex={true} />
                 <div className="max-w-md w-full bg-surface p-8 rounded-sm shadow-md border border-secondary/10">
                     <div className="text-center mb-8">
                         <h2 className="font-heading text-3xl font-bold text-primary mb-2">
@@ -827,6 +829,7 @@ const Account = () => {
 
     return (
         <div className="w-full pt-20 bg-background min-h-screen">
+            <SEO title="My Account | Siraba Organic" noindex={true} />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 <div className="flex flex-col md:flex-row gap-8">
 

@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Globe, Shield, Star, Users, TrendingUp, Package, CheckCircle, ArrowRight, Mail, Sparkles } from "lucide-react";
+import SEO, { buildBreadcrumbSchema } from "../../components/SEO";
 
 const benefits = [
   {
@@ -95,6 +96,12 @@ const VendorBenefits = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Vendor Benefits | Why Sell on Siraba Organic"
+        description="Discover the advantages of selling on Siraba Organic: reach conscious consumers, leverage certification-focused trust, and expand your organic brand."
+        canonicalUrl="/vendor-benefits"
+        schema={buildBreadcrumbSchema("/vendor-benefits")}
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

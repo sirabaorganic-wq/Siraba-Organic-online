@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SEO from "../../components/SEO";
 import {
   Building,
   ShieldCheck,
@@ -223,6 +224,11 @@ const VendorOnboardingChecklist = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Vendor Onboarding Checklist | Required Documents | Siraba Organic"
+        description="Complete onboarding checklist for organic producers: certification verification, lab reports, business documents, and packaging compliance for Siraba Organic."
+        canonicalUrl="/vendor-onboarding-checklist"
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

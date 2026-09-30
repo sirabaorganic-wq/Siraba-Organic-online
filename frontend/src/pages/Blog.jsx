@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, User, ArrowRight, Loader2 } from 'lucide-react';
 import client from '../api/client';
+import SEO, { buildBreadcrumbSchema } from '../components/SEO';
 
 const Blog = () => {
     const [blogs, setBlogs] = useState([]);
@@ -34,6 +35,12 @@ const Blog = () => {
 
     return (
         <div className="w-full pt-28 pb-20 bg-background text-primary min-h-screen">
+            <SEO
+                title="Knowledge Hub & Organic Living Blog | Siraba Organic"
+                description="Explore curated articles and insights on certified organic living, traditional spices, Ayurvedic wellness, and sustainable sourcing from Siraba Organic."
+                canonicalUrl="/blog"
+                schema={buildBreadcrumbSchema("/blog")}
+            />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Header */}

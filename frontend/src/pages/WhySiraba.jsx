@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import BgImage2 from "../assets/bgimage2.png";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const WhySiraba = () => {
   useEffect(() => {
@@ -21,6 +22,12 @@ const WhySiraba = () => {
 
   return (
     <div className="w-full pt-20 bg-background text-primary selection:bg-accent selection:text-white">
+      <SEO
+        title="Why Siraba Organic | Standards, Testing & Disciplined Sourcing"
+        description="Discover why conscious consumers choose Siraba Organic: mandatory dual international organic certifications, accredited lab testing, and batch traceability."
+        canonicalUrl="/why-siraba"
+        schema={buildBreadcrumbSchema("/why-siraba")}
+      />
       {/* Hero Section */}
       <div className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SEO from "../../components/SEO";
 import {
   ShieldCheck,
   BadgeCheck,
@@ -339,6 +340,11 @@ const VendorTermsAndConditions = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Vendor Terms & Conditions | Siraba Organic"
+        description="Comprehensive terms, operational policies, certification requirements, and commercial compliance guidelines for Siraba Organic marketplace vendors."
+        canonicalUrl="/vendor-terms-and-conditions"
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

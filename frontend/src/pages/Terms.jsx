@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const Terms = () => {
   useEffect(() => {
@@ -26,6 +27,12 @@ const Terms = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Terms & Conditions | Siraba Organic"
+        description="Review the terms and conditions governing the use of the Siraba Organic marketplace, user accounts, product orders, and services."
+        canonicalUrl="/terms"
+        schema={buildBreadcrumbSchema("/terms")}
+      />
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-4">
           Terms &amp; Conditions

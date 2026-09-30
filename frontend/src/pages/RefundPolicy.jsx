@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import SEO from "../components/SEO";
 
 const RefundPolicy = () => {
   useEffect(() => {
@@ -26,6 +27,11 @@ const RefundPolicy = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Refund & Cancellation Policy | Siraba Organic"
+        description="Review Siraba Organic's policy on refunds, replacements, cancellations, and returns for certified organic grocery products and deliveries."
+        canonicalUrl="/refund-policy"
+      />
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-4">
           Refund, Return &amp; Cancellation Policy

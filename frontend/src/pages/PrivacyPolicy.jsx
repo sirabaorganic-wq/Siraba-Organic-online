@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const PrivacyPolicy = () => {
   useEffect(() => {
@@ -26,6 +27,12 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Privacy Policy | Siraba Organic"
+        description="Learn how Siraba Organic collects, protects, and manages customer personal information, payment security, and data privacy."
+        canonicalUrl="/privacy-policy"
+        schema={buildBreadcrumbSchema("/privacy-policy")}
+      />
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-4">
           Privacy Policy

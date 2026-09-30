@@ -10,6 +10,7 @@ import {
   Mail,
   ArrowRight,
 } from "lucide-react";
+import SEO, { getBreadcrumbSchema } from "../../components/SEO";
 
 const steps = [
   {
@@ -110,6 +111,16 @@ const VendorOnboardingGuide = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen relative">
+      <SEO
+        title="Vendor Onboarding Guide | Step-by-Step Selling | Siraba Organic"
+        description="Step-by-step guide for certified organic vendors to apply, submit verification documents, complete lab checks, and list products on Siraba Organic."
+        canonicalUrl="/vendor-onboarding-guide"
+        schema={getBreadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Sell on Siraba", url: "/vendor" },
+          { name: "Vendor Onboarding Guide", url: "/vendor-onboarding-guide" },
+        ])}
+      />
       <WatermarkBg />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-16 md:py-24">

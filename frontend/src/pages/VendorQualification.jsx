@@ -13,6 +13,7 @@ import {
     Building2,
 } from "lucide-react";
 import BgImage1 from "../assets/bgimage1.png";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const VendorQualification = () => {
     useEffect(() => {
@@ -105,6 +106,12 @@ const VendorQualification = () => {
 
     return (
         <div className="w-full pt-20 bg-background text-primary">
+            <SEO
+                title="Vendor Qualification Standards | Sell on Siraba Organic"
+                description="Review the mandatory qualification criteria for organic producers, including valid NPOP/USDA certifications, lab test evidence, and traceability."
+                canonicalUrl="/vendor-qualification"
+                schema={buildBreadcrumbSchema("/vendor-qualification")}
+            />
 
             {/* ───────────────── HERO SECTION ───────────────── */}
             <section className="relative min-h-[97vh] flex items-center justify-center overflow-hidden">

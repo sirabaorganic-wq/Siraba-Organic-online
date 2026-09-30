@@ -13,6 +13,7 @@ import {
 import BgImage1 from "../assets/bgimage1.png";
 import JaivikBharatLogo from "../assets/jaivik_bharat.png";
 import UsdaOrganicLogo from "../assets/usda_organic.png";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const Certification = () => {
   const [certData, setCertData] = useState(null);
@@ -79,6 +80,12 @@ const Certification = () => {
 
   return (
     <div className="w-full pt-20 bg-background text-primary">
+      <SEO
+        title="Organic Certifications & Standards | Siraba Organic"
+        description="Explore Siraba Organic's multi-layered certification framework requiring NPOP, USDA Organic, and EU Organic standards with scientific laboratory verification."
+        canonicalUrl="/certifications"
+        schema={buildBreadcrumbSchema("/certifications")}
+      />
 
       {/* ───────────────── HERO SECTION ───────────────── */}
       <section className="relative min-h-[97vh] flex items-center justify-center overflow-hidden">

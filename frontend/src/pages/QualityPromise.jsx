@@ -11,6 +11,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import BgImage1 from "../assets/bgimage1.png";
+import SEO, { getBreadcrumbSchema } from "../components/SEO";
 
 const QualityPromise = () => {
   useEffect(() => {
@@ -79,6 +80,15 @@ const QualityPromise = () => {
 
   return (
     <div className="w-full pt-20 bg-background text-primary">
+      <SEO
+        title="Our Quality Promise | Scientific Testing & Traceability | Siraba Organic"
+        description="Read Siraba Organic's quality promise: mandatory dual organic certifications, accredited laboratory documentation, and batch-level traceability."
+        canonicalUrl="/quality-promise"
+        schema={getBreadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Quality Promise", url: "/quality-promise" },
+        ])}
+      />
 
       {/* ───────────────── HERO SECTION ───────────────── */}
       <section className="relative min-h-[97vh] flex items-center justify-center overflow-hidden">

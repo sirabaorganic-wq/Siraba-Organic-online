@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import SEO, { buildBreadcrumbSchema } from "../components/SEO";
 
 const ShippingPolicy = () => {
   useEffect(() => {
@@ -26,6 +27,12 @@ const ShippingPolicy = () => {
 
   return (
     <div className="w-full pt-20 bg-background min-h-screen">
+      <SEO
+        title="Shipping & Delivery Policy | Siraba Organic"
+        description="Learn about shipping rates, delivery timelines, packaging standards, and courier partners for certified organic products on Siraba Organic."
+        canonicalUrl="/shipping-policy"
+        schema={buildBreadcrumbSchema("/shipping-policy")}
+      />
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         <h1 className="font-heading text-3xl md:text-4xl text-primary font-bold mb-4">
           Shipping &amp; Delivery Policy
