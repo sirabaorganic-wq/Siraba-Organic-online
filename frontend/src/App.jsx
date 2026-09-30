@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,15 +10,31 @@ import SEO from "./components/SEO";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
+import SirabaAssistant from "./components/SirabaAssistant";
+import { CartProvider } from "./context/CartContext";
+import { ProductProvider } from "./context/ProductContext";
+import { AuthProvider } from "./context/AuthContext";
+import { OrderProvider } from "./context/OrderContext";
+import { VendorProvider } from "./context/VendorContext";
+import { SocketProvider } from "./context/SocketContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
+import { ToastProvider } from "./components/Toast";
+import { ConfirmProvider } from "./components/ConfirmModal";
+import { trackPageView, initGlobalAnalyticsListeners } from "./utils/analytics";
+import Shop from "./pages/Shop";
+import ProductDetails from "./pages/ProductDetails";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
 import About from "./pages/About";
 import FounderFAQs from "./pages/FounderFAQs";
 import OrganicCertificationGuide from "./pages/OrganicCertificationGuide";
 import WhySiraba from "./pages/WhySiraba";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Certification from "./pages/Certification";
 import B2B from "./pages/B2B";
 import Account from "./pages/Account";
-import Shop from "./pages/Shop";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
@@ -26,50 +42,36 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 import RefundPolicy from "./pages/RefundPolicy";
 import FAQ from "./pages/FAQ";
 import QualityPromise from "./pages/QualityPromise";
-import ProductDetails from "./pages/ProductDetails";
 import ProductVerification from "./pages/ProductVerification";
-import Cart from "./pages/Cart";
-import { CartProvider } from "./context/CartContext";
-import { ProductProvider } from "./context/ProductContext";
-import { AuthProvider } from "./context/AuthContext";
-import { OrderProvider } from "./context/OrderContext";
-import { VendorProvider } from "./context/VendorContext";
-import AdminLogin from "./pages/admin/Login";
-import AdminDashboard from "./pages/admin/Dashboard";
-import VendorOnboarderDashboard from "./pages/admin/VendorOnboarderDashboard";
-import BlogCreatorDashboard from "./pages/admin/BlogCreatorDashboard";
-import VendorLogin from "./pages/vendor/VendorLogin";
-import VendorDashboard from "./pages/vendor/VendorDashboard";
-import VendorOnboarding from "./pages/vendor/VendorOnboarding";
-import VendorUnderReview from "./pages/vendor/VendorUnderReview";
-import VendorRejected from "./pages/vendor/VendorRejected";
-import VendorSubscription from "./pages/vendor/VendorSubscription";
-import Login from "./pages/Login";
 import TrackOrder from "./pages/TrackOrder";
-import Checkout from "./pages/Checkout";
-import OrderSuccess from "./pages/OrderSuccess";
-import BlogPost from "./pages/BlogPost";
-import AdminBlogList from "./pages/admin/AdminBlogList";
-import AdminBlogEdit from "./pages/admin/AdminBlogEdit";
+import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VendorShopPage from "./pages/VendorShopPage";
-import VendorQualification from "./pages/VendorQualification";
-import VendorIntro from "./pages/vendor/VendorIntro";
-import VendorBenefits from "./pages/vendor/VendorBenefits";
-import VendorOnboardingGuide from "./pages/vendor/VendorOnboardingGuide";
-import VendorOnboardingChecklist from "./pages/vendor/VendorOnboardingChecklist";
-import VendorVerificationPolicies from "./pages/vendor/VendorVerificationPolicies";
-import VendorTermsAndConditions from "./pages/vendor/VendorTermsAndConditions";
-import VendorFAQ from "./pages/vendor/VendorFAQ";
-import MarketplaceBadges from "./pages/MarketplaceBadges";
-import SirabaAssistant from "./components/SirabaAssistant";
-import { useEffect } from "react";
-import { SocketProvider } from "./context/SocketContext";
-import { CurrencyProvider } from "./context/CurrencyContext";
-import { ToastProvider } from "./components/Toast";
-import { ConfirmProvider } from "./components/ConfirmModal";
-import { trackPageView, initGlobalAnalyticsListeners } from "./utils/analytics";
+
+// Heavy Admin & Vendor Portals (Lazy-loaded to keep main bundle lean)
+const AdminLogin = lazy(() => import("./pages/admin/Login"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const VendorOnboarderDashboard = lazy(() => import("./pages/admin/VendorOnboarderDashboard"));
+const BlogCreatorDashboard = lazy(() => import("./pages/admin/BlogCreatorDashboard"));
+const AdminBlogList = lazy(() => import("./pages/admin/AdminBlogList"));
+const AdminBlogEdit = lazy(() => import("./pages/admin/AdminBlogEdit"));
+
+const VendorLogin = lazy(() => import("./pages/vendor/VendorLogin"));
+const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
+const VendorOnboarding = lazy(() => import("./pages/vendor/VendorOnboarding"));
+const VendorUnderReview = lazy(() => import("./pages/vendor/VendorUnderReview"));
+const VendorRejected = lazy(() => import("./pages/vendor/VendorRejected"));
+const VendorSubscription = lazy(() => import("./pages/vendor/VendorSubscription"));
+const VendorQualification = lazy(() => import("./pages/VendorQualification"));
+const VendorIntro = lazy(() => import("./pages/vendor/VendorIntro"));
+const VendorBenefits = lazy(() => import("./pages/vendor/VendorBenefits"));
+const VendorOnboardingGuide = lazy(() => import("./pages/vendor/VendorOnboardingGuide"));
+const VendorOnboardingChecklist = lazy(() => import("./pages/vendor/VendorOnboardingChecklist"));
+const VendorVerificationPolicies = lazy(() => import("./pages/vendor/VendorVerificationPolicies"));
+const VendorTermsAndConditions = lazy(() => import("./pages/vendor/VendorTermsAndConditions"));
+const VendorFAQ = lazy(() => import("./pages/vendor/VendorFAQ"));
+const MarketplaceBadges = lazy(() => import("./pages/MarketplaceBadges"));
 
 const RouteTracker = () => {
   const location = useLocation();
@@ -115,7 +117,8 @@ function App() {
                         <div className="flex flex-col min-h-screen font-body text-text-primary bg-background selection:bg-accent selection:text-primary">
                           <NavbarWrapper />
                           <main className="flex-grow">
-                            <Routes>
+                            <Suspense fallback={null}>
+                              <Routes>
                               <Route path="/" element={<Home />} />
                               <Route path="/shop" element={<Shop />} />
                               <Route
@@ -343,6 +346,7 @@ function App() {
                                 }
                               />
                             </Routes>
+                            </Suspense>
                           </main>
                           <SirabaAssistant />
                           <FooterWrapper />

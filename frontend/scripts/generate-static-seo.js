@@ -1050,10 +1050,10 @@ ${JSON.stringify(schemas, null, 2)}
 
     html = html.replace('</head>', `${headSeo}\n</head>`);
 
-    // Inject Initial Semantic Content into #root for no-JS crawlers
+    // Inject Initial Semantic Content into #root for no-JS crawlers (visually hidden for real users)
     const semanticContent = `
     <div id="root">
-      <article class="sr-only-seo" style="max-width:800px;margin:2rem auto;padding:1rem;font-family:sans-serif;" aria-hidden="false">
+      <article class="sr-only-seo" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;" aria-hidden="false">
         <nav aria-label="Breadcrumb">
           <a href="/">Home</a> &gt; <a href="/shop">Shop</a> &gt; <span>${escapeHtml(p.name)}</span>
         </nav>
@@ -1108,10 +1108,10 @@ ${JSON.stringify(page.schema, null, 2)}
 
     html = html.replace('</head>', `${headSeo}\n</head>`);
 
-    // Inject Initial Semantic Content into #root for crawlers
+    // Inject Initial Semantic Content into #root for crawlers (visually hidden for real users)
     const semanticContent = `
     <div id="root">
-      <article class="sr-only-seo" style="max-width:900px;margin:2rem auto;padding:1rem;font-family:sans-serif;" aria-hidden="false">
+      <article class="sr-only-seo" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;" aria-hidden="false">
         <nav aria-label="Breadcrumb">
           <a href="/">Home</a> ${page.path !== '/' ? `&gt; <span>${escapeHtml(page.heading || page.title)}</span>` : ''}
         </nav>
