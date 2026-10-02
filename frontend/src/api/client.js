@@ -7,21 +7,35 @@ const client = axios.create({
 // Add a request interceptor to inject the token
 client.interceptors.request.use(
   (config) => {
+    const url = config.url || "";
     // Check if this is a vendor API call
     const isVendorRoute =
-      config.url?.startsWith("/vendors") ||
-      config.url?.startsWith("/vendor-messages/vendor") ||
-      config.url?.startsWith("/notifications/vendor");
+      url.startsWith("/vendors") ||
+      url.startsWith("/vendor-messages/vendor") ||
+      url.startsWith("/notifications/vendor") ||
+      url.includes("/vendor");
 
     if (isVendorRoute) {
-      // Use vendor token for vendor routes
-      const vendorToken = localStorage.getItem("vendorToken");
+      // Use vendor token for vendor routes with resilient fallbacks
+      let vendorToken = localStorage.getItem("vendorToken");
+      if (!vendorToken) {
+        try {
+          const vInfo = JSON.parse(localStorage.getItem("vendorInfo") || "{}");
+          vendorToken = vInfo.token;
+        } catch (e) {}
+      }
+      if (!vendorToken) {
+        vendorToken = localStorage.getItem("token");
+      }
       if (vendorToken) {
         config.headers.Authorization = `Bearer ${vendorToken}`;
       }
     } else {
-      // Use regular user token for other routes
-      const token = localStorage.getItem("token");
+      // Use regular user token for other routes, falling back to vendorToken
+      let token = localStorage.getItem("token");
+      if (!token) {
+        token = localStorage.getItem("vendorToken");
+      }
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -40,26 +54,32 @@ client.interceptors.response.use(
       const isVendorRoute =
         requestUrl.startsWith("/vendors") ||
         requestUrl.startsWith("/vendor-messages/vendor") ||
-        requestUrl.startsWith("/notifications/vendor");
+        requestUrl.startsWith("/notifications/vendor") ||
+        requestUrl.includes("/vendor");
+
+      // Do NOT clear tokens on downloads, previews, or non-fatal status checks
+      const isExemptRoute =
+        requestUrl.includes("/download") ||
+        requestUrl.includes("/preview") ||
+        requestUrl.includes("/status");
 
       if (isVendorRoute) {
-        // Vendor auth failed - redirect to vendor login
-        localStorage.removeItem("vendorToken");
-        localStorage.removeItem("vendorInfo");
-        if (
-          !window.location.pathname.startsWith("/vendor") ||
-          window.location.pathname === "/vendor/dashboard"
-        ) {
-          window.location.href = "/vendor";
+        if (!isExemptRoute) {
+          // If actively on vendor dashboard and session expires
+          if (window.location.pathname === "/vendor/dashboard") {
+            localStorage.removeItem("vendorToken");
+            localStorage.removeItem("vendorInfo");
+            window.location.href = "/vendor";
+          }
         }
       } else {
         // User auth failed - redirect to user login
-        localStorage.removeItem("token");
-        localStorage.removeItem("userInfo");
         if (
           window.location.pathname !== "/login" &&
           !window.location.pathname.startsWith("/vendor")
         ) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userInfo");
           window.location.href = "/login";
         }
       }

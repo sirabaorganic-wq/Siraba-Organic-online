@@ -133,10 +133,13 @@ const AgreementPreviewModal = ({
       }
     } catch (err) {
       console.error("Agreement acceptance error:", err);
-      setSigningError(
-        err.response?.data?.message ||
-          "An error occurred while executing the agreement. Please try again."
-      );
+      let errMsg = err.response?.data?.message || "";
+      if (errMsg.includes("Could not find Chrome") || errMsg.includes("puppeteer")) {
+        errMsg = "Document signing engine was temporarily initializing. Please try again.";
+      } else if (!errMsg) {
+        errMsg = "An error occurred while executing the agreement. Please try again.";
+      }
+      setSigningError(errMsg);
     } finally {
       setSigning(false);
     }

@@ -18,6 +18,14 @@ export const VendorProvider = ({ children }) => {
   const [compliance, setCompliance] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
 
+  // Auto-refresh vendor status / profile on mount if token is present
+  useEffect(() => {
+    const token = localStorage.getItem("vendorToken");
+    if (token) {
+      refreshVendorStatus();
+    }
+  }, []);
+
   // Login
   const login = async (email, password) => {
     try {
@@ -26,6 +34,19 @@ export const VendorProvider = ({ children }) => {
       setVendor(data);
       localStorage.setItem("vendorInfo", JSON.stringify(data));
       localStorage.setItem("vendorToken", data.token);
+
+      // Hydrate profile to ensure all deep fields are fully loaded immediately
+      try {
+        const { data: profile } = await client.get("/vendors/profile");
+        if (profile) {
+          const merged = { ...data, ...profile };
+          setVendor(merged);
+          localStorage.setItem("vendorInfo", JSON.stringify(merged));
+        }
+      } catch (profErr) {
+        console.warn("Could not fetch full profile after login:", profErr);
+      }
+
       return { success: true };
     } catch (error) {
       return {
@@ -83,10 +104,12 @@ export const VendorProvider = ({ children }) => {
     try {
       const { data } = await client.get("/vendors/profile");
       if (data) {
-        const updatedVendor = { ...vendor, ...data };
-        setVendor(updatedVendor);
-        localStorage.setItem("vendorInfo", JSON.stringify(updatedVendor));
-        return { success: true, vendor: updatedVendor };
+        setVendor((prev) => {
+          const updatedVendor = { ...(prev || {}), ...data };
+          localStorage.setItem("vendorInfo", JSON.stringify(updatedVendor));
+          return updatedVendor;
+        });
+        return { success: true, vendor: data };
       }
       return { success: false };
     } catch (error) {
@@ -120,21 +143,19 @@ export const VendorProvider = ({ children }) => {
         step,
         data: stepData,
       });
-      setVendor((prev) => ({
-        ...prev,
-        ...stepData, // Merge the submitted data (e.g., businessDescription) into state immediately
-        onboardingStep: data.onboardingStep,
-        onboardingComplete: data.onboardingComplete,
-        status: data.status,
-      }));
-      const updatedVendor = {
-        ...vendor,
-        ...stepData, // Also merge here for localStorage
-        onboardingStep: data.onboardingStep,
-        onboardingComplete: data.onboardingComplete,
-        status: data.status,
-      };
-      localStorage.setItem("vendorInfo", JSON.stringify(updatedVendor));
+      const returnedVendor = data.vendor || {};
+      setVendor((prev) => {
+        const updatedVendor = {
+          ...(prev || {}),
+          ...stepData,
+          ...returnedVendor,
+          onboardingStep: data.onboardingStep,
+          onboardingComplete: data.onboardingComplete,
+          status: data.status,
+        };
+        localStorage.setItem("vendorInfo", JSON.stringify(updatedVendor));
+        return updatedVendor;
+      });
       return { success: true, data };
     } catch (error) {
       return {

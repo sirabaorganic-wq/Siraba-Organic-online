@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const Vendor = require("../models/Vendor");
 
+const User = require("../models/User");
+
 // Protect vendor routes
 const protectVendor = async (req, res, next) => {
   let token;
@@ -9,23 +11,34 @@ const protectVendor = async (req, res, next) => {
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
+    token = req.headers.authorization.split(" ")[1];
+  } else if (req.query && (req.query.token || req.query.vendorToken)) {
+    token = req.query.token || req.query.vendorToken;
+  }
+
+  if (token) {
     try {
-      token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret123");
 
-      // Check if it's a vendor token (has vendorId)
-      if (decoded.vendorId) {
-        req.vendor = await Vendor.findById(decoded.vendorId).select(
-          "-password"
-        );
+      const vendorId = decoded.vendorId || decoded.id || decoded._id;
+
+      if (vendorId) {
+        req.vendor = await Vendor.findById(vendorId).select("-password");
 
         if (!req.vendor) {
+          // Check if this token belongs to an Admin/Staff
+          const user = await User.findById(vendorId).select("-password");
+          if (user && (user.role === "admin" || user.isAdmin)) {
+            req.user = user;
+            req.isAdmin = true;
+            return next();
+          }
           return res
             .status(401)
             .json({ message: "Not authorized, vendor not found" });
         }
 
-        if (!req.vendor.isActive) {
+        if (req.vendor.isActive === false) {
           return res
             .status(401)
             .json({ message: "Vendor account is inactive" });
@@ -37,16 +50,16 @@ const protectVendor = async (req, res, next) => {
             .json({ message: "Vendor account is suspended" });
         }
 
-        next();
+        return next();
       } else {
         return res.status(401).json({ message: "Not authorized as vendor" });
       }
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: "Not authorized, token failed" });
+      console.error("Vendor auth token error:", error.message);
+      return res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {
-    res.status(401).json({ message: "Not authorized, no token" });
+    return res.status(401).json({ message: "Not authorized, no token" });
   }
 };
 

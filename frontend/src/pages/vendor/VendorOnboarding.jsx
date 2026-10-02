@@ -269,7 +269,7 @@ const VendorOnboarding = () => {
               : "Other";
 
     try {
-      const res = await updateOnboarding(2, {
+      const res = await updateOnboarding(4, {
         organicCertification: {
           certificationRoute: routeToSave,
           certificationBody,
@@ -303,6 +303,130 @@ const VendorOnboarding = () => {
   const [uploadedDocs, setUploadedDocs] = useState({});
   const [uploadingState, setUploadingState] = useState({});
 
+  const hasUserEditedRef = useRef(false);
+
+  const populateFormFromVendor = useCallback((v) => {
+    if (!v) return;
+
+    if (v.isBusinessRegistered) setIsBusinessRegistered(v.isBusinessRegistered);
+    if (v.gstApplicable) setGstApplicable(v.gstApplicable);
+    if (v.authorizedSignatoryName) {
+      setAuthorizedSignatoryName(v.authorizedSignatoryName);
+    } else if (v.panNumber) {
+      setAuthorizedSignatoryName(v.panNumber);
+    }
+    if (v.panNumber) setPanNumber(v.panNumber);
+    if (v.fssaiNumber) setFssaiNumber(v.fssaiNumber);
+    if (v.gstNumber) setGstNumber(v.gstNumber);
+
+    // Bank & Payout Details
+    if (v.bankDetails) {
+      if (v.bankDetails.accountHolderName) setAccountHolderName(v.bankDetails.accountHolderName);
+      if (v.bankDetails.accountNumber) {
+        setAccountNumber(v.bankDetails.accountNumber);
+        setConfirmAccountNumber(v.bankDetails.accountNumber);
+      }
+      if (v.bankDetails.bankName) setBankName(v.bankDetails.bankName);
+      if (v.bankDetails.ifscCode) setIfscCode(v.bankDetails.ifscCode);
+      if (v.bankDetails.branchName) setBranchName(v.bankDetails.branchName);
+      if (v.bankDetails.accountType) setAccountType(v.bankDetails.accountType);
+      if (v.bankDetails.upiId) setUpiId(v.bankDetails.upiId);
+    } else if (v.businessName) {
+      setAccountHolderName((prev) => prev || v.businessName);
+    }
+
+    // Warehouse & Pickup Address
+    if (v.pickupAddress) {
+      if (v.pickupAddress.facilityName) setFacilityName(v.pickupAddress.facilityName);
+      if (v.pickupAddress.contactPerson) setPickupContactPerson(v.pickupAddress.contactPerson);
+      if (v.pickupAddress.phone) setPickupPhone(v.pickupAddress.phone);
+      if (v.pickupAddress.addressLine1) setPickupAddressLine1(v.pickupAddress.addressLine1);
+      if (v.pickupAddress.addressLine2) setPickupAddressLine2(v.pickupAddress.addressLine2);
+      if (v.pickupAddress.city) setPickupCity(v.pickupAddress.city);
+      if (v.pickupAddress.state) setPickupState(v.pickupAddress.state);
+      if (v.pickupAddress.pincode) setPickupPincode(v.pickupAddress.pincode);
+      if (v.pickupAddress.country) setPickupCountry(v.pickupAddress.country);
+    } else if (v.address) {
+      if (v.address.street) setPickupAddressLine1((prev) => prev || v.address.street);
+      if (v.address.city) setPickupCity((prev) => prev || v.address.city);
+      if (v.address.state) setPickupState((prev) => prev || v.address.state);
+      if (v.address.postalCode) setPickupPincode((prev) => prev || v.address.postalCode);
+      if (v.contactPerson) setPickupContactPerson((prev) => prev || v.contactPerson);
+      if (v.phone) setPickupPhone((prev) => prev || v.phone);
+      if (v.businessName) setFacilityName((prev) => prev || v.businessName);
+    }
+
+    // Organic Certification
+    if (v.organicCertification) {
+      const route = v.organicCertification.certificationRoute || "npop";
+      setCertificationRoute(route);
+
+      const savedByRoute = v.organicCertification.certificationsByRoute || {};
+      const newMap = {
+        npop: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+        usda: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+        pgs: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+        eu: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+        other: { certificationBody: "", certificateNumber: "", certificateValidUntil: "" },
+      };
+
+      Object.keys(newMap).forEach((rKey) => {
+        if (savedByRoute[rKey]) {
+          newMap[rKey] = {
+            certificationBody: savedByRoute[rKey].certificationBody || "",
+            certificateNumber: savedByRoute[rKey].certificateNumber || "",
+            certificateValidUntil: savedByRoute[rKey].certificateValidUntil
+              ? new Date(savedByRoute[rKey].certificateValidUntil).toISOString().split("T")[0]
+              : "",
+          };
+        }
+      });
+
+      if (v.organicCertification.certificationBody && !newMap[route]?.certificationBody) {
+        newMap[route] = {
+          certificationBody: v.organicCertification.certificationBody || "",
+          certificateNumber: v.organicCertification.certificateNumber || "",
+          certificateValidUntil: v.organicCertification.certificateValidUntil
+            ? new Date(v.organicCertification.certificateValidUntil).toISOString().split("T")[0]
+            : "",
+        };
+      }
+
+      setCertificationsByRoute(newMap);
+      const activeData = newMap[route] || {};
+      setCertificationBody(activeData.certificationBody || v.organicCertification.certificationBody || "");
+      setCertificateNumber(activeData.certificateNumber || v.organicCertification.certificateNumber || "");
+      setCertificateValidUntil(
+        activeData.certificateValidUntil ||
+        (v.organicCertification.certificateValidUntil
+          ? new Date(v.organicCertification.certificateValidUntil).toISOString().split("T")[0]
+          : "")
+      );
+    }
+
+    // Representative Product
+    if (v.representativeProduct) {
+      if (v.representativeProduct.productName) setProductName(v.representativeProduct.productName);
+      if (v.representativeProduct.productCategory) setProductCategory(v.representativeProduct.productCategory);
+      if (v.representativeProduct.certificationCoverage) setCertificationCoverage(v.representativeProduct.certificationCoverage);
+    }
+
+    // Quality & Traceability Declarations
+    if (v.maintainsTraceabilityRecords) setMaintainsTraceabilityRecords(v.maintainsTraceabilityRecords);
+    if (v.canProvideBatchSourceEvidence) setCanProvideBatchSourceEvidence(v.canProvideBatchSourceEvidence);
+  }, []);
+
+  // Fetch full profile from backend on mount to hydrate all saved fields
+  useEffect(() => {
+    if (refreshVendorStatus) {
+      refreshVendorStatus().then((res) => {
+        if (res?.success && res.vendor) {
+          populateFormFromVendor(res.vendor);
+        }
+      });
+    }
+  }, [refreshVendorStatus, populateFormFromVendor]);
+
   useEffect(() => {
     if (vendor) {
       if (vendor.status === "approved" || vendor.status === "subadmin_approved") {
@@ -311,6 +435,11 @@ const VendorOnboarding = () => {
         if (vendor.onboardingComplete) {
           navigate("/vendor/under-review");
         }
+      }
+
+      // Populate form if user hasn't actively edited yet
+      if (!hasUserEditedRef.current) {
+        populateFormFromVendor(vendor);
       }
 
       // Populate compliance docs already uploaded
@@ -341,7 +470,7 @@ const VendorOnboarding = () => {
         setActiveStep(vendor.onboardingStep);
       }
     }
-  }, [vendor, navigate]);
+  }, [vendor, navigate, populateFormFromVendor]);
 
   const handleOtherCertFileUpload = async (file) => {
     if (!file) return;
@@ -473,6 +602,85 @@ const VendorOnboarding = () => {
     }
   };
 
+  const handleSaveProgress = async () => {
+    setLoading(true);
+    setError("");
+
+    if (accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber) {
+      setError("Account numbers do not match.");
+      setLoading(false);
+      return;
+    }
+
+    const updatedCertMap = {
+      ...certificationsByRoute,
+      [certificationRoute]: {
+        certificationBody,
+        certificateNumber,
+        certificateValidUntil,
+      },
+    };
+
+    const draftPayload = {
+      currentStep: activeStep,
+      isBusinessRegistered,
+      gstApplicable,
+      authorizedSignatoryName,
+      panNumber: panNumber ? panNumber.trim().toUpperCase() : "",
+      fssaiNumber: fssaiNumber ? fssaiNumber.trim() : "",
+      gstNumber: gstNumber ? gstNumber.trim().toUpperCase() : "",
+      bankDetails: {
+        accountHolderName,
+        accountNumber,
+        bankName,
+        ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : "",
+        branchName,
+        accountType,
+        upiId,
+      },
+      pickupAddress: {
+        facilityName,
+        contactPerson: pickupContactPerson,
+        phone: pickupPhone,
+        addressLine1: pickupAddressLine1,
+        addressLine2: pickupAddressLine2,
+        city: pickupCity,
+        state: pickupState,
+        pincode: pickupPincode,
+        country: pickupCountry,
+      },
+      organicCertification: {
+        certificationRoute,
+        certificationBody,
+        certificateNumber,
+        certificateValidUntil,
+        certificationsByRoute: updatedCertMap,
+      },
+      representativeProduct: {
+        productName,
+        productCategory,
+        certificationCoverage,
+      },
+      maintainsTraceabilityRecords,
+      canProvideBatchSourceEvidence,
+    };
+
+    try {
+      const res = await updateOnboarding("draft", draftPayload);
+      if (res.success) {
+        setSuccess("Progress saved successfully! Your filled details are preserved.");
+        if (refreshVendorStatus) await refreshVendorStatus();
+        setTimeout(() => setSuccess(""), 4000);
+      } else {
+        setError(res.message || "Failed to save progress.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to save progress.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveStep = async (stepNum) => {
     setLoading(true);
     setError("");
@@ -578,7 +786,10 @@ const VendorOnboarding = () => {
       return Boolean(uploadedDocs.representative_product_image || productName || vendor?.representativeProduct?.productName);
     }
     if (stepNum === 6) {
-      return Boolean(vendor?.maintainsTraceabilityRecords && vendor?.canProvideBatchSourceEvidence);
+      return Boolean(
+        (maintainsTraceabilityRecords || vendor?.maintainsTraceabilityRecords) &&
+        (canProvideBatchSourceEvidence || vendor?.canProvideBatchSourceEvidence)
+      );
     }
     if (stepNum === 7) {
       const existingComplete = Boolean(vendor?.onboardingComplete);
@@ -693,11 +904,11 @@ const VendorOnboarding = () => {
           <span className="font-semibold uppercase tracking-wider text-slate-600">Vendor Onboarding</span>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => handleSaveStep(activeStep)}
+              onClick={handleSaveProgress}
               disabled={loading}
               className="hover:text-slate-800 flex items-center gap-1 cursor-pointer font-medium"
             >
-              <Save size={13} /> Save Progress
+              <Save size={13} /> {loading ? "Saving..." : "Save Progress"}
             </button>
             <button
               onClick={() => {
@@ -1857,11 +2068,11 @@ const VendorOnboarding = () => {
         {/* Actions Bar */}
         <div className="flex justify-between items-center mt-6 font-sans">
           <button
-            onClick={() => handleSaveStep(activeStep)}
+            onClick={handleSaveProgress}
             disabled={loading}
-            className="border border-[#455249] rounded-lg px-4 py-2.5 text-xs text-[#24302a] bg-white hover:bg-slate-50 transition-colors font-medium cursor-pointer"
+            className="border border-[#455249] rounded-lg px-4 py-2.5 text-xs text-[#24302a] bg-white hover:bg-slate-50 transition-colors font-medium cursor-pointer flex items-center gap-1.5"
           >
-            ← Save Progress
+            <Save size={13} /> {loading ? "Saving..." : "Save Progress"}
           </button>
 
           <button

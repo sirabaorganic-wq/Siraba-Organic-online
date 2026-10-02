@@ -65,6 +65,7 @@ const corsOptions = {
     }
   },
   credentials: true,
+  exposedHeaders: ["Content-Disposition", "Content-Length"],
   optionsSuccessStatus: 200,
 };
 

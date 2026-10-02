@@ -21,6 +21,7 @@ const complianceService = require("../services/complianceService");
 const { protect, admin, adminOrVendorOnboarder } = require("../middleware/authMiddleware");
 const RefundLog = require("../models/RefundLog");
 const { invalidateCache } = require("../config/cache");
+const { streamAgreementPdf } = require("../utils/agreementDownloadHelper");
 
 // ================== VENDOR MANAGEMENT ==================
 
@@ -567,17 +568,8 @@ router.get(
         });
       }
 
-      const docUrl = agreement.artifact.documentUrl;
-
-      if (docUrl.startsWith("/uploads/")) {
-        const localFilePath = path.join(__dirname, "..", docUrl);
-        if (fs.existsSync(localFilePath)) {
-          const downloadFileName = `${type.toLowerCase()}-${agreement.template.version}-${vendor._id}.pdf`;
-          return res.download(localFilePath, downloadFileName);
-        }
-      }
-
-      return res.redirect(docUrl);
+      const downloadFileName = `${type.toLowerCase()}-${agreement.template.version}-${vendor._id}.pdf`;
+      return streamAgreementPdf(res, agreement, downloadFileName);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

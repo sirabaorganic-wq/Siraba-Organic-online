@@ -100,7 +100,22 @@ const LegalAgreementsSection = forwardRef(({ vendor, onStatusChange, className =
   const handleDownloadPdf = async (docType) => {
     setDownloadingType(docType);
     try {
-      const response = await client.get(`/vendors/agreements/${docType}/download`, {
+      const token =
+        localStorage.getItem("vendorToken") ||
+        localStorage.getItem("token") ||
+        (() => {
+          try {
+            return JSON.parse(localStorage.getItem("vendorInfo") || "{}").token;
+          } catch (e) {
+            return "";
+          }
+        })();
+
+      const downloadPath = `/vendors/agreements/${docType}/download${
+        token ? `?token=${encodeURIComponent(token)}` : ""
+      }`;
+
+      const response = await client.get(downloadPath, {
         responseType: "blob",
       });
 
@@ -122,10 +137,17 @@ const LegalAgreementsSection = forwardRef(({ vendor, onStatusChange, className =
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error("Document download failed:", err);
-      alert(
-        err.response?.data?.message ||
-          "Failed to download executed agreement. Please try again."
-      );
+      let errorMsg = "Failed to download executed agreement. Please try again.";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed.message) errorMsg = parsed.message;
+        } catch (e) {}
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      alert(errorMsg);
     } finally {
       setDownloadingType(null);
     }

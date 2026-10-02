@@ -7,6 +7,11 @@ const fs = require("fs").promises;
 const path = require("path");
 const handlebars = require("handlebars");
 const puppeteer = require("puppeteer");
+const {
+  launchBrowser,
+  buildPureJsPdf,
+  htmlToTextBlocks,
+} = require("../utils/puppeteerHelper");
 
 // Helper function to generate invoice HTML
 const generateInvoiceHTML = async (order) => {
@@ -162,31 +167,40 @@ router.get("/:orderId/download", protect, async (req, res) => {
 
     const html = await generateInvoiceHTML(order);
 
-    // Generate PDF
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    let pdf;
+    try {
+      browser = await launchBrowser();
+      const page = await browser.newPage();
+      await page.setContent(html, {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      });
 
-    const page = await browser.newPage();
-    await page.setContent(html, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "15mm",
-        right: "15mm",
-        bottom: "15mm",
-        left: "15mm",
-      },
-      preferCSSPageSize: true,
-    });
-
-    await browser.close();
+      pdf = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: {
+          top: "15mm",
+          right: "15mm",
+          bottom: "15mm",
+          left: "15mm",
+        },
+        preferCSSPageSize: true,
+      });
+      await browser.close();
+      browser = null;
+    } catch (launchErr) {
+      console.warn(
+        `[invoiceRoutes] Puppeteer invoice render failed (${launchErr.message}). Generating fallback PDF...`
+      );
+      if (browser) {
+        await browser.close().catch(() => {});
+        browser = null;
+      }
+      const invoiceNumber = order._id.toString().slice(-8).toUpperCase();
+      const textBlocks = htmlToTextBlocks(html, `TAX INVOICE #${invoiceNumber}`);
+      pdf = buildPureJsPdf(`TAX INVOICE #${invoiceNumber}`, textBlocks);
+    }
 
     // Set response headers for PDF download
     const invoiceNumber = order._id.toString().slice(-8).toUpperCase();

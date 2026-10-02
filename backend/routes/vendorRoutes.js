@@ -29,6 +29,7 @@ const {
 const { cacheByIdMiddleware } = require("../middleware/cacheMiddleware");
 const { sendVendorWelcomeEmail, sendAdminNewVendorEmail, sendOTPEmail } = require("../utils/emailService");
 const { generateOTP } = require("../utils/otpUtils");
+const { streamAgreementPdf } = require("../utils/agreementDownloadHelper");
 
 // Helper to create or replace an OTP entry in DB
 const createOrReplaceOtp = async (identifier, type, plainOtp) => {
@@ -325,17 +326,11 @@ router.post("/login", async (req, res) => {
       vendor.lastLogin = new Date();
       await vendor.save();
 
+      const vendorObj = vendor.toObject ? vendor.toObject() : vendor;
+      delete vendorObj.password;
+
       res.json({
-        _id: vendor._id,
-        email: vendor.email,
-        businessName: vendor.businessName,
-        businessType: vendor.businessType,
-        contactPerson: vendor.contactPerson,
-        logo: vendor.logo,
-        status: vendor.status,
-        onboardingStep: vendor.onboardingStep,
-        onboardingComplete: vendor.onboardingComplete,
-        metrics: vendor.metrics,
+        ...vendorObj,
         token: generateVendorToken(vendor._id),
       });
     } else {
@@ -757,6 +752,92 @@ router.put("/onboarding", protectVendor, async (req, res) => {
     const { step, data = {} } = req.body;
 
     switch (step) {
+      case "draft":
+      case "save_progress":
+      case 0: {
+        // Save all draft progress without blocking validation errors
+        if (data.isBusinessRegistered !== undefined) vendor.isBusinessRegistered = data.isBusinessRegistered;
+        if (data.gstApplicable !== undefined) vendor.gstApplicable = data.gstApplicable;
+        if (data.authorizedSignatoryName !== undefined) vendor.authorizedSignatoryName = data.authorizedSignatoryName;
+        if (data.businessDescription !== undefined) vendor.businessDescription = data.businessDescription;
+        if (data.website !== undefined) vendor.website = data.website;
+
+        if (data.gstNumber !== undefined) vendor.gstNumber = data.gstNumber ? data.gstNumber.trim().toUpperCase() : "";
+        if (data.panNumber !== undefined) vendor.panNumber = data.panNumber ? data.panNumber.trim().toUpperCase() : "";
+        if (data.fssaiNumber !== undefined) vendor.fssaiNumber = data.fssaiNumber ? data.fssaiNumber.trim() : "";
+
+        // Bank Details
+        if (data.bankDetails) {
+          const bd = data.bankDetails;
+          vendor.bankDetails = {
+            accountHolderName: bd.accountHolderName ?? vendor.bankDetails?.accountHolderName,
+            accountNumber: bd.accountNumber ?? vendor.bankDetails?.accountNumber,
+            bankName: bd.bankName ?? vendor.bankDetails?.bankName,
+            ifscCode: bd.ifscCode ? bd.ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
+            branchName: bd.branchName ?? vendor.bankDetails?.branchName,
+            accountType: bd.accountType || vendor.bankDetails?.accountType || "current",
+            upiId: bd.upiId ?? vendor.bankDetails?.upiId,
+          };
+        }
+
+        // Pickup Address
+        if (data.pickupAddress) {
+          const pa = data.pickupAddress;
+          const locName =
+            pa.shiprocketLocationName ||
+            pa.facilityName ||
+            vendor.pickupAddress?.shiprocketLocationName ||
+            `VEND_${(pa.facilityName || vendor.businessName || 'FAC').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`;
+          vendor.pickupAddress = {
+            facilityName: pa.facilityName ?? vendor.pickupAddress?.facilityName,
+            contactPerson: pa.contactPerson ?? vendor.pickupAddress?.contactPerson,
+            phone: pa.phone ?? vendor.pickupAddress?.phone,
+            addressLine1: pa.addressLine1 ?? vendor.pickupAddress?.addressLine1,
+            addressLine2: pa.addressLine2 ?? vendor.pickupAddress?.addressLine2,
+            city: pa.city ?? vendor.pickupAddress?.city,
+            state: pa.state ?? vendor.pickupAddress?.state,
+            pincode: pa.pincode ?? vendor.pickupAddress?.pincode,
+            country: pa.country || vendor.pickupAddress?.country || "India",
+            shiprocketLocationName: locName,
+          };
+          vendor.shiprocket_pickup_code = locName;
+        }
+
+        // Organic Certification
+        if (data.organicCertification) {
+          const oc = data.organicCertification;
+          vendor.organicCertification = {
+            certificationRoute: oc.certificationRoute || vendor.organicCertification?.certificationRoute || "npop",
+            certificationBody: oc.certificationBody ?? vendor.organicCertification?.certificationBody,
+            certificateNumber: oc.certificateNumber ?? vendor.organicCertification?.certificateNumber,
+            certificateValidUntil: oc.certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
+            certificationsByRoute: oc.certificationsByRoute
+              ? { ...vendor.organicCertification?.certificationsByRoute, ...oc.certificationsByRoute }
+              : vendor.organicCertification?.certificationsByRoute || {},
+          };
+        }
+
+        // Representative Product
+        if (data.representativeProduct) {
+          const rp = data.representativeProduct;
+          vendor.representativeProduct = {
+            productName: rp.productName ?? vendor.representativeProduct?.productName,
+            productCategory: rp.productCategory ?? vendor.representativeProduct?.productCategory,
+            certificationCoverage: rp.certificationCoverage ?? vendor.representativeProduct?.certificationCoverage,
+          };
+        }
+
+        // Quality & Traceability Declarations
+        if (data.maintainsTraceabilityRecords !== undefined) vendor.maintainsTraceabilityRecords = data.maintainsTraceabilityRecords;
+        if (data.canProvideBatchSourceEvidence !== undefined) vendor.canProvideBatchSourceEvidence = data.canProvideBatchSourceEvidence;
+
+        if (data.currentStep && typeof data.currentStep === "number") {
+          vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, data.currentStep);
+        }
+
+        break;
+      }
+
       case 1: { // Section 1: Business & Food Safety
         const step1Errors = validateOnboardingStep1(data || {});
         if (step1Errors.length > 0) {
@@ -1029,11 +1110,15 @@ router.put("/onboarding", protectVendor, async (req, res) => {
     await vendor.save();
     invalidateCache.vendors();
 
+    const vendorObj = vendor.toObject ? vendor.toObject() : vendor;
+    delete vendorObj.password;
+
     res.json({
       onboardingStep: vendor.onboardingStep,
       onboardingComplete: vendor.onboardingComplete,
       status: vendor.status,
-      message: vendor.onboardingComplete ? "Application submitted successfully! Status: Under Review." : "Onboarding step saved.",
+      vendor: vendorObj,
+      message: vendor.onboardingComplete ? "Application submitted successfully! Status: Under Review." : "Onboarding progress saved successfully.",
     });
   } catch (error) {
     console.error("Onboarding error:", error);
@@ -1259,27 +1344,8 @@ router.get("/agreements/:type/download", protectVendor, async (req, res) => {
       });
     }
 
-    const docUrl = agreement.artifact.documentUrl;
-
-    // If local file path
-    if (docUrl.startsWith("/uploads/")) {
-      const path = require("path");
-      const fs = require("fs");
-      const relativePath = docUrl.replace("/uploads/", "");
-      const fullPath = path.join(__dirname, "../uploads", relativePath);
-
-      if (fs.existsSync(fullPath)) {
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-          "Content-Disposition",
-          `attachment; filename="${docType.toLowerCase()}-${agreement.template.version}.pdf"`
-        );
-        return res.sendFile(fullPath);
-      }
-    }
-
-    // If remote URL (Cloudinary)
-    return res.redirect(docUrl);
+    const filename = `${docType.toLowerCase()}-${agreement.template.version}.pdf`;
+    return streamAgreementPdf(res, agreement, filename);
   } catch (error) {
     console.error("Agreement download error:", error);
     res.status(500).json({ message: error.message });

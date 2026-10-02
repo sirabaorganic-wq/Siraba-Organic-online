@@ -3,6 +3,11 @@ const path = require("path");
 const crypto = require("crypto");
 const handlebars = require("handlebars");
 const puppeteer = require("puppeteer");
+const {
+  launchBrowser,
+  buildPureJsPdf,
+  htmlToTextBlocks,
+} = require("../utils/puppeteerHelper");
 const { loadTemplateWithHash, getActiveTemplateConfig } = require("../config/legalTemplates");
 const LegalAgreement = require("../models/LegalAgreement");
 const Vendor = require("../models/Vendor");
@@ -163,15 +168,12 @@ function renderTemplateHtml(documentType, context) {
 }
 
 /**
- * Generate PDF buffer using Puppeteer (identical to production invoice engine)
+ * Generate PDF buffer using Puppeteer with resilient pure-JS fallback for cloud runtimes
  */
-async function generatePdfFromHtml(html) {
+async function generatePdfFromHtml(html, documentType = "SIRABA ORGANIC LEGAL AGREEMENT") {
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await launchBrowser();
 
     const page = await browser.newPage();
     await page.setContent(html, {
@@ -192,9 +194,16 @@ async function generatePdfFromHtml(html) {
     });
 
     return Buffer.from(pdfBuffer);
+  } catch (puppeteerErr) {
+    console.warn(
+      `[agreementService] Puppeteer PDF rendering failed (${puppeteerErr.message}). Generating compliant pure-JS legal PDF fallback...`
+    );
+    // Resilient fallback for cloud containers (e.g. Render) without headless Chrome
+    const textBlocks = htmlToTextBlocks(html, documentType);
+    return buildPureJsPdf(documentType, textBlocks);
   } finally {
     if (browser) {
-      await browser.close();
+      await browser.close().catch(() => {});
     }
   }
 }
@@ -366,7 +375,7 @@ async function executeAgreement({
   const { html: initialHtml } = renderTemplateHtml(documentType, initialContext);
 
   // 2. Generate PDF bytes
-  let pdfBuffer = await generatePdfFromHtml(initialHtml);
+  let pdfBuffer = await generatePdfFromHtml(initialHtml, documentType);
 
   // 3. Exact PDF bytes hash (SHA-256)
   const documentHash = crypto.createHash("sha256").update(pdfBuffer).digest("hex");
@@ -377,7 +386,7 @@ async function executeAgreement({
   const { html: finalHtml, htmlHash, templateHash } = renderTemplateHtml(documentType, finalContext);
 
   // Final PDF generated with the printed documentHash
-  pdfBuffer = await generatePdfFromHtml(finalHtml);
+  pdfBuffer = await generatePdfFromHtml(finalHtml, documentType);
 
   // 5. Persist the final PDF
   const storageResult = await persistPdfBuffer(
