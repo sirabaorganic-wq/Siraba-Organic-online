@@ -65,6 +65,7 @@ import ImageUploadField from "../../components/ImageUploadField";
 
 import Logo from "../../assets/SIRABALOGO.png";
 import NotificationDropdown from "../../components/vendor/NotificationDropdown";
+import { useSocket } from "../../context/SocketContext";
 import client from "../../api/client";
 import { getDocumentViewUrl } from "../../utils/documentViewer";
 import VendorContactUpdateModal from "../../components/vendor/VendorContactUpdateModal";
@@ -5040,6 +5041,7 @@ const VendorDashboard = () => {
     selectPlan,
   } = useVendor();
 
+  const { socket } = useSocket();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -5049,8 +5051,9 @@ const VendorDashboard = () => {
   // Fetch notifications
   const fetchNotifications = async () => {
     try {
-      const { data } = await client.get("/notifications/vendor");
-      setNotifications(data);
+      const { data } = await client.get("/vendors/notifications");
+      const list = Array.isArray(data) ? data : (data.notifications || []);
+      setNotifications(list);
     } catch (error) {
       console.error("Failed to fetch notifications", error);
     }
@@ -5058,13 +5061,67 @@ const VendorDashboard = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      await client.put("/notifications/vendor/read-all");
+      await client.patch("/vendors/notifications/read-all");
       // Optimistic update
       setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
     } catch (error) {
       console.error("Failed to mark read", error);
     }
   };
+
+  const handleMarkOneRead = async (id) => {
+    try {
+      await client.patch(`/vendors/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (error) {
+      console.error("Failed to mark notification read", error);
+    }
+  };
+
+  const handleNotificationClick = (notification) => {
+    setActiveTab("orders");
+  };
+
+  // Realtime Socket.IO Vendor Notification Integration
+  useEffect(() => {
+    if (socket && vendor?._id) {
+      const getVendorAuthToken = () =>
+        localStorage.getItem("vendorToken") || localStorage.getItem("token");
+
+      // Initial join with token authentication
+      socket.emit("join_vendor", {
+        vendorId: vendor._id,
+        token: getVendorAuthToken(),
+      });
+
+      // Handle automatic resubscription upon socket reconnection
+      const handleReconnect = () => {
+        socket.emit("join_vendor", {
+          vendorId: vendor._id,
+          token: getVendorAuthToken(),
+        });
+      };
+
+      socket.on("connect", handleReconnect);
+
+      const handleVendorNotification = (newNotif) => {
+        setNotifications((prev) => {
+          if (prev.some((n) => n._id === newNotif._id || (n.eventId && n.eventId === newNotif.eventId))) {
+            return prev;
+          }
+          return [newNotif, ...prev];
+        });
+      };
+
+      socket.on("vendor:notification", handleVendorNotification);
+      return () => {
+        socket.off("connect", handleReconnect);
+        socket.off("vendor:notification", handleVendorNotification);
+      };
+    }
+  }, [socket, vendor?._id]);
 
   // Refresh vendor status on mount to get latest approval status
   useEffect(() => {
@@ -5146,6 +5203,8 @@ const VendorDashboard = () => {
               <NotificationDropdown
                 notifications={notifications}
                 onMarkAsRead={handleMarkAllRead}
+                onMarkOneRead={handleMarkOneRead}
+                onNotificationClick={handleNotificationClick}
               />
               <div className="h-8 w-px bg-secondary/20 mx-2 hidden sm:block"></div>
               <div

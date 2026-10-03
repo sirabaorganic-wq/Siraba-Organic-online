@@ -2028,6 +2028,23 @@ router.put(
             await user.save();
           }
         }
+
+        // Dispatch ORDER_CANCELLED notification
+        try {
+          const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require("../services/vendorNotificationService");
+          dispatchVendorNotification({
+            eventType: VENDOR_NOTIFICATION_EVENTS.ORDER_CANCELLED,
+            vendorId: req.vendor._id,
+            vendorOrderId: vendorOrder._id,
+            orderId: vendorOrder.order,
+            metadata: {
+              vendorOrderNumber: String(vendorOrder._id).slice(-8),
+              cancelReason: "Cancelled by vendor partner",
+            },
+          }).catch((e) => console.error("Error dispatching vendor cancel notification:", e.message));
+        } catch (notifErr) {
+          console.error("Failed to enqueue vendor cancel notification:", notifErr.message);
+        }
       } else if (status === "delivered" && previousStatus !== "delivered") {
         vendorOrder.deliveredAt = new Date();
 

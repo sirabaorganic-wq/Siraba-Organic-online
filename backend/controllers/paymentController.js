@@ -197,6 +197,30 @@ const verifyPayment = async (req, res) => {
         } catch (queueErr) {
            console.error("Failed to enqueue Shiprocket Job after payment:", queueErr);
         }
+
+        // Dispatch VENDOR_ORDER_CONFIRMED notification
+        if (vo.vendor) {
+          try {
+            const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require('../services/vendorNotificationService');
+            dispatchVendorNotification({
+              eventType: VENDOR_NOTIFICATION_EVENTS.VENDOR_ORDER_CONFIRMED,
+              vendorId: vo.vendor,
+              vendorOrderId: vo._id,
+              orderId: order._id,
+              metadata: {
+                orderNumber: String(order._id).slice(-8),
+                vendorOrderNumber: String(vo._id).slice(-8),
+                subtotal: vo.subtotal,
+                items: (vo.items || []).map((i) => ({ name: i.name, quantity: i.quantity, price: i.price })),
+                deliveryCity: vo.shippingAddress?.city,
+                deliveryState: vo.shippingAddress?.state,
+                deliveryPincode: vo.shippingAddress?.postalCode,
+              },
+            }).catch((e) => console.error("Error dispatching payment confirmed notification:", e.message));
+          } catch (notifErr) {
+            console.error("Failed to enqueue payment confirmed notification:", notifErr.message);
+          }
+        }
     }
 
     // NOTE: Razorpay Route transfer logic (split payments) is offloaded

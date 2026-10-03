@@ -3,22 +3,22 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const { protectVendor } = require('../middleware/vendorMiddleware');
 const { protect } = require('../middleware/authMiddleware');
+const {
+  getVendorNotifications,
+  getUnreadCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} = require('../controllers/vendorNotificationController');
 
 // @desc    Get my notifications (Vendor)
 // @route   GET /api/notifications/vendor
 // @access  Private/Vendor
-router.get('/vendor', protectVendor, async (req, res) => {
-    try {
-        const notifications = await Notification.find({
-            recipient: req.vendor._id,
-            recipientModel: 'Vendor'
-        }).sort({ createdAt: -1 }).limit(50);
+router.get('/vendor', protectVendor, getVendorNotifications);
 
-        res.json(notifications);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+// @desc    Get unread notification count (Vendor)
+// @route   GET /api/notifications/vendor/unread-count
+// @access  Private/Vendor
+router.get('/vendor/unread-count', protectVendor, getUnreadCount);
 
 // @desc    Get my notifications (User/Admin)
 // @route   GET /api/notifications/user
@@ -36,37 +36,19 @@ router.get('/user', protect, async (req, res) => {
     }
 });
 
-// @desc    Mark notification as read
+// @desc    Mark notification as read (Vendor-scoped if vendor token, else general)
+// @route   PATCH /api/notifications/:id/read
 // @route   PUT /api/notifications/:id/read
 // @access  Private
-router.put('/:id/read', async (req, res) => {
-    try {
-        const notification = await Notification.findById(req.params.id);
-        if (notification) {
-            notification.isRead = true;
-            await notification.save();
-            res.json(notification);
-        } else {
-            res.status(404).json({ message: 'Notification not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.patch('/:id/read', protectVendor, markNotificationAsRead);
+router.put('/:id/read', protectVendor, markNotificationAsRead);
 
 // @desc    Mark all as read (Vendor)
+// @route   PATCH /api/notifications/vendor/read-all
 // @route   PUT /api/notifications/vendor/read-all
 // @access  Private/Vendor
-router.put('/vendor/read-all', protectVendor, async (req, res) => {
-    try {
-        await Notification.updateMany(
-            { recipient: req.vendor._id, recipientModel: 'Vendor', isRead: false },
-            { isRead: true }
-        );
-        res.json({ message: 'All notifications marked as read' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.patch('/vendor/read-all', protectVendor, markAllNotificationsAsRead);
+router.put('/vendor/read-all', protectVendor, markAllNotificationsAsRead);
 
 module.exports = router;
+

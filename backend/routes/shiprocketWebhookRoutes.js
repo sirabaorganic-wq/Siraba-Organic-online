@@ -193,7 +193,7 @@ router.post("/", async (req, res) => {
 
     const payload = req.body || {};
     const { order_id, shipment_id, awb, current_status, courier_name } = payload;
-    const statusTimestamp = payload.status_date_time || payload.current_timestamp || payload.updated_at || "";
+    const statusTimestamp = payload.status_date_time || payload.current_timestamp || payload.updated_at || payload.event_id || payload.id || "";
 
     // 2. Deterministic Idempotency Key (No Date.now()!)
     const rawId = payload.event_id || payload.id || `${shipment_id || awb || order_id || "evt"}_${current_status || "update"}_${statusTimestamp}`;
@@ -306,19 +306,66 @@ router.post("/", async (req, res) => {
         }
       }
 
-      // Create System Notification for Vendor & Customer on Terminal / Major Transitions
-      const Notification = require("../models/Notification");
-      if (["delivered", "in_transit", "rto", "cancelled"].includes(newInternalStatus)) {
+      // Dispatch Canonical Vendor Notification (Asynchronous, Multi-Tenant Scoped)
+      const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require("../services/vendorNotificationService");
+      
+      let vendorEventType = null;
+      const rawUpper = String(current_status || "").trim().toUpperCase();
+
+      if (newInternalStatus === "delivered") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.DELIVERED;
+      } else if (newInternalStatus === "delivery_failed") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.DELIVERY_FAILED;
+      } else if (newInternalStatus === "out_for_delivery") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.OUT_FOR_DELIVERY;
+      } else if (newInternalStatus === "in_transit") {
+        if (rawUpper.includes("PICKED UP") || rawUpper === "PICKED UP") {
+          vendorEventType = VENDOR_NOTIFICATION_EVENTS.PICKED_UP;
+        } else {
+          vendorEventType = VENDOR_NOTIFICATION_EVENTS.IN_TRANSIT;
+        }
+      } else if (newInternalStatus === "pickup_failed") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.PICKUP_FAILED;
+      } else if (newInternalStatus === "pickup_pending") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.PICKUP_PENDING;
+      } else if (newInternalStatus === "pickup_scheduled") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.PICKUP_SCHEDULED;
+      } else if (newInternalStatus === "rto") {
+        if (rawUpper.includes("DELIVERED")) {
+          vendorEventType = VENDOR_NOTIFICATION_EVENTS.RTO_DELIVERED;
+        } else if (rawUpper.includes("TRANSIT")) {
+          vendorEventType = VENDOR_NOTIFICATION_EVENTS.RTO_IN_TRANSIT;
+        } else {
+          vendorEventType = VENDOR_NOTIFICATION_EVENTS.RTO_INITIATED;
+        }
+      } else if (newInternalStatus === "cancelled") {
+        vendorEventType = VENDOR_NOTIFICATION_EVENTS.ORDER_CANCELLED;
+      }
+
+      if (vendorEventType && vendorOrder.vendor) {
         try {
-          await Notification.create({
-            recipient: vendorOrder.vendor,
-            recipientModel: "Vendor",
-            type: newInternalStatus === "delivered" ? "success" : (newInternalStatus === "rto" ? "error" : "info"),
-            title: `Shipment Status: ${newInternalStatus.toUpperCase()}`,
-            message: `Shipment for Order #${vendorOrder._id.toString().slice(-8)} (AWB: ${vendorOrder.awbCode || 'N/A'}) is now ${newInternalStatus.replace('_', ' ')}.`,
+          await dispatchVendorNotification({
+            eventType: vendorEventType,
+            vendorId: vendorOrder.vendor,
+            vendorOrderId: vendorOrder._id,
+            orderId: vendorOrder.order,
+            eventTimestamp: statusTimestamp,
+            metadata: {
+              orderNumber: parentOrder?._id ? String(parentOrder._id).slice(-8) : String(vendorOrder.order).slice(-8),
+              vendorOrderNumber: String(vendorOrder._id).slice(-8),
+              awbCode: vendorOrder.awbCode || awb,
+              courierName: vendorOrder.courierName || courier_name,
+              deliveryCity: vendorOrder.shippingAddress?.city,
+              deliveryState: vendorOrder.shippingAddress?.state,
+              deliveryPincode: vendorOrder.shippingAddress?.postalCode,
+              deliveredAt: vendorOrder.deliveredAt,
+              failureReason: typeof payload.activity === "string" ? payload.activity : vendorOrder.shipmentError?.message,
+              rtoReason: typeof payload.activity === "string" ? payload.activity : undefined,
+              statusTimestamp,
+            },
           });
         } catch (nErr) {
-          console.error("Failed to create webhook status notification:", nErr.message);
+          console.error("Failed to dispatch vendor notification from webhook:", nErr.message);
         }
       }
     } else {

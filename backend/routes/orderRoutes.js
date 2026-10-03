@@ -388,6 +388,31 @@ router.post("/", protect, async (req, res) => {
         req.io.emit(`vendor-new-order-${vendorId}`, vendorOrder);
       }
 
+      // Dispatch Canonical Vendor Notification (Asynchronous, Non-blocking)
+      try {
+        const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require("../services/vendorNotificationService");
+        dispatchVendorNotification({
+          eventType: paymentMethod === "COD"
+            ? VENDOR_NOTIFICATION_EVENTS.VENDOR_ORDER_CONFIRMED
+            : VENDOR_NOTIFICATION_EVENTS.VENDOR_ORDER_RECEIVED,
+          vendorId,
+          vendorOrderId: vendorOrder._id,
+          orderId: createdOrder._id,
+          metadata: {
+            orderNumber: String(createdOrder._id).slice(-8),
+            vendorOrderNumber: String(vendorOrder._id).slice(-8),
+            subtotal: vendorData.subtotal,
+            items: (vendorData.items || []).map((i) => ({ name: i.name, quantity: i.quantity, price: i.price })),
+            deliveryCity: verifiedShippingAddress.city,
+            deliveryState: verifiedShippingAddress.state,
+            deliveryPincode: verifiedShippingAddress.postalCode,
+            paymentMethod,
+          },
+        }).catch((err) => console.error("Error dispatching vendor order notification:", err.message));
+      } catch (notifErr) {
+        console.error("Failed to enqueue vendor order notification:", notifErr.message);
+      }
+
       // Shiprocket: Enqueue shipment if it's COD (Prepaid orders enqueue after payment verif)
       if (paymentMethod === 'COD') {
         try {
@@ -1348,6 +1373,26 @@ router.post("/:id/cancel", protect, async (req, res) => {
           }
 
           await vendorOrder.save();
+
+          // Dispatch Vendor Cancellation Notification
+          if (vendorOrder.vendor) {
+            try {
+              const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require("../services/vendorNotificationService");
+              dispatchVendorNotification({
+                eventType: VENDOR_NOTIFICATION_EVENTS.ORDER_CANCELLED,
+                vendorId: vendorOrder.vendor,
+                vendorOrderId: vendorOrder._id,
+                orderId: order._id,
+                metadata: {
+                  orderNumber: String(order._id).slice(-8),
+                  vendorOrderNumber: String(vendorOrder._id).slice(-8),
+                  cancelReason: order.cancelReason || "Order cancelled by customer/admin",
+                },
+              }).catch((e) => console.error("Error dispatching cancellation notification:", e.message));
+            } catch (notifErr) {
+              console.error("Failed to enqueue cancellation notification:", notifErr.message);
+            }
+          }
         }
       } catch (voError) {
         console.error(

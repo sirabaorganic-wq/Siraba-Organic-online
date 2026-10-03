@@ -190,6 +190,7 @@ const sendAdminNewVendorEmail = async (vendorDetails) => {
 };
 
 module.exports = {
+  createTransporter,
   sendOTPEmail,
   buildOtpEmailHtml,
   isEmailConfigured,

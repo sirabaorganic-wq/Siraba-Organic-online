@@ -103,6 +103,68 @@ const shipmentWorker = new Worker('shiprocket-shipments', async job => {
   }
 
   await vendorOrder.save();
+
+  // Dispatch Canonical Vendor Shipment Notifications (Asynchronous)
+  if (vendorOrder.vendor) {
+    try {
+      const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require('../services/vendorNotificationService');
+      const baseMeta = {
+        orderNumber: order?._id ? String(order._id).slice(-8) : String(vendorOrder.order).slice(-8),
+        vendorOrderNumber: String(vendorOrder._id).slice(-8),
+        awbCode: shipmentResult.awbCode,
+        courierName: shipmentResult.courierName,
+        pickupToken: shipmentResult.pickupTokenNumber ? String(shipmentResult.pickupTokenNumber) : undefined,
+        pickupScheduledDate: shipmentResult.pickupScheduledAt ? new Date(shipmentResult.pickupScheduledAt).toLocaleDateString('en-IN') : undefined,
+        deliveryCity: vendorOrder.shippingAddress?.city,
+        deliveryState: vendorOrder.shippingAddress?.state,
+        deliveryPincode: vendorOrder.shippingAddress?.postalCode,
+      };
+
+      if (shipmentResult.shipmentId) {
+        await dispatchVendorNotification({
+          eventType: VENDOR_NOTIFICATION_EVENTS.SHIPMENT_CREATED,
+          vendorId: vendorOrder.vendor,
+          vendorOrderId: vendorOrder._id,
+          orderId: order._id,
+          metadata: baseMeta,
+        });
+      }
+
+      if (shipmentResult.awbCode) {
+        await dispatchVendorNotification({
+          eventType: VENDOR_NOTIFICATION_EVENTS.AWB_ASSIGNED,
+          vendorId: vendorOrder.vendor,
+          vendorOrderId: vendorOrder._id,
+          orderId: order._id,
+          metadata: baseMeta,
+        });
+      }
+
+      if (shipmentResult.pickupScheduled) {
+        await dispatchVendorNotification({
+          eventType: VENDOR_NOTIFICATION_EVENTS.PICKUP_SCHEDULED,
+          vendorId: vendorOrder.vendor,
+          vendorOrderId: vendorOrder._id,
+          orderId: order._id,
+          metadata: baseMeta,
+        });
+      } else if (shipmentResult.pickupError) {
+        await dispatchVendorNotification({
+          eventType: VENDOR_NOTIFICATION_EVENTS.PICKUP_FAILED,
+          vendorId: vendorOrder.vendor,
+          vendorOrderId: vendorOrder._id,
+          orderId: order._id,
+          metadata: {
+            ...baseMeta,
+            failureReason: shipmentResult.pickupError,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error('[ShiprocketQueue] Failed to dispatch vendor shipment notification:', notifErr.message);
+    }
+  }
+
   return shipmentResult;
 }, { connection });
 
@@ -130,16 +192,24 @@ shipmentWorker.on('failed', async (job, err) => {
         };
         await vendorOrder.save();
 
-        // Alert the Vendor & Admin
-        await Notification.create({
-          recipient: vendorOrder.vendor,
-          recipientModel: "Vendor",
-          type: "error",
-          title: isPickupUnverified ? "Shipment Blocked: Pickup Location Unverified" : "Shipment Creation Failed",
-          message: isPickupUnverified
-            ? `Shipment blocked for VendorOrder ${vendorOrderId}. Vendor pickup location is not registered in Shiprocket. Please contact Admin.`
-            : `Shiprocket failed to create a shipment after max retries for order ${vendorOrderId}. Reason: ${err.message}`
-        });
+        // Alert the Vendor & Admin via notification dispatcher & Notification model
+        if (vendorOrder.vendor) {
+          const { dispatchVendorNotification, VENDOR_NOTIFICATION_EVENTS } = require('../services/vendorNotificationService');
+          await dispatchVendorNotification({
+            eventType: VENDOR_NOTIFICATION_EVENTS.PICKUP_FAILED,
+            vendorId: vendorOrder.vendor,
+            vendorOrderId: vendorOrder._id,
+            orderId: vendorOrder.order,
+            metadata: {
+              vendorOrderNumber: String(vendorOrder._id).slice(-8),
+              failureReason: err.message,
+            },
+            customTitle: isPickupUnverified ? "Shipment Blocked: Pickup Location Unverified" : "Shipment Creation Failed",
+            customMessage: isPickupUnverified
+              ? `Shipment blocked for VendorOrder ${vendorOrderId}. Vendor pickup location is not registered in Shiprocket. Please contact Admin.`
+              : `Shiprocket failed to create a shipment after max retries for order ${vendorOrderId}. Reason: ${err.message}`
+          });
+        }
 
         console.log(`VendorOrder ${vendorOrderId} status set to ${vendorOrder.status}: ${err.message}`);
       }

@@ -127,6 +127,9 @@ const io = new Server(server, {
   },
 });
 
+const socketManager = require("./utils/socketManager");
+socketManager.setIO(io);
+
 // Make io available in routes
 app.use((req, res, next) => {
   req.io = io;
@@ -143,6 +146,41 @@ io.on("connection", (socket) => {
   socket.on("join_chat", (room) => {
     socket.join(room);
     console.log(`Socket ${socket.id} joined room: ${room}`);
+  });
+
+  // Multi-tenant scoped vendor room for notifications and events (Token-authenticated)
+  socket.on("join_vendor", (data) => {
+    let vendorId = data;
+    let token = null;
+
+    if (data && typeof data === "object") {
+      vendorId = data.vendorId;
+      token = data.token;
+    }
+
+    if (!vendorId) return;
+
+    // Verify token authorization if provided or required
+    if (token) {
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+        if (decoded.id && String(decoded.id) !== String(vendorId)) {
+          console.warn(`[Socket.IO] Unauthorized join_vendor: token user ${decoded.id} does not match vendor ${vendorId}`);
+          return;
+        }
+      } catch (err) {
+        console.warn(`[Socket.IO] Invalid token on join_vendor:`, err.message);
+        return;
+      }
+    } else if (process.env.NODE_ENV === "production") {
+      console.warn(`[Socket.IO] Rejected unauthenticated join_vendor attempt in production for: ${vendorId}`);
+      return;
+    }
+
+    const room = `vendor:${String(vendorId)}`;
+    socket.join(room);
+    console.log(`Socket ${socket.id} joined vendor room: ${room}`);
   });
 
   // Handle typing events (optional enhancement)
@@ -178,6 +216,7 @@ app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
 app.use("/api/vendors", require("./routes/vendorRoutes"));
+app.use("/api/vendors/notifications", require("./routes/vendorNotificationRoutes"));
 app.use("/api/vendors/invoices", require("./routes/vendorInvoiceRoutes"));
 app.use("/api/vendor-messages", require("./routes/vendorMessageRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
