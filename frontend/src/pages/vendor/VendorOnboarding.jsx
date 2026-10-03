@@ -199,63 +199,25 @@ const VendorOnboarding = () => {
     certificateValidUntil: "",
   };
 
-  const [certificationBody, setCertificationBody] = useState(
-    activeRouteData.certificationBody || vendor?.organicCertification?.certificationBody || ""
-  );
-  const [certificateNumber, setCertificateNumber] = useState(
-    activeRouteData.certificateNumber || vendor?.organicCertification?.certificateNumber || ""
-  );
-  const [certificateValidUntil, setCertificateValidUntil] = useState(
-    activeRouteData.certificateValidUntil ||
-    (vendor?.organicCertification?.certificateValidUntil
-      ? new Date(vendor.organicCertification.certificateValidUntil).toISOString().split("T")[0]
-      : "")
-  );
-
   const handleCertInputChange = (field, value) => {
-    if (field === "certificationBody") setCertificationBody(value);
-    if (field === "certificateNumber") setCertificateNumber(value);
-    if (field === "certificateValidUntil") setCertificateValidUntil(value);
-
+    hasUserEditedRef.current = true;
     setCertificationsByRoute((prev) => ({
       ...prev,
       [certificationRoute]: {
-        ...prev[certificationRoute],
+        ...(prev[certificationRoute] || { certificationBody: "", certificateNumber: "", certificateValidUntil: "" }),
         [field]: value,
       },
     }));
   };
 
   const handleRouteSwitch = (newRoute) => {
-    // Save current input values into map
-    const updatedMap = {
-      ...certificationsByRoute,
-      [certificationRoute]: {
-        certificationBody,
-        certificateNumber,
-        certificateValidUntil,
-      },
-    };
-    setCertificationsByRoute(updatedMap);
+    hasUserEditedRef.current = true;
     setCertificationRoute(newRoute);
-
-    // Load values for newRoute
-    const targetData = updatedMap[newRoute] || { certificationBody: "", certificateNumber: "", certificateValidUntil: "" };
-    setCertificationBody(targetData.certificationBody || "");
-    setCertificateNumber(targetData.certificateNumber || "");
-    setCertificateValidUntil(targetData.certificateValidUntil || "");
   };
 
   const handleSaveRouteDetails = async (routeToSave = certificationRoute) => {
-    const updatedMap = {
-      ...certificationsByRoute,
-      [routeToSave]: {
-        certificationBody,
-        certificateNumber,
-        certificateValidUntil,
-      },
-    };
-    setCertificationsByRoute(updatedMap);
+    hasUserEditedRef.current = true;
+    const certData = certificationsByRoute[routeToSave] || { certificationBody: "", certificateNumber: "", certificateValidUntil: "" };
 
     const routeLabel =
       routeToSave === "npop"
@@ -272,10 +234,10 @@ const VendorOnboarding = () => {
       const res = await updateOnboarding(4, {
         organicCertification: {
           certificationRoute: routeToSave,
-          certificationBody,
-          certificateNumber,
-          certificateValidUntil,
-          certificationsByRoute: updatedMap,
+          certificationBody: certData.certificationBody || "",
+          certificateNumber: certData.certificateNumber || "",
+          certificateValidUntil: certData.certificateValidUntil || "",
+          certificationsByRoute: certificationsByRoute,
         },
       });
 
@@ -287,6 +249,46 @@ const VendorOnboarding = () => {
       }
     } catch (err) {
       setError("Failed to save certification details.");
+    }
+  };
+
+  const handleSaveBankDetails = async () => {
+    hasUserEditedRef.current = true;
+    setError("");
+
+    if (!accountHolderName.trim()) {
+      setError("Account holder name is required.");
+      return;
+    }
+    if (accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber) {
+      setError("Account numbers do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await updateOnboarding(2, {
+        bankDetails: {
+          accountHolderName: accountHolderName.trim(),
+          accountNumber: accountNumber.trim(),
+          bankName: bankName.trim(),
+          ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : "",
+          branchName: branchName.trim(),
+          accountType,
+          upiId: upiId.trim(),
+        },
+      });
+
+      if (res.success) {
+        setSuccess("Bank details saved successfully!");
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(res.message || "Failed to save bank details.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to save bank details.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -304,6 +306,7 @@ const VendorOnboarding = () => {
   const [uploadingState, setUploadingState] = useState({});
 
   const hasUserEditedRef = useRef(false);
+  const isFormPopulatedRef = useRef(false);
 
   const populateFormFromVendor = useCallback((v) => {
     if (!v) return;
@@ -321,7 +324,11 @@ const VendorOnboarding = () => {
 
     // Bank & Payout Details
     if (v.bankDetails) {
-      if (v.bankDetails.accountHolderName) setAccountHolderName(v.bankDetails.accountHolderName);
+      if (v.bankDetails.accountHolderName) {
+        setAccountHolderName(v.bankDetails.accountHolderName);
+      } else if (v.businessName) {
+        setAccountHolderName((prev) => prev || v.businessName);
+      }
       if (v.bankDetails.accountNumber) {
         setAccountNumber(v.bankDetails.accountNumber);
         setConfirmAccountNumber(v.bankDetails.accountNumber);
@@ -393,15 +400,6 @@ const VendorOnboarding = () => {
       }
 
       setCertificationsByRoute(newMap);
-      const activeData = newMap[route] || {};
-      setCertificationBody(activeData.certificationBody || v.organicCertification.certificationBody || "");
-      setCertificateNumber(activeData.certificateNumber || v.organicCertification.certificateNumber || "");
-      setCertificateValidUntil(
-        activeData.certificateValidUntil ||
-        (v.organicCertification.certificateValidUntil
-          ? new Date(v.organicCertification.certificateValidUntil).toISOString().split("T")[0]
-          : "")
-      );
     }
 
     // Representative Product
@@ -420,8 +418,9 @@ const VendorOnboarding = () => {
   useEffect(() => {
     if (refreshVendorStatus) {
       refreshVendorStatus().then((res) => {
-        if (res?.success && res.vendor) {
+        if (res?.success && res.vendor && !hasUserEditedRef.current && !isFormPopulatedRef.current) {
           populateFormFromVendor(res.vendor);
+          isFormPopulatedRef.current = true;
         }
       });
     }
@@ -437,9 +436,10 @@ const VendorOnboarding = () => {
         }
       }
 
-      // Populate form if user hasn't actively edited yet
-      if (!hasUserEditedRef.current) {
+      // Populate form if user hasn't actively edited yet and not yet populated
+      if (!isFormPopulatedRef.current && !hasUserEditedRef.current) {
         populateFormFromVendor(vendor);
+        isFormPopulatedRef.current = true;
       }
 
       // Populate compliance docs already uploaded
@@ -612,15 +612,6 @@ const VendorOnboarding = () => {
       return;
     }
 
-    const updatedCertMap = {
-      ...certificationsByRoute,
-      [certificationRoute]: {
-        certificationBody,
-        certificateNumber,
-        certificateValidUntil,
-      },
-    };
-
     const draftPayload = {
       currentStep: activeStep,
       isBusinessRegistered,
@@ -630,13 +621,13 @@ const VendorOnboarding = () => {
       fssaiNumber: fssaiNumber ? fssaiNumber.trim() : "",
       gstNumber: gstNumber ? gstNumber.trim().toUpperCase() : "",
       bankDetails: {
-        accountHolderName,
-        accountNumber,
-        bankName,
+        accountHolderName: accountHolderName.trim(),
+        accountNumber: accountNumber.trim(),
+        bankName: bankName.trim(),
         ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : "",
-        branchName,
+        branchName: branchName.trim(),
         accountType,
-        upiId,
+        upiId: upiId.trim(),
       },
       pickupAddress: {
         facilityName,
@@ -651,10 +642,10 @@ const VendorOnboarding = () => {
       },
       organicCertification: {
         certificationRoute,
-        certificationBody,
-        certificateNumber,
-        certificateValidUntil,
-        certificationsByRoute: updatedCertMap,
+        certificationBody: activeRouteData.certificationBody || "",
+        certificateNumber: activeRouteData.certificateNumber || "",
+        certificateValidUntil: activeRouteData.certificateValidUntil || "",
+        certificationsByRoute,
       },
       representativeProduct: {
         productName,
@@ -701,13 +692,13 @@ const VendorOnboarding = () => {
         return;
       }
       stepPayload.bankDetails = {
-        accountHolderName,
-        accountNumber,
-        bankName,
-        ifscCode,
-        branchName,
+        accountHolderName: accountHolderName.trim(),
+        accountNumber: accountNumber.trim(),
+        bankName: bankName.trim(),
+        ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : "",
+        branchName: branchName.trim(),
         accountType,
-        upiId,
+        upiId: upiId.trim(),
       };
     } else if (stepNum === 3) {
       stepPayload.pickupAddress = {
@@ -724,17 +715,10 @@ const VendorOnboarding = () => {
     } else if (stepNum === 4) {
       stepPayload.organicCertification = {
         certificationRoute,
-        certificationBody,
-        certificateNumber,
-        certificateValidUntil,
-        certificationsByRoute: {
-          ...certificationsByRoute,
-          [certificationRoute]: {
-            certificationBody,
-            certificateNumber,
-            certificateValidUntil,
-          },
-        },
+        certificationBody: activeRouteData.certificationBody || "",
+        certificateNumber: activeRouteData.certificateNumber || "",
+        certificateValidUntil: activeRouteData.certificateValidUntil || "",
+        certificationsByRoute,
       };
     } else if (stepNum === 5) {
       stepPayload.representativeProduct = {
@@ -819,13 +803,13 @@ const VendorOnboarding = () => {
       fssaiNumber,
       gstNumber,
       bankDetails: {
-        accountHolderName,
-        accountNumber,
-        bankName,
-        ifscCode,
-        branchName,
+        accountHolderName: accountHolderName.trim(),
+        accountNumber: accountNumber.trim(),
+        bankName: bankName.trim(),
+        ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : "",
+        branchName: branchName.trim(),
         accountType,
-        upiId,
+        upiId: upiId.trim(),
       },
       pickupAddress: {
         facilityName,
@@ -840,17 +824,10 @@ const VendorOnboarding = () => {
       },
       organicCertification: {
         certificationRoute,
-        certificationBody,
-        certificateNumber,
-        certificateValidUntil,
-        certificationsByRoute: {
-          ...certificationsByRoute,
-          [certificationRoute]: {
-            certificationBody,
-            certificateNumber,
-            certificateValidUntil,
-          },
-        },
+        certificationBody: activeRouteData.certificationBody || "",
+        certificateNumber: activeRouteData.certificateNumber || "",
+        certificateValidUntil: activeRouteData.certificateValidUntil || "",
+        certificationsByRoute,
       },
       representativeProduct: {
         productName,
@@ -1190,12 +1167,22 @@ const VendorOnboarding = () => {
 
         {/* SECTION 2: Bank & Account Details (NEW) */}
         <section className="bg-white border border-[#d9ddd9] rounded-xl my-4 overflow-hidden shadow-sm">
-          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9]">
-            <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 2</div>
-            <h2 className="text-lg font-semibold text-[#24302a]">Bank &amp; Payout Details</h2>
-            <div className="font-sans text-[11px] text-[#68736d] mt-1">
-              Provide your official business bank account details for payouts, settlements, and tax invoices.
+          <div className="px-4 py-3.5 border-b border-[#d9ddd9] bg-gradient-to-r from-white to-[#fafbf9] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div className="text-[9px] tracking-[1.6px] text-[#9d8043] font-bold">SECTION 2</div>
+              <h2 className="text-lg font-semibold text-[#24302a]">Bank &amp; Payout Details</h2>
+              <div className="font-sans text-[11px] text-[#68736d] mt-1">
+                Provide your official business bank account details for payouts, settlements, and tax invoices.
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={handleSaveBankDetails}
+              disabled={loading}
+              className="bg-[#6d8a72] hover:bg-[#5a745f] text-white text-[11px] font-bold px-3 py-1.5 rounded-md transition-colors shadow-sm flex items-center gap-1 cursor-pointer self-start sm:self-auto flex-shrink-0"
+            >
+              ✓ Save Bank Details
+            </button>
           </div>
 
           <div className="p-4 sm:p-5 space-y-4 font-sans">
@@ -1208,7 +1195,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="e.g. Siraba Organics Pvt Ltd"
                   value={accountHolderName}
-                  onChange={(e) => setAccountHolderName(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setAccountHolderName(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                 />
               </div>
@@ -1221,7 +1211,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="e.g. HDFC Bank / ICICI Bank"
                   value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setBankName(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                 />
               </div>
@@ -1234,7 +1227,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="Enter Bank Account Number"
                   value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setAccountNumber(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono"
                 />
               </div>
@@ -1247,7 +1243,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="Confirm Bank Account Number"
                   value={confirmAccountNumber}
-                  onChange={(e) => setConfirmAccountNumber(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setConfirmAccountNumber(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono"
                 />
                 {accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber && (
@@ -1263,7 +1262,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="e.g. HDFC0001234"
                   value={ifscCode}
-                  onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setIfscCode(e.target.value.toUpperCase());
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72] font-mono uppercase"
                 />
               </div>
@@ -1276,7 +1278,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="e.g. MG Road Branch"
                   value={branchName}
-                  onChange={(e) => setBranchName(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setBranchName(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                 />
               </div>
@@ -1287,7 +1292,10 @@ const VendorOnboarding = () => {
                 </label>
                 <select
                   value={accountType}
-                  onChange={(e) => setAccountType(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setAccountType(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                 >
                   <option value="current">Current Account</option>
@@ -1303,7 +1311,10 @@ const VendorOnboarding = () => {
                   type="text"
                   placeholder="e.g. business@upi"
                   value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
+                  onChange={(e) => {
+                    hasUserEditedRef.current = true;
+                    setUpiId(e.target.value);
+                  }}
                   className="w-full h-9 border border-[#cfd5d0] rounded px-2.5 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                 />
               </div>
@@ -1321,8 +1332,18 @@ const VendorOnboarding = () => {
                     <div className="text-[12px] font-bold text-[#24302a] font-serif">Upload Cancelled Cheque / Bank Document</div>
                     <div className="text-[10px] text-[#7b837e] mt-0.5">PDF, JPG, PNG, WEBP • Max 5MB</div>
                     {uploadedDocs.cancelled_cheque && (
-                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate flex items-center gap-1">
-                        ✓ {uploadedDocs.cancelled_cheque.name || "Uploaded"}
+                      <div className="text-[10px] text-[#6d8a72] font-bold mt-1 truncate flex items-center gap-2">
+                        <span>✓ {uploadedDocs.cancelled_cheque.name || "Uploaded"}</span>
+                        {uploadedDocs.cancelled_cheque.url && (
+                          <a
+                            href={getDocumentViewUrl(uploadedDocs.cancelled_cheque.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline text-blue-600 hover:text-blue-800"
+                          >
+                            View
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1332,7 +1353,12 @@ const VendorOnboarding = () => {
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.webp"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "cancelled_cheque"), e.target.files[0])}
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleFileUpload(ACTIVE_DOCUMENTS.find(d => d.type === "cancelled_cheque"), e.target.files[0]);
+                          e.target.value = "";
+                        }
+                      }}
                     />
                   </label>
                 </div>
@@ -1488,27 +1514,28 @@ const VendorOnboarding = () => {
                   { val: "eu", label: "EU Organic" },
                   { val: "other", label: "Other recognized certification" },
                 ].map((route) => {
-                  const hasData = certificationsByRoute[route.val]?.certificationBody && certificationsByRoute[route.val]?.certificateNumber;
+                  const cert = certificationsByRoute[route.val];
+                  const hasData = Boolean(cert?.certificationBody || cert?.certificateNumber);
+                  const isSelected = certificationRoute === route.val;
                   return (
-                    <label
+                    <button
                       key={route.val}
+                      type="button"
                       onClick={() => handleRouteSwitch(route.val)}
-                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] transition-all ${certificationRoute === route.val
+                      className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 cursor-pointer text-[11px] transition-all ${
+                        isSelected
                           ? "bg-emerald-50 border-emerald-600 text-emerald-900 font-bold shadow-sm"
                           : "bg-[#fbfcfb] border-[#d5dad6] text-slate-700 hover:bg-slate-50"
-                        }`}
+                      }`}
                     >
-                      <input
-                        type="radio"
-                        name="organicRoute"
-                        value={route.val}
-                        checked={certificationRoute === route.val}
-                        onChange={() => { }}
-                        className="accent-[#6d8a72]"
-                      />
-                      {route.label}
-                      {hasData && <span className="text-[9px] text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.2 rounded-full">✓ Saved</span>}
-                    </label>
+                      <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-emerald-600" : "bg-slate-300"}`} />
+                      <span>{route.label}</span>
+                      {hasData && (
+                        <span className="text-[9px] text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.2 rounded-full">
+                          ✓ Filled
+                        </span>
+                      )}
+                    </button>
                   );
                 })}
               </div>
@@ -1518,25 +1545,47 @@ const VendorOnboarding = () => {
             <div className="bg-[#f8f9f7] border border-[#d9ddd9] rounded-lg p-3 text-xs">
               <div className="text-[11px] font-bold text-[#24302a] mb-1 font-serif flex items-center justify-between">
                 <span>Certification Details Summary (Saved per route):</span>
-                <span className="text-[10px] text-slate-500 font-sans font-normal">Switch tabs to view/edit</span>
+                <span className="text-[10px] text-slate-500 font-sans font-normal">Click any card below to view or edit</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
-                <div className={`p-2 rounded border ${certificationsByRoute.npop?.certificationBody ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
-                  <strong className="block text-[11px]">NPOP / India Organic:</strong>
-                  {certificationsByRoute.npop?.certificationBody ? (
-                    <span>✓ Body: <b>{certificationsByRoute.npop.certificationBody}</b> | No: <b>{certificationsByRoute.npop.certificateNumber}</b></span>
-                  ) : (
-                    <em>Details pending - Select NPOP above to enter details</em>
-                  )}
-                </div>
-                <div className={`p-2 rounded border ${certificationsByRoute.usda?.certificationBody ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
-                  <strong className="block text-[11px]">USDA Organic:</strong>
-                  {certificationsByRoute.usda?.certificationBody ? (
-                    <span>✓ Body: <b>{certificationsByRoute.usda.certificationBody}</b> | No: <b>{certificationsByRoute.usda.certificateNumber}</b></span>
-                  ) : (
-                    <em>Details pending - Select USDA Organic above to enter details</em>
-                  )}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[10px]">
+                {[
+                  { val: "npop", title: "NPOP / India Organic" },
+                  { val: "usda", title: "USDA Organic" },
+                  { val: "pgs", title: "PGS-India" },
+                  { val: "eu", title: "EU Organic" },
+                  { val: "other", title: "Other Organic" },
+                ].map((item) => {
+                  const c = certificationsByRoute[item.val];
+                  const hasC = Boolean(c?.certificationBody || c?.certificateNumber);
+                  const isCurrent = certificationRoute === item.val;
+                  return (
+                    <div
+                      key={item.val}
+                      onClick={() => handleRouteSwitch(item.val)}
+                      className={`p-2 rounded border cursor-pointer transition-colors ${
+                        isCurrent
+                          ? "ring-1 ring-emerald-500 border-emerald-300 bg-emerald-50/70 text-emerald-900"
+                          : hasC
+                          ? "bg-emerald-50/40 border-emerald-200 text-emerald-900"
+                          : "bg-slate-50 border-slate-200 text-slate-500"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <strong className="block text-[11px] font-serif">{item.title}</strong>
+                        {isCurrent && (
+                          <span className="text-[9px] bg-emerald-600 text-white font-bold px-1.5 rounded">Active</span>
+                        )}
+                      </div>
+                      {hasC ? (
+                        <span className="block mt-0.5 truncate">
+                          ✓ Body: <b>{c.certificationBody || "—"}</b> | No: <b>{c.certificateNumber || "—"}</b>
+                        </span>
+                      ) : (
+                        <em className="text-slate-400 block mt-0.5">Click to enter details</em>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -1564,7 +1613,7 @@ const VendorOnboarding = () => {
                   <input
                     type="text"
                     placeholder="e.g. OneCert, Control Union"
-                    value={certificationBody}
+                    value={activeRouteData.certificationBody || ""}
                     onChange={(e) => handleCertInputChange("certificationBody", e.target.value)}
                     className="w-full h-8 border border-[#cfd5d0] rounded px-2 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                   />
@@ -1575,7 +1624,7 @@ const VendorOnboarding = () => {
                   <input
                     type="text"
                     placeholder="Enter certificate number"
-                    value={certificateNumber}
+                    value={activeRouteData.certificateNumber || ""}
                     onChange={(e) => handleCertInputChange("certificateNumber", e.target.value)}
                     className="w-full h-8 border border-[#cfd5d0] rounded px-2 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                   />
@@ -1585,7 +1634,7 @@ const VendorOnboarding = () => {
                   <div className="text-[11px] font-bold text-[#24302a] mb-1 font-serif">Certificate Valid Until <span className="text-[#a04b42]">*</span></div>
                   <input
                     type="date"
-                    value={certificateValidUntil}
+                    value={activeRouteData.certificateValidUntil || ""}
                     onChange={(e) => handleCertInputChange("certificateValidUntil", e.target.value)}
                     className="w-full h-8 border border-[#cfd5d0] rounded px-2 text-xs bg-white text-[#24302a] focus:outline-none focus:border-[#6d8a72]"
                   />

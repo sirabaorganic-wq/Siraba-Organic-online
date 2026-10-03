@@ -4,6 +4,7 @@ const ACTIVE_ONBOARDING_DOCUMENT_TYPES = [
   "business_legal_identity",
   "fssai_license",
   "gst_certificate",
+  "cancelled_cheque",
   "npop_certificate",
   "usda_organic_certificate",
   "other_organic_certificate",
@@ -18,6 +19,7 @@ const ONBOARDING_DOCUMENT_REQUIREMENTS = {
   business_legal_identity: { required: true, label: "Business / Legal Identity Document" },
   fssai_license: { required: true, label: "FSSAI Licence / Registration" },
   gst_certificate: { required: false, conditional: true, label: "GST Certificate" }, // Required if gstApplicable === 'yes'
+  cancelled_cheque: { required: true, label: "Cancelled Cheque / Bank Passbook" },
   npop_certificate: { required: true, label: "NPOP / India Organic Certificate" },
   usda_organic_certificate: { required: true, label: "USDA Organic Certificate" },
   other_organic_certificate: { required: false, label: "Other Organic Certificate" },

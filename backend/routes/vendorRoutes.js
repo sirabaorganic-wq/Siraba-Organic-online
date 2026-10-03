@@ -142,6 +142,7 @@ const complianceValidators = [
       "organic_certification",
       "pan_card",
       "bank_details",
+      "cancelled_cheque",
       "other",
       "npop_certificate",
       "usda_organic_certificate",
@@ -769,15 +770,15 @@ router.put("/onboarding", protectVendor, async (req, res) => {
         // Bank Details
         if (data.bankDetails) {
           const bd = data.bankDetails;
-          vendor.bankDetails = {
-            accountHolderName: bd.accountHolderName ?? vendor.bankDetails?.accountHolderName,
-            accountNumber: bd.accountNumber ?? vendor.bankDetails?.accountNumber,
-            bankName: bd.bankName ?? vendor.bankDetails?.bankName,
-            ifscCode: bd.ifscCode ? bd.ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
-            branchName: bd.branchName ?? vendor.bankDetails?.branchName,
-            accountType: bd.accountType || vendor.bankDetails?.accountType || "current",
-            upiId: bd.upiId ?? vendor.bankDetails?.upiId,
-          };
+          if (!vendor.bankDetails) vendor.bankDetails = {};
+          if (bd.accountHolderName !== undefined) vendor.bankDetails.accountHolderName = bd.accountHolderName;
+          if (bd.accountNumber !== undefined) vendor.bankDetails.accountNumber = bd.accountNumber;
+          if (bd.bankName !== undefined) vendor.bankDetails.bankName = bd.bankName;
+          if (bd.ifscCode !== undefined) vendor.bankDetails.ifscCode = bd.ifscCode ? bd.ifscCode.trim().toUpperCase() : "";
+          if (bd.branchName !== undefined) vendor.bankDetails.branchName = bd.branchName;
+          if (bd.accountType !== undefined) vendor.bankDetails.accountType = bd.accountType;
+          if (bd.upiId !== undefined) vendor.bankDetails.upiId = bd.upiId;
+          vendor.markModified("bankDetails");
         }
 
         // Pickup Address
@@ -806,15 +807,27 @@ router.put("/onboarding", protectVendor, async (req, res) => {
         // Organic Certification
         if (data.organicCertification) {
           const oc = data.organicCertification;
-          vendor.organicCertification = {
-            certificationRoute: oc.certificationRoute || vendor.organicCertification?.certificationRoute || "npop",
-            certificationBody: oc.certificationBody ?? vendor.organicCertification?.certificationBody,
-            certificateNumber: oc.certificateNumber ?? vendor.organicCertification?.certificateNumber,
-            certificateValidUntil: oc.certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
-            certificationsByRoute: oc.certificationsByRoute
-              ? { ...vendor.organicCertification?.certificationsByRoute, ...oc.certificationsByRoute }
-              : vendor.organicCertification?.certificationsByRoute || {},
-          };
+          if (!vendor.organicCertification) vendor.organicCertification = {};
+          if (oc.certificationRoute) vendor.organicCertification.certificationRoute = oc.certificationRoute;
+          if (oc.certificationBody !== undefined) vendor.organicCertification.certificationBody = oc.certificationBody;
+          if (oc.certificateNumber !== undefined) vendor.organicCertification.certificateNumber = oc.certificateNumber;
+          if (oc.certificateValidUntil !== undefined) vendor.organicCertification.certificateValidUntil = oc.certificateValidUntil ? new Date(oc.certificateValidUntil) : null;
+
+          if (oc.certificationsByRoute) {
+            if (!vendor.organicCertification.certificationsByRoute) vendor.organicCertification.certificationsByRoute = {};
+            const routes = ["npop", "usda", "pgs", "eu", "other"];
+            routes.forEach((rKey) => {
+              if (oc.certificationsByRoute[rKey]) {
+                const src = oc.certificationsByRoute[rKey];
+                vendor.organicCertification.certificationsByRoute[rKey] = {
+                  certificationBody: src.certificationBody || "",
+                  certificateNumber: src.certificateNumber || "",
+                  certificateValidUntil: src.certificateValidUntil ? new Date(src.certificateValidUntil) : null,
+                };
+              }
+            });
+          }
+          vendor.markModified("organicCertification");
         }
 
         // Representative Product
@@ -867,28 +880,16 @@ router.put("/onboarding", protectVendor, async (req, res) => {
       }
 
       case 2: { // Section 2: Bank & Payout Details
-        if (data.bankDetails) {
-          const { accountHolderName, accountNumber, bankName, ifscCode, branchName, accountType, upiId } = data.bankDetails;
-          vendor.bankDetails = {
-            accountHolderName: accountHolderName || vendor.bankDetails?.accountHolderName,
-            accountNumber: accountNumber || vendor.bankDetails?.accountNumber,
-            bankName: bankName || vendor.bankDetails?.bankName,
-            ifscCode: ifscCode ? ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
-            branchName: branchName || vendor.bankDetails?.branchName,
-            accountType: accountType || vendor.bankDetails?.accountType || "current",
-            upiId: upiId || vendor.bankDetails?.upiId,
-          };
-        } else if (data.accountNumber || data.ifscCode) {
-          vendor.bankDetails = {
-            accountHolderName: data.accountHolderName || vendor.bankDetails?.accountHolderName,
-            accountNumber: data.accountNumber || vendor.bankDetails?.accountNumber,
-            bankName: data.bankName || vendor.bankDetails?.bankName,
-            ifscCode: data.ifscCode ? data.ifscCode.trim().toUpperCase() : vendor.bankDetails?.ifscCode,
-            branchName: data.branchName || vendor.bankDetails?.branchName,
-            accountType: data.accountType || vendor.bankDetails?.accountType || "current",
-            upiId: data.upiId || vendor.bankDetails?.upiId,
-          };
-        }
+        const bd = data.bankDetails || data;
+        if (!vendor.bankDetails) vendor.bankDetails = {};
+        if (bd.accountHolderName !== undefined) vendor.bankDetails.accountHolderName = bd.accountHolderName;
+        if (bd.accountNumber !== undefined) vendor.bankDetails.accountNumber = bd.accountNumber;
+        if (bd.bankName !== undefined) vendor.bankDetails.bankName = bd.bankName;
+        if (bd.ifscCode !== undefined) vendor.bankDetails.ifscCode = bd.ifscCode ? bd.ifscCode.trim().toUpperCase() : "";
+        if (bd.branchName !== undefined) vendor.bankDetails.branchName = bd.branchName;
+        if (bd.accountType !== undefined) vendor.bankDetails.accountType = bd.accountType;
+        if (bd.upiId !== undefined) vendor.bankDetails.upiId = bd.upiId;
+        vendor.markModified("bankDetails");
 
         vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 3);
         break;
@@ -934,24 +935,35 @@ router.put("/onboarding", protectVendor, async (req, res) => {
 
       case 4: { // Section 4: Organic Certification
         if (data.organicCertification) {
-          const { certificationRoute, certificationBody, certificateNumber, certificateValidUntil, certificationsByRoute } = data.organicCertification;
-          vendor.organicCertification = {
-            certificationRoute: certificationRoute || vendor.organicCertification?.certificationRoute,
-            certificationBody: certificationBody || vendor.organicCertification?.certificationBody,
-            certificateNumber: certificateNumber || vendor.organicCertification?.certificateNumber,
-            certificateValidUntil: certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
-            certificationsByRoute: certificationsByRoute
-              ? { ...vendor.organicCertification?.certificationsByRoute, ...certificationsByRoute }
-              : vendor.organicCertification?.certificationsByRoute || {},
-          };
+          const oc = data.organicCertification;
+          if (!vendor.organicCertification) vendor.organicCertification = {};
+          if (oc.certificationRoute) vendor.organicCertification.certificationRoute = oc.certificationRoute;
+          if (oc.certificationBody !== undefined) vendor.organicCertification.certificationBody = oc.certificationBody;
+          if (oc.certificateNumber !== undefined) vendor.organicCertification.certificateNumber = oc.certificateNumber;
+          if (oc.certificateValidUntil !== undefined) vendor.organicCertification.certificateValidUntil = oc.certificateValidUntil ? new Date(oc.certificateValidUntil) : null;
+
+          if (oc.certificationsByRoute) {
+            if (!vendor.organicCertification.certificationsByRoute) vendor.organicCertification.certificationsByRoute = {};
+            const routes = ["npop", "usda", "pgs", "eu", "other"];
+            routes.forEach((rKey) => {
+              if (oc.certificationsByRoute[rKey]) {
+                const src = oc.certificationsByRoute[rKey];
+                vendor.organicCertification.certificationsByRoute[rKey] = {
+                  certificationBody: src.certificationBody || "",
+                  certificateNumber: src.certificateNumber || "",
+                  certificateValidUntil: src.certificateValidUntil ? new Date(src.certificateValidUntil) : null,
+                };
+              }
+            });
+          }
+          vendor.markModified("organicCertification");
         } else if (data.certificationRoute || data.certificationBody) {
-          vendor.organicCertification = {
-            certificationRoute: data.certificationRoute || vendor.organicCertification?.certificationRoute,
-            certificationBody: data.certificationBody || vendor.organicCertification?.certificationBody,
-            certificateNumber: data.certificateNumber || vendor.organicCertification?.certificateNumber,
-            certificateValidUntil: data.certificateValidUntil || vendor.organicCertification?.certificateValidUntil,
-            certificationsByRoute: vendor.organicCertification?.certificationsByRoute || {},
-          };
+          if (!vendor.organicCertification) vendor.organicCertification = {};
+          if (data.certificationRoute) vendor.organicCertification.certificationRoute = data.certificationRoute;
+          if (data.certificationBody !== undefined) vendor.organicCertification.certificationBody = data.certificationBody;
+          if (data.certificateNumber !== undefined) vendor.organicCertification.certificateNumber = data.certificateNumber;
+          if (data.certificateValidUntil !== undefined) vendor.organicCertification.certificateValidUntil = data.certificateValidUntil ? new Date(data.certificateValidUntil) : null;
+          vendor.markModified("organicCertification");
         }
 
         vendor.onboardingStep = Math.max(vendor.onboardingStep || 1, 5);
@@ -995,13 +1007,54 @@ router.put("/onboarding", protectVendor, async (req, res) => {
         if (data.fssaiNumber) vendor.fssaiNumber = data.fssaiNumber.trim();
 
         if (data.bankDetails) {
-          vendor.bankDetails = { ...vendor.bankDetails, ...data.bankDetails };
+          const bd = data.bankDetails;
+          if (!vendor.bankDetails) vendor.bankDetails = {};
+          if (bd.accountHolderName !== undefined) vendor.bankDetails.accountHolderName = bd.accountHolderName;
+          if (bd.accountNumber !== undefined) vendor.bankDetails.accountNumber = bd.accountNumber;
+          if (bd.bankName !== undefined) vendor.bankDetails.bankName = bd.bankName;
+          if (bd.ifscCode !== undefined) vendor.bankDetails.ifscCode = bd.ifscCode ? bd.ifscCode.trim().toUpperCase() : "";
+          if (bd.branchName !== undefined) vendor.bankDetails.branchName = bd.branchName;
+          if (bd.accountType !== undefined) vendor.bankDetails.accountType = bd.accountType;
+          if (bd.upiId !== undefined) vendor.bankDetails.upiId = bd.upiId;
+          vendor.markModified("bankDetails");
         }
         if (data.pickupAddress) {
-          vendor.pickupAddress = { ...vendor.pickupAddress, ...data.pickupAddress };
+          const pa = data.pickupAddress;
+          if (!vendor.pickupAddress) vendor.pickupAddress = {};
+          if (pa.facilityName !== undefined) vendor.pickupAddress.facilityName = pa.facilityName;
+          if (pa.contactPerson !== undefined) vendor.pickupAddress.contactPerson = pa.contactPerson;
+          if (pa.phone !== undefined) vendor.pickupAddress.phone = pa.phone;
+          if (pa.addressLine1 !== undefined) vendor.pickupAddress.addressLine1 = pa.addressLine1;
+          if (pa.addressLine2 !== undefined) vendor.pickupAddress.addressLine2 = pa.addressLine2;
+          if (pa.city !== undefined) vendor.pickupAddress.city = pa.city;
+          if (pa.state !== undefined) vendor.pickupAddress.state = pa.state;
+          if (pa.pincode !== undefined) vendor.pickupAddress.pincode = pa.pincode;
+          if (pa.country !== undefined) vendor.pickupAddress.country = pa.country;
+          if (pa.shiprocketLocationName !== undefined) vendor.pickupAddress.shiprocketLocationName = pa.shiprocketLocationName;
+          vendor.markModified("pickupAddress");
         }
         if (data.organicCertification) {
-          vendor.organicCertification = { ...vendor.organicCertification, ...data.organicCertification };
+          const oc = data.organicCertification;
+          if (!vendor.organicCertification) vendor.organicCertification = {};
+          if (oc.certificationRoute) vendor.organicCertification.certificationRoute = oc.certificationRoute;
+          if (oc.certificationBody !== undefined) vendor.organicCertification.certificationBody = oc.certificationBody;
+          if (oc.certificateNumber !== undefined) vendor.organicCertification.certificateNumber = oc.certificateNumber;
+          if (oc.certificateValidUntil !== undefined) vendor.organicCertification.certificateValidUntil = oc.certificateValidUntil ? new Date(oc.certificateValidUntil) : null;
+          if (oc.certificationsByRoute) {
+            if (!vendor.organicCertification.certificationsByRoute) vendor.organicCertification.certificationsByRoute = {};
+            const routes = ["npop", "usda", "pgs", "eu", "other"];
+            routes.forEach((rKey) => {
+              if (oc.certificationsByRoute[rKey]) {
+                const src = oc.certificationsByRoute[rKey];
+                vendor.organicCertification.certificationsByRoute[rKey] = {
+                  certificationBody: src.certificationBody || "",
+                  certificateNumber: src.certificateNumber || "",
+                  certificateValidUntil: src.certificateValidUntil ? new Date(src.certificateValidUntil) : null,
+                };
+              }
+            });
+          }
+          vendor.markModified("organicCertification");
         }
         if (data.representativeProduct) {
           vendor.representativeProduct = { ...vendor.representativeProduct, ...data.representativeProduct };
@@ -1136,13 +1189,24 @@ router.post("/compliance", protectVendor, complianceValidators, handleValidation
     const { name, type, fileUrl, expiryDate } = req.body;
     const vendor = await Vendor.findById(req.vendor._id);
 
-    vendor.complianceDocuments.push({
-      name,
-      type,
-      fileUrl,
-      expiryDate,
-      status: "pending",
-    });
+    const existingIndex = vendor.complianceDocuments.findIndex(
+      (d) => d.type === type && type !== "other_organic_certificate" && type !== "other"
+    );
+    if (existingIndex > -1) {
+      vendor.complianceDocuments[existingIndex].name = name;
+      vendor.complianceDocuments[existingIndex].fileUrl = fileUrl;
+      vendor.complianceDocuments[existingIndex].status = "pending";
+      if (expiryDate) vendor.complianceDocuments[existingIndex].expiryDate = expiryDate;
+      vendor.complianceDocuments[existingIndex].uploadedAt = new Date();
+    } else {
+      vendor.complianceDocuments.push({
+        name,
+        type,
+        fileUrl,
+        expiryDate,
+        status: "pending",
+      });
+    }
 
     await vendor.save();
     res.status(201).json(vendor.complianceDocuments);

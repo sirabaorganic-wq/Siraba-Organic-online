@@ -212,18 +212,32 @@ const hidePoweredBy = (req, res, next) => {
  * Log suspicious activities
  */
 const suspiciousActivityLogger = (req, res, next) => {
-    // Log requests with suspicious patterns
-    const suspiciousPatterns = [
-        /(\.\.)|(\/\/)/,  // Path traversal
+    // Check path traversal on URL and query string
+    const urlCheckString = `${req.url} ${JSON.stringify(req.query)}`;
+    if (/(\.\.)|(\/\/)/.test(urlCheckString)) {
+        console.warn({
+            timestamp: new Date().toISOString(),
+            type: 'SUSPICIOUS_ACTIVITY',
+            reason: 'Path traversal pattern in URL/query',
+            ip: req.ip,
+            method: req.method,
+            url: req.url,
+            userAgent: req.get('user-agent'),
+            query: req.query
+        });
+        return next();
+    }
+
+    // Check payload injection patterns
+    const injectionPatterns = [
         /(<script|<iframe|javascript:)/i,  // XSS attempts
         /(\$where|\$ne|\$gt|\$lt)/,  // NoSQL injection
         /(union|select|insert|update|delete|drop)/i  // SQL injection
     ];
 
-    const checkString = `${req.url} ${JSON.stringify(req.query)} ${JSON.stringify(req.body)}`;
-
-    for (const pattern of suspiciousPatterns) {
-        if (pattern.test(checkString)) {
+    const bodyString = `${JSON.stringify(req.query)} ${JSON.stringify(req.body)}`;
+    for (const pattern of injectionPatterns) {
+        if (pattern.test(bodyString)) {
             console.warn({
                 timestamp: new Date().toISOString(),
                 type: 'SUSPICIOUS_ACTIVITY',

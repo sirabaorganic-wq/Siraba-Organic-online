@@ -12,6 +12,7 @@ const complianceDocSchema = mongoose.Schema({
       "organic_certification",
       "pan_card",
       "bank_details",
+      "cancelled_cheque",
       "other",
       "business_legal_identity",
       "organic_certificate",
