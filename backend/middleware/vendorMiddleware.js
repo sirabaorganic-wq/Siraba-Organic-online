@@ -65,6 +65,9 @@ const protectVendor = async (req, res, next) => {
 
 // Check if vendor is approved
 const approvedVendor = (req, res, next) => {
+  if (req.isAdmin || (req.user && (req.user.isAdmin || req.user.role === "admin"))) {
+    return next();
+  }
   if (req.vendor && req.vendor.status === "approved") {
     next();
   } else {

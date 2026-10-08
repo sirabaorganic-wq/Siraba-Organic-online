@@ -23,6 +23,15 @@ const vendorOrderSchema = mongoose.Schema(
         price: { type: Number, required: true },
         image: { type: String },
         sku: { type: String },
+        hsnCode: { type: String },
+        hsn: { type: String },
+        taxRate: { type: Number, default: 18 },
+        taxAmount: { type: Number, default: 0 },
+        taxableAmount: { type: Number },
+        discountAmount: { type: Number, default: 0 },
+        cgstAmount: { type: Number, default: 0 },
+        sgstAmount: { type: Number, default: 0 },
+        igstAmount: { type: Number, default: 0 },
       },
     ],
 
@@ -33,6 +42,17 @@ const vendorOrderSchema = mongoose.Schema(
     commissionRateAtOrder: { type: Number },
     planAtOrder: { type: String },
     netAmount: { type: Number, required: true }, // subtotal - commission
+
+    // Tax breakdown snapshot
+    taxBreakdown: {
+      isInterState: { type: Boolean, default: false },
+      supplierState: { type: String },
+      customerState: { type: String },
+      cgst: { type: Number, default: 0 },
+      sgst: { type: Number, default: 0 },
+      igst: { type: Number, default: 0 },
+      totalTax: { type: Number, default: 0 },
+    },
 
     // Shipping Economics Snapshot
     shippingThresholdAtOrder: { type: Number, default: 999 },

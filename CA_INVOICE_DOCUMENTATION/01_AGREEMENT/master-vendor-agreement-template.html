@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SIRABA ORGANIC — Master Vendor Marketplace Agreement</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm 15mm 20mm 15mm;
+
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: Arial, sans-serif;
+        font-size: 8pt;
+        color: #666;
+      }
+    }
+
+    body {
+      font-family: "Times New Roman", Times, Georgia, serif;
+      font-size: 10.5pt;
+      line-height: 1.5;
+      color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #24302a;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .brand-mark {
+      font-size: 16pt;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #24302a;
+    }
+
+    .brand-sub {
+      font-family: Arial, sans-serif;
+      font-size: 8pt;
+      letter-spacing: 1.5px;
+      color: #7b837e;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    .doc-title {
+      font-size: 13pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 10px;
+      letter-spacing: 0.5px;
+      color: #9d8043;
+    }
+
+    .doc-meta {
+      font-family: Arial, sans-serif;
+      font-size: 8.5pt;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    .parties-box {
+      background-color: #f9faf9;
+      border: 1px solid #d9ddd9;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 10pt;
+    }
+
+    .section-title {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #24302a;
+      text-transform: uppercase;
+      margin-top: 18px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 2px;
+    }
+
+    p,
+    li {
+      text-align: justify;
+      margin: 4px 0;
+    }
+
+    ul,
+    ol {
+      margin: 4px 0 8px 20px;
+      padding: 0;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 9.5pt;
+      font-family: Arial, sans-serif;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      border: 1px solid #d9ddd9;
+      padding: 6px 10px;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background-color: #f4f6f4;
+      font-weight: bold;
+      color: #24302a;
+      width: 35%;
+    }
+
+    .signature-container {
+      margin-top: 30px;
+      page-break-inside: avoid;
+      border-top: 2px solid #24302a;
+      padding-top: 15px;
+    }
+
+    .sig-grid {
+      display: table;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .sig-col {
+      display: table-cell;
+      width: 50%;
+      vertical-align: top;
+      padding-right: 15px;
+    }
+
+    .sig-box {
+      border: 1px dashed #b99a57;
+      background-color: #fbfbfa;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-family: Arial, sans-serif;
+      font-size: 8.5pt;
+    }
+
+    .audit-badge {
+      display: inline-block;
+      background-color: #e8f0eb;
+      color: #2e6038;
+      font-weight: bold;
+      font-size: 7.5pt;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hash-text {
+      font-family: monospace;
+      font-size: 7.5pt;
+      word-break: break-all;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand-mark">SIRABA ORGANIC™</div>
+    <div class="brand-sub">Certified • Verified • Qualified</div>
+    <div class="doc-title">Master Vendor Marketplace Agreement</div>
+    <div class="doc-meta">Document Ref: VMA-{{vendorId}}-v{{templateVersion}} | Effective Date: {{effectiveDate}}</div>
+  </div>
+
+  <!-- PREAMBLE -->
+  <p>
+    This <strong>MASTER VENDOR MARKETPLACE AGREEMENT</strong> (the "<strong>Agreement</strong>") is executed and entered
+    into on this
+    <strong>{{effectiveDate}}</strong> ("<strong>Effective Date</strong>"), by and between:
+  </p>
+
+  <div class="parties-box">
+    <p>
+      <strong>1. SIRABA ORGANIC</strong>, operating the online marketplace platform at www.sirabaorganic.com
+      (hereinafter referred to as the
+      "<strong>Company</strong>" or "<strong>Marketplace Operator</strong>", which expression shall, unless repugnant to
+      the context or meaning thereof, be deemed to include its successors, affiliates, and permitted assigns) of the
+      <strong>FIRST PART</strong>;
+    </p>
+    <p style="text-align: center; font-weight: bold; margin: 8px 0;">AND</p>
+    <p>
+      <strong>2. {{vendorLegalName}}</strong>, a {{businessType}} having its registered place of business at
+      <strong>{{vendorAddress}}</strong>, holding PAN <strong>{{panNumber}}</strong> and GSTIN
+      <strong>{{gstNumber}}</strong>,
+      represented herein by its authorized representative <strong>{{authorizedRepresentative}}</strong>,
+      {{representativeDesignation}} (hereinafter referred to as the "<strong>Vendor</strong>", which expression shall,
+      unless repugnant to the context, include its legal heirs, successors, and permitted assigns) of the <strong>SECOND
+        PART</strong>.
+    </p>
+  </div>
+
+  <p>
+    The Company and the Vendor are hereinafter collectively referred to as the "<strong>Parties</strong>" and
+    individually as a "<strong>Party</strong>".
+  </p>
+
+  <!-- RECITALS -->
+  <div class="section-title">Recitals</div>
+  <p>
+    <strong>WHEREAS</strong>, the Company owns, operates, and manages an exclusive, certification-led online marketplace
+    under the brand name <strong>SIRABA ORGANIC™</strong>, facilitating the promotion, sale, and distribution of
+    verified organic, authentic, and compliant products; and
+  </p>
+  <p>
+    <strong>WHEREAS</strong>, the Vendor is engaged in the manufacturing, processing, farming, distribution, or
+    wholesale of organic products and has submitted an application for qualification and onboarding onto the SIRABA
+    ORGANIC™ marketplace platform; and
+  </p>
+  <p>
+    <strong>WHEREAS</strong>, the Company, relying upon the representations, certifications, regulatory licences, and
+    warranties submitted by the Vendor, has agreed to list the Vendor's qualified products on the marketplace, subject
+    to the mutual terms, conditions, and covenants set forth herein.
+  </p>
+
+  <p><strong>NOW, THEREFORE</strong>, in consideration of the mutual covenants, terms, conditions, and premises
+    contained herein, the Parties agree as follows:</p>
+
+  <!-- SECTION 1 -->
+  <div class="section-title">1. Definitions and Interpretation</div>
+  <ul>
+    <li><strong>"Applicable Law"</strong> means any Indian statute, law, ordinance, regulation, rule, notification,
+      order, decree, or directive issued by any court, governmental, or statutory authority (including FSSAI, APEDA, and
+      the Ministry of Consumer Affairs).</li>
+    <li><strong>"Marketplace Platform"</strong> means the website, mobile applications, technology stack, and backend
+      services operated by the Company under the brand SIRABA ORGANIC™.</li>
+    <li><strong>"Organic Certification"</strong> means valid and authentic certification issued by accredited
+      certification bodies under the National Programme for Organic Production (NPOP / India Organic), USDA Organic, EU
+      Organic, or recognized equivalent standards.</li>
+    <li><strong>"Qualified Products"</strong> means products manufactured or sourced by the Vendor that have
+      successfully passed the Company's compliance verification, regulatory review, and certification mapping.</li>
+    <li><strong>"Platform Commission"</strong> means the agreed percentage fee payable by the Vendor to the Company for
+      every completed commercial order facilitated via the Marketplace.</li>
+  </ul>
+
+  <!-- SECTION 2 -->
+  <div class="section-title">2. Scope of Marketplace Services & Listing</div>
+  <p>
+    2.1. The Company hereby grants the Vendor a non-exclusive, revocable right to list, showcase, and offer Qualified
+    Products for sale to customers on the Marketplace Platform in accordance with this Agreement.<br>
+    2.2. The Vendor acknowledges and agrees that the Company operates as a marketplace platform and neutral facilitator
+    under the Information Technology Act, 2000, and does not take title to the Vendor's products unless expressly agreed
+    in an authorized enterprise agreement.<br>
+    2.3. The Vendor retains sole ownership and title to its products until customer delivery.
+  </p>
+
+  <!-- SECTION 3 -->
+  <div class="section-title">3. Vendor Qualifications, Certifications & Warranties</div>
+  <p>
+    3.1. The Vendor expressly warrants, represents, and covenants that:
+  </p>
+  <ul>
+    <li>It possesses a valid Food Safety and Standards Authority of India (FSSAI) licence/registration (Number:
+      <strong>{{fssaiNumber}}</strong>) where applicable, and complies strictly with all food safety guidelines.
+    </li>
+    <li>All products marketed as "organic" hold genuine, unexpired, and verifiable Organic Certifications (Details:
+      <strong>{{organicCertification}}</strong>) mapped to the relevant product categories.
+    </li>
+    <li>It maintains complete, auditable batch records, traceability evidence, and chain-of-custody documentation from
+      farm/source to finished packaging, and shall furnish copies within 48 hours upon written request.</li>
+    <li>All product representations, labels, dietary claims, ingredient disclosures, batch codes, and best-before dates
+      comply fully with the Legal Metrology Act and FSSAI packaging guidelines.</li>
+    <li>No prohibited chemicals, banned synthetic fertilizers, undeclared additives, or unauthorized GMOs are present in
+      products supplied under the organic claim.</li>
+  </ul>
+
+  <!-- SECTION 4 -->
+  <div class="section-title">4. Commercial Terms, Commission & Settlement</div>
+  <p>
+    4.1. <strong>Platform Commission:</strong> The Company shall deduct a platform commission according to the Vendor
+    selected plan (exclusive of applicable taxes) on the net product sales value of each completed customer order.<br>
+    4.2. <strong>Pricing & Taxes:</strong> The Vendor shall set the Maximum Retail Price (MRP) and Selling Price in
+    compliance with Indian legal requirements. Prices must be inclusive of all applicable GST, duties, and packaging
+    costs.<br>
+    4.3. <strong>Settlement Cycle:</strong> Payouts for delivered orders shall be disbursed to the Vendor's registered
+    bank account in accordance with the standard settlement schedule (T+{{settlementDays}} business days following
+    completion of the return window).<br>
+    4.4. <strong>Subscription Tier:</strong> The Vendor is currently enrolled in the <strong>{{pricingTier}}</strong>
+    vendor tier.
+  </p>
+
+  <!-- SECTION 5 -->
+  <div class="section-title">5. Order Fulfillment, Packaging & Dispatch</div>
+  <p>
+    5.1. Upon notification of a customer order, the Vendor shall prepare, package in eco-friendly and food-grade
+    materials, and make available the consignment at the designated warehouse/pickup facility:
+    <strong>{{pickupFacilityAddress}}</strong>.<br>
+    5.2. Consignments must be handed over to the Company's integrated logistics partner (Shiprocket) within the agreed
+    dispatch processing window (not exceeding 48 hours from order confirmation).<br>
+    5.3. The Vendor shall ensure that each dispatch includes an authentic batch identifier matching the compliance
+    certificate and invoice.
+  </p>
+
+  <!-- SECTION 6 -->
+  <div class="section-title">6. Quality Assurance, Audits & Non-Compliance</div>
+  <p>
+    6.1. The Company reserves the right to perform random accredited laboratory testing (CoA) of products procured from
+    the Marketplace.<br>
+    6.2. If any batch fails laboratory safety, pesticide residue, or authenticity testing, the Vendor shall immediately
+    indemnify the Company, recall all units at its own expense, and compensate affected customers.<br>
+    6.3. The Company reserves the right to immediately delist non-compliant products or suspend the Vendor's account
+    upon identification of expired certificates, falsified documentation, or unresolved customer complaints.
+  </p>
+
+  <!-- SECTION 7 -->
+  <div class="section-title">7. Indemnification & Limitation of Liability</div>
+  <p>
+    7.1. The Vendor agrees to defend, indemnify, and hold harmless the Company, its directors, officers, employees, and
+    agents from and against any and all claims, liabilities, losses, damages, penalties, fines, and legal expenses
+    arising out of: (a) breach of any warranty or covenant under this Agreement; (b) customer product liability,
+    illness, or injury resulting from the Vendor's goods; (c) trademark, copyright, or patent infringement; or (d)
+    regulatory non-compliance under FSSAI, Consumer Protection, or Legal Metrology rules.<br>
+    7.2. To the maximum extent permitted by law, the Company's aggregate liability under this Agreement shall not exceed
+    the platform commissions earned from the Vendor in the three (3) months preceding the event giving rise to
+    liability.
+  </p>
+
+  <!-- SECTION 8 -->
+  <div class="section-title">8. Term and Termination</div>
+  <p>
+    8.1. This Agreement shall commence on the Effective Date and shall continue in force for a period of one (1) year,
+    automatically renewing for successive one-year terms unless terminated by either Party with thirty (30) days' prior
+    written notice.<br>
+    8.2. The Company may terminate this Agreement immediately upon written notice if the Vendor breaches certification
+    covenants, commits fraud, or suffers regulatory disqualification.
+  </p>
+
+  <!-- SECTION 9 -->
+  <div class="section-title">9. Governing Law & Dispute Resolution</div>
+  <p>
+    9.1. This Agreement shall be governed by, interpreted, and construed in accordance with the laws of the Republic of
+    India.<br>
+    9.2. Any dispute, controversy, or claim arising out of or relating to this Agreement shall be resolved through
+    good-faith negotiation, failing which it shall be referred to arbitration in accordance with the Arbitration and
+    Conciliation Act, 1996. The seat and venue of arbitration shall be New Delhi, India. The courts of New Delhi shall
+    have exclusive jurisdiction.
+  </p>
+
+  <!-- SCHEDULE A: VENDOR DETAILS SUMMARY -->
+  <div class="section-title" style="margin-top: 25px;">Schedule A: Registered Vendor Specifications & Baseline Data
+  </div>
+  <table class="data-table">
+    <tr>
+      <th>Legal Business Entity Name</th>
+      <td><strong>{{vendorLegalName}}</strong></td>
+    </tr>
+    <tr>
+      <th>Business Constitution / Entity Type</th>
+      <td>{{businessType}}</td>
+    </tr>
+    <tr>
+      <th>Principal Registered Address</th>
+      <td>{{vendorAddress}}</td>
+    </tr>
+    <tr>
+      <th>Permanent Account Number (PAN)</th>
+      <td><strong>{{panNumber}}</strong></td>
+    </tr>
+    <tr>
+      <th>GST Registration Number (GSTIN)</th>
+      <td>{{gstNumber}}</td>
+    </tr>
+    <tr>
+      <th>FSSAI Licence / Registration</th>
+      <td>{{fssaiNumber}}</td>
+    </tr>
+    <tr>
+      <th>Organic Certification Scope</th>
+      <td>{{organicCertification}}</td>
+    </tr>
+    <tr>
+      <th>Authorized Signatory</th>
+      <td>{{authorizedRepresentative}} ({{representativeDesignation}})</td>
+    </tr>
+    <tr>
+      <th>Agreed Commercial Commission</th>
+      <td>Chosen Platform Fee</td>
+    </tr>
+    <tr>
+      <th>Approved Selling Categories</th>
+      <td>{{approvedCategories}}</td>
+    </tr>
+    <tr>
+      <th>Submitted Compliance Evidence</th>
+      <td>{{complianceDocumentsList}}</td>
+    </tr>
+  </table>
+
+  <!-- ELECTRONIC SIGNATURE & EXECUTION BLOCK -->
+  <div class="signature-container">
+    <div class="section-title" style="border: none; margin-top: 0;">Execution and Electronic Signature</div>
+    <p style="font-size: 8.5pt; color: #555; margin-bottom: 12px;">
+      IN WITNESS WHEREOF, the Parties hereto have caused this Master Vendor Marketplace Agreement to be executed
+      electronically by their duly authorized representatives as of the date and time recorded below. By checking the
+      acceptance confirmation and completing electronic execution, the Vendor affirms that it has reviewed, understood,
+      and consented to be bound by all provisions of this Agreement.
+    </p>
+
+    <div class="sig-grid">
+      <!-- Operator Column -->
+      <div class="sig-col">
+        <div class="sig-box">
+          <div class="audit-badge">Marketplace Operator</div>
+          <p><strong>SIRABA ORGANIC PRIVATE LIMITED</strong></p>
+          <p>Authorized Signatory: <em>Compliance & Legal Division</em></p>
+          <p>Designation: Authorized Marketplace Signatory</p>
+          <p>Status: Accepted & Issued</p>
+          <p>Platform Reference: SIR-MKT-AGR-VERIFIED</p>
+        </div>
+      </div>
+
+      <!-- Vendor Column -->
+      <div class="sig-col">
+        <div class="sig-box">
+          <div class="audit-badge">Executed Vendor Signatory</div>
+          <p><strong>{{vendorLegalName}}</strong></p>
+          <p>Signatory Name: <strong>{{signatoryName}}</strong></p>
+          <p>Signatory Designation: <strong>{{signatoryDesignation}}</strong></p>
+          <p>Electronic Acceptance Timestamp: <strong>{{executionTimestamp}}</strong></p>
+          <p>Signatory IP Address: <strong>{{ipAddress}}</strong></p>
+          <p>Signatory User-Agent: <span style="font-size: 7pt; color: #666;">{{userAgent}}</span></p>
+          <p style="margin-top: 6px;">SHA-256 Verification Hash:</p>
+          <div class="hash-text">{{documentHash}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

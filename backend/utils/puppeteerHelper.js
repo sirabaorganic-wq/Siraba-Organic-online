@@ -30,13 +30,16 @@ function getCandidateExecutablePaths() {
     candidates.push(process.env.PUPPETEER_EXECUTABLE_PATH);
   }
 
-  // System locations on Linux / Debian / Ubuntu / Render
+  // System locations on Linux / Debian / Ubuntu / Render / Windows
   const systemPaths = [
     "/usr/bin/google-chrome-stable",
     "/usr/bin/google-chrome",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/snap/bin/chromium",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   ];
   for (const sp of systemPaths) {
     if (fs.existsSync(sp)) {
@@ -317,9 +320,71 @@ function htmlToTextBlocks(html, defaultTitle = "LEGAL AGREEMENT") {
   return lines;
 }
 
+// ── Concurrency Limiter for Headless PDF Rendering ──────────────────────────
+let activePdfRenders = 0;
+const MAX_CONCURRENT_PDF_RENDERS = 2;
+const RENDER_TIMEOUT_MS = 25000;
+
+async function acquirePdfRenderSlot() {
+  const startTime = Date.now();
+  while (activePdfRenders >= MAX_CONCURRENT_PDF_RENDERS) {
+    if (Date.now() - startTime > 10000) {
+      throw new Error("PDF render queue full. Server busy, please retry in a moment.");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  activePdfRenders++;
+}
+
+function releasePdfRenderSlot() {
+  if (activePdfRenders > 0) activePdfRenders--;
+}
+
+/**
+ * Safely render HTML to PDF buffer with concurrency limiting and guaranteed resource cleanup.
+ */
+async function renderHtmlToPdf(html, options = {}) {
+  await acquirePdfRenderSlot();
+  let browser = null;
+  let page = null;
+  try {
+    browser = await launchBrowser();
+    page = await browser.newPage();
+    page.setDefaultTimeout(RENDER_TIMEOUT_MS);
+
+    await page.setContent(html, {
+      waitUntil: "domcontentloaded",
+      timeout: RENDER_TIMEOUT_MS,
+    });
+
+    const pdfBuffer = await page.pdf({
+      format: options.format || "A4",
+      printBackground: true,
+      margin: options.margin || {
+        top: "15mm",
+        right: "15mm",
+        bottom: "15mm",
+        left: "15mm",
+      },
+      preferCSSPageSize: true,
+    });
+
+    return pdfBuffer;
+  } finally {
+    if (page) {
+      await page.close().catch(() => {});
+    }
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+    releasePdfRenderSlot();
+  }
+}
+
 module.exports = {
   launchBrowser,
   getPuppeteerLaunchArgs,
   buildPureJsPdf,
   htmlToTextBlocks,
+  renderHtmlToPdf,
 };

@@ -39,7 +39,10 @@ const productSchema = mongoose.Schema(
     },
     category: { type: String, required: true },
     tag: { type: String },
-    hsn: { type: String, default: "0909" }, // HSN code for GST (default: spices/saffron)
+    hsnCode: { type: String, trim: true }, // Canonical HSN code for GST
+    hsn: { type: String, trim: true }, // Legacy alias for backward compatibility
+    gstRate: { type: Number, min: 0, max: 100, default: 18 }, // Product-level GST rate (0, 5, 12, 18)
+    taxCategory: { type: String, default: "standard" }, // exempt, essential, standard
     rating: { type: Number, default: 0 },
     numReviews: { type: Number, default: 0 },
     reviews: [reviewSchema],
@@ -89,8 +92,18 @@ const productSchema = mongoose.Schema(
   },
 );
 
-// Middleware to automatically set isPublic field
+// Middleware to automatically set isPublic field and synchronize HSN fields
 productSchema.pre("save", function () {
+  // Synchronize HSN fields (standardize hsnCode while preserving legacy hsn)
+  if (this.hsnCode && !this.hsn) {
+    this.hsn = String(this.hsnCode).trim();
+  } else if (this.hsn && !this.hsnCode) {
+    this.hsnCode = String(this.hsn).trim();
+  } else if (this.hsnCode && this.hsn) {
+    this.hsnCode = String(this.hsnCode).trim();
+    this.hsn = this.hsnCode;
+  }
+
   if (this.isVendorProduct) {
     // Vendor products: public only if approved AND active
     this.isPublic = this.vendorStatus === "approved" && this.isActive === true;

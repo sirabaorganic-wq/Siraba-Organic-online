@@ -1466,10 +1466,26 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
       stockQuantity,
       sku,
       hsn,
+      hsnCode,
       certifications,
       batchNumber,
       batchInfo,
     } = req.body;
+
+    const rawHsn = hsnCode !== undefined ? hsnCode : hsn;
+    const cleanHsn = rawHsn ? String(rawHsn).trim() : "";
+
+    // Phase 3: HSN Code validation
+    if (!cleanHsn) {
+      return res.status(400).json({
+        message: "HSN code is required for product listing.",
+      });
+    }
+    if (!/^[0-9A-Za-z]{2,8}$/.test(cleanHsn)) {
+      return res.status(400).json({
+        message: "Invalid HSN code format. HSN must be 2 to 8 alphanumeric characters.",
+      });
+    }
 
     let prodCertifications = certifications;
     if (!prodCertifications || prodCertifications.length === 0) {
@@ -1528,7 +1544,8 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
       ingredients,
       stockQuantity: stockQuantity || 0,
       sku: sku || `VND-${req.vendor._id.toString().slice(-6)}-${Date.now()}`,
-      hsn: hsn || "0909",
+      hsnCode: cleanHsn,
+      hsn: cleanHsn,
       certifications: prodCertifications,
       batchNumber: batchNumber ? String(batchNumber).trim() : "",
       batchInfo: batchInfo ? String(batchInfo).trim() : "",
@@ -1555,6 +1572,51 @@ router.post("/products", protectVendor, approvedVendor, certifiedVendor, async (
     res.status(500).json({ message: error.message });
   }
 });
+
+// @desc    Get vendor HSN management summary
+// @route   GET /api/vendors/products/hsn-summary
+// @access  Private/Vendor (Approved only)
+router.get(
+  "/products/hsn-summary",
+  protectVendor,
+  approvedVendor,
+  async (req, res) => {
+    try {
+      const products = await Product.find({
+        vendor: req.vendor._id,
+        isVendorProduct: true,
+      }).select("name sku category hsn hsnCode price updatedAt");
+
+      let configuredCount = 0;
+      let missingCount = 0;
+      const missingProducts = [];
+
+      products.forEach((p) => {
+        const code = (p.hsnCode || p.hsn || "").trim();
+        if (code) {
+          configuredCount++;
+        } else {
+          missingCount++;
+          missingProducts.push({
+            _id: p._id,
+            name: p.name,
+            sku: p.sku,
+            category: p.category,
+          });
+        }
+      });
+
+      res.json({
+        totalProducts: products.length,
+        configuredCount,
+        missingCount,
+        missingProducts,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
 
 // @desc    Update vendor product
 // @route   PUT /api/vendors/products/:productId
@@ -1589,6 +1651,7 @@ router.put(
         stockQuantity,
         sku,
         hsn,
+        hsnCode,
         isActive,
         certifications,
         batchNumber,
@@ -1641,7 +1704,17 @@ router.put(
       if (ingredients) product.ingredients = ingredients;
       if (stockQuantity !== undefined) product.stockQuantity = stockQuantity;
       if (sku) product.sku = sku;
-      if (hsn) product.hsn = hsn;
+      if (hsnCode !== undefined || hsn !== undefined) {
+        const rawHsn = hsnCode !== undefined ? hsnCode : hsn;
+        const cleanHsn = rawHsn ? String(rawHsn).trim() : "";
+        if (cleanHsn && !/^[0-9A-Za-z]{2,8}$/.test(cleanHsn)) {
+          return res.status(400).json({
+            message: "Invalid HSN code format. HSN must be 2 to 8 alphanumeric characters.",
+          });
+        }
+        product.hsnCode = cleanHsn;
+        product.hsn = cleanHsn;
+      }
       if (isActive !== undefined) product.isActive = isActive;
       if (certifications) product.certifications = certifications;
       if (batchNumber !== undefined) product.batchNumber = String(batchNumber).trim();
@@ -1670,6 +1743,57 @@ router.put(
       res.status(500).json({ message: error.message });
     }
   },
+);
+
+// @desc    Update product HSN code specifically (HSN Management tab)
+// @route   PATCH /api/vendors/products/:productId/hsn
+// @access  Private/Vendor (Approved only)
+router.patch(
+  "/products/:productId/hsn",
+  protectVendor,
+  approvedVendor,
+  async (req, res) => {
+    try {
+      const { hsnCode, hsn } = req.body;
+      const rawHsn = hsnCode !== undefined ? hsnCode : hsn;
+      const cleanHsn = rawHsn ? String(rawHsn).trim() : "";
+
+      if (!cleanHsn) {
+        return res.status(400).json({ message: "HSN code is required." });
+      }
+      if (!/^[0-9A-Za-z]{2,8}$/.test(cleanHsn)) {
+        return res.status(400).json({
+          message: "Invalid HSN code format. HSN must be 2 to 8 alphanumeric characters.",
+        });
+      }
+
+      // Security / Tenant Isolation: Vendor can only update own products
+      const product = await Product.findOne({
+        _id: req.params.productId,
+        vendor: req.vendor._id,
+        isVendorProduct: true,
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found or not owned by vendor." });
+      }
+
+      product.hsnCode = cleanHsn;
+      product.hsn = cleanHsn;
+      await product.save();
+
+      invalidateCache.products();
+      invalidateCache.vendors();
+
+      res.json({
+        success: true,
+        message: "Product HSN code updated successfully.",
+        product,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 );
 
 // @desc    Delete vendor product

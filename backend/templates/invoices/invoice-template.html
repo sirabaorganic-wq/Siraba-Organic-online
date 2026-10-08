@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Invoice - {{invoiceNumber}}</title>
+    <title>Tax Invoice - {{invoiceNumber}}</title>
     <style>
       * {
         margin: 0;
@@ -13,14 +13,14 @@
 
       @page {
         size: A4;
-        margin: 15mm;
+        margin: 12mm 15mm;
       }
 
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
         background: white;
-        color: #333;
-        font-size: 13px;
+        color: #2d3748;
+        font-size: 12px;
         line-height: 1.4;
       }
 
@@ -34,275 +34,361 @@
       .accent-bar {
         height: 6px;
         background: linear-gradient(90deg, #1a4d2e 0%, #7cb342 100%);
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
       .header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 25px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #e5e5e5;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #e2e8f0;
       }
 
-      .logo-section {
+      .seller-brand {
         display: flex;
-        align-items: center;
-        gap: 15px;
+        align-items: flex-start;
+        gap: 14px;
+        max-width: 58%;
       }
 
       .logo {
-        width: 70px;
-        height: 70px;
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
       }
 
-      .company-info h1 {
-        font-size: 28px;
+      .seller-info .seller-badge {
+        display: inline-block;
+        background: #e6f4ea;
+        color: #1a4d2e;
+        font-size: 8.5px;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 3px;
+        margin-bottom: 4px;
+      }
+
+      .seller-info h1 {
+        font-size: 20px;
         color: #1a4d2e;
         font-weight: 800;
-        margin-bottom: 3px;
-        letter-spacing: -0.5px;
+        line-height: 1.2;
+        margin-bottom: 2px;
       }
 
-      .company-tagline {
-        color: #7cb342;
-        font-size: 9px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 600;
-        margin-bottom: 8px;
-      }
-
-      .company-contact {
-        color: #666;
+      .seller-trade-name {
         font-size: 11px;
-        line-height: 1.6;
+        color: #4a5568;
+        font-style: italic;
+        margin-bottom: 4px;
       }
 
-      .company-website {
-        color: #1a4d2e;
-        font-weight: 600;
-        font-size: 11px;
-        margin-top: 4px;
+      .seller-address {
+        color: #4a5568;
+        font-size: 10.5px;
+        line-height: 1.45;
       }
 
-      .gst-info {
+      .gst-box {
+        display: inline-block;
         background: #f0f7f0;
         border: 1px solid #7cb342;
-        padding: 8px 12px;
+        padding: 4px 8px;
         border-radius: 4px;
-        margin-top: 8px;
+        margin-top: 6px;
         font-size: 10px;
-      }
-
-      .gst-info strong {
         color: #1a4d2e;
-        font-weight: 700;
       }
 
-      .invoice-label {
+      .invoice-meta {
         text-align: right;
+        max-width: 40%;
       }
 
-      .invoice-label h2 {
-        font-size: 12px;
-        color: #888;
-        font-weight: 400;
-        margin-bottom: 3px;
-        letter-spacing: 1px;
+      .marketplace-tag {
+        font-size: 9px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        font-weight: 600;
       }
 
-      .invoice-label .inv-number {
-        font-size: 28px;
-        color: #1a4d2e;
+      .doc-title {
+        font-size: 13px;
+        color: #718096;
         font-weight: 700;
+        letter-spacing: 1.5px;
+      }
+
+      .inv-number {
+        font-size: 20px;
+        color: #1a4d2e;
+        font-weight: 800;
+        margin: 2px 0 6px;
+      }
+
+      .meta-row {
+        font-size: 10.5px;
+        color: #4a5568;
+        margin: 2px 0;
+      }
+
+      .meta-row strong {
+        color: #1a4d2e;
       }
 
       .detail-cards {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 20px;
+        grid-template-columns: 1.2fr 1fr 0.8fr;
+        gap: 12px;
+        margin-bottom: 16px;
       }
 
       .card {
-        background: #f9fafb;
-        padding: 15px;
-        border-radius: 6px;
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 5px;
         border-left: 3px solid #7cb342;
       }
 
       .card h3 {
-        font-size: 10px;
-        color: #888;
+        font-size: 9.5px;
+        color: #718096;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 8px;
+        letter-spacing: 0.8px;
+        margin-bottom: 6px;
         font-weight: 700;
       }
 
       .card p {
-        font-size: 11px;
-        color: #444;
-        line-height: 1.5;
+        font-size: 10.5px;
+        color: #2d3748;
+        line-height: 1.4;
         margin: 2px 0;
       }
 
       .card .highlight {
         color: #1a4d2e;
         font-weight: 700;
-        font-size: 12px;
+        font-size: 11.5px;
       }
 
       .status-tag {
-        background: linear-gradient(135deg, #1a4d2e 0%, #2d7a4f 100%);
+        background: #1a4d2e;
         color: white;
-        padding: 4px 10px;
-        border-radius: 15px;
-        font-size: 9px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 8.5px;
         font-weight: 700;
         text-transform: uppercase;
         display: inline-block;
-        margin-top: 6px;
+        margin-top: 4px;
       }
 
       .items-section {
-        margin-bottom: 15px;
+        margin-bottom: 14px;
       }
 
       .section-title {
-        font-size: 14px;
+        font-size: 12.5px;
         color: #1a4d2e;
         font-weight: 700;
-        margin-bottom: 12px;
-        padding-bottom: 6px;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
         border-bottom: 2px solid #7cb342;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px;
+        font-size: 11px;
       }
 
       thead th {
         background: #1a4d2e;
         color: white;
-        padding: 10px 8px;
+        padding: 8px 6px;
         text-align: left;
-        font-size: 10px;
+        font-size: 9.5px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
 
-      thead th:first-child {
-        border-radius: 5px 0 0 0;
-      }
-
-      thead th:last-child {
-        border-radius: 0 5px 0 0;
-        text-align: right;
-      }
+      thead th.text-center { text-align: center; }
+      thead th.text-right { text-align: right; }
 
       tbody tr {
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid #edf2f7;
       }
 
-      tbody tr:last-child {
-        border-bottom: none;
+      tbody tr:nth-child(even) {
+        background-color: #fafbfc;
       }
 
       tbody td {
-        padding: 12px 8px;
-        color: #444;
-      }
-
-      tbody td:nth-child(2),
-      tbody td:nth-child(3),
-      tbody td:nth-child(4) {
-        text-align: right;
+        padding: 8px 6px;
+        color: #2d3748;
+        vertical-align: middle;
       }
 
       .product-name {
         font-weight: 700;
         color: #1a4d2e;
+        font-size: 11.5px;
+      }
+
+      .product-sku {
+        color: #718096;
+        font-size: 9.5px;
+      }
+
+      .totals-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-top: 14px;
+      }
+
+      .words-container {
+        flex: 1;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 10px 12px;
+        font-size: 10.5px;
+      }
+
+      .words-container strong {
+        color: #1a4d2e;
+        display: block;
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         margin-bottom: 3px;
-        font-size: 13px;
-      }
-
-      .product-desc {
-        color: #999;
-        font-size: 11px;
-        font-style: italic;
-      }
-
-      .totals-section {
-        margin-top: 15px;
       }
 
       .totals-box {
-        margin-left: auto;
-        width: 280px;
-        background: #f9fafb;
-        border-radius: 6px;
-        padding: 15px;
+        width: 310px;
+        background: #f8fafc;
+        border-radius: 5px;
+        padding: 12px;
         border-left: 3px solid #7cb342;
+        border: 1px solid #e2e8f0;
+        border-left-width: 3px;
+        border-left-color: #7cb342;
       }
 
       .total-row {
         display: flex;
         justify-content: space-between;
-        padding: 8px 0;
-        font-size: 12px;
-        color: #555;
-        border-bottom: 1px solid #e5e5e5;
+        padding: 5px 0;
+        font-size: 11px;
+        color: #4a5568;
+        border-bottom: 1px solid #edf2f7;
       }
 
-      .total-row:last-child {
-        border-bottom: none;
+      .total-row.tax-component {
+        font-size: 10.5px;
+        color: #1a4d2e;
+        padding-left: 8px;
+        background: #f0f7f0;
+        border-radius: 2px;
+        margin: 2px 0;
+        padding: 4px 6px;
+      }
+
+      .total-row.discount-row {
+        color: #c53030;
       }
 
       .total-row.grand {
         background: linear-gradient(135deg, #1a4d2e 0%, #2d7a4f 100%);
         color: white;
-        margin: 12px -15px -15px;
-        padding: 15px;
-        border-radius: 0 0 6px 6px;
-        font-size: 16px;
-        font-weight: 700;
+        margin: 8px -12px -12px;
+        padding: 10px 12px;
+        border-radius: 0 0 4px 4px;
+        font-size: 14px;
+        font-weight: 800;
+        border-bottom: none;
       }
 
       .footer {
-        margin-top: 25px;
-        padding-top: 15px;
+        margin-top: 22px;
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .footer-disclaimer {
+        color: #718096;
+        font-size: 9.5px;
+        line-height: 1.45;
         text-align: center;
-        border-top: 1px solid #e5e5e5;
+        margin-bottom: 14px;
       }
 
-      .footer p {
-        color: #777;
-        font-size: 11px;
-        line-height: 1.6;
-        margin-bottom: 15px;
+      .signatory-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0 10px;
       }
 
-      .signature-section {
-        margin-top: 20px;
+      .facilitator-note {
+        font-size: 9.5px;
+        color: #4a5568;
+      }
+
+      .sig-box {
         text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
       }
 
-      .sig-line {
-        display: inline-block;
-        border-top: 2px solid #1a4d2e;
-        padding-top: 6px;
-        width: 180px;
-        font-size: 10px;
-        color: #666;
+      .sig-title {
+        font-size: 9.5px;
+        color: #1a4d2e;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
+        margin-bottom: 2px;
+      }
+
+      .stamp-container {
+        margin: 2px 0 3px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .stamp-img {
+        width: 76px;
+        height: auto;
+        max-height: 95px;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+        display: block;
+      }
+
+      .sig-behalf {
+        font-size: 9px;
         font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 2px;
+      }
+
+      .sig-disclaimer {
+        font-size: 8px;
+        color: #718096;
+        line-height: 1.35;
+        max-width: 220px;
+        text-align: right;
       }
     </style>
   </head>
@@ -311,96 +397,92 @@
     <div class="invoice-container">
       <div class="accent-bar"></div>
 
+      <!-- Header Section: Vendor as Seller -->
       <div class="header">
-        <div class="logo-section">
+        <div class="seller-brand">
           <img
             src="data:image/png;base64,{{logoBase64}}"
-            alt="Siraba Organic Logo"
+            alt="Siraba Organic"
             class="logo"
           />
-          <div class="company-info">
+          <div class="seller-info">
+            <span class="seller-badge">SUPPLIER / SELLER</span>
             <h1>{{companyName}}</h1>
-            <div class="company-tagline">
-              P R E M I U M&nbsp;&nbsp;Q U A L I T Y&nbsp;&nbsp;O R G A N I
-              C&nbsp;&nbsp;P R O D U C T S
+            {{#if tradeName}}
+            <div class="seller-trade-name">{{tradeName}}</div>
+            {{/if}}
+            <div class="seller-address">
+              {{companyAddress}}<br />
+              {{companyCityState}} (State Code: {{sellerStateCode}})<br />
+              {{#if companyEmail}}{{companyEmail}}{{/if}}{{#if companyPhone}} • {{companyPhone}}{{/if}}
             </div>
-            <div class="company-contact">
-              {{companyAddress}} • {{companyCity}}<br />
-              {{companyEmail}} • {{companyPhone}}
-            </div>
-            <div class="company-website">🌐 www.sirabaorganic.com</div>
             {{#if sellerGST}}
-            <div class="gst-info">
-              <strong>Vendor GSTIN:</strong> {{sellerGST}}
+            <div class="gst-box">
+              <strong>GSTIN:</strong> {{sellerGST}}
             </div>
             {{/if}}
           </div>
         </div>
-        <div class="invoice-label">
-          <h2>INVOICE</h2>
+
+        <div class="invoice-meta">
+          <div class="marketplace-tag">Marketplace: {{facilitatorName}}</div>
+          <div class="doc-title">TAX INVOICE</div>
           <div class="inv-number">{{invoiceNumber}}</div>
+          <div class="meta-row"><strong>Invoice Date:</strong> {{invoiceDate}}</div>
+          <div class="meta-row"><strong>Order ID:</strong> #{{orderShortId}}</div>
+          {{#if vendorOrderShortId}}
+          <div class="meta-row"><strong>Vendor Order:</strong> #{{vendorOrderShortId}}</div>
+          {{/if}}
         </div>
       </div>
 
+      <!-- Detail Cards -->
       <div class="detail-cards">
         <div class="card">
-          <h3>Bill To</h3>
+          <h3>Bill & Deliver To</h3>
           <p class="highlight">{{customerName}}</p>
           <p>{{customerAddress}}</p>
-          <p>{{customerCity}}</p>
+          <p>{{customerCityState}}</p>
           <p>{{customerCountry}}</p>
-          {{#if sellerGST}}
-          <div
-            style="
-              margin-top: 8px;
-              padding-top: 8px;
-              border-top: 1px solid #e0e0e0;
-            "
-          >
-            {{#if buyerGST}}
-            <p
-              style="
-                font-size: 10px;
-                color: #7cb342;
-                font-weight: 700;
-                margin: 0 0 4px 0;
-              "
-            >
-              ✓ GST Claimed
-            </p>
-            <p style="font-size: 10px; color: #1a4d2e; margin: 0">
-              <strong>GSTIN:</strong> {{buyerGST}}
-            </p>
-            {{else}}
-            <p style="font-size: 9px; color: #999; margin: 0">
-              GST Not Claimed
-            </p>
-            {{/if}}
-          </div>
+          {{#if customerPhone}}<p>Phone: {{customerPhone}}</p>{{/if}}
+          {{#if buyerGST}}
+          <p style="margin-top: 5px; color: #1a4d2e; font-weight: 700;">
+            ✓ Buyer GSTIN: {{buyerGST}}
+          </p>
           {{/if}}
         </div>
+
         <div class="card">
-          <h3>Invoice Date</h3>
-          <p class="highlight">{{invoiceDate}}</p>
-          <p style="margin-top: 6px; font-size: 10px; color: #888">Order ID:</p>
-          <p style="font-size: 10px; word-break: break-all">{{orderId}}</p>
+          <h3>Supply & Order Details</h3>
+          <p><strong>Place of Supply:</strong></p>
+          <p class="highlight">{{placeOfSupply}}</p>
+          <p style="margin-top: 5px;"><strong>Supply Type:</strong> {{supplyType}}</p>
+          <p><strong>Payment Method:</strong> {{paymentMethod}}</p>
         </div>
+
         <div class="card">
-          <h3>Status</h3>
+          <h3>Marketplace Facilitator</h3>
+          <p class="highlight">{{facilitatorName}}</p>
+          <p>Platform E-Commerce Operator</p>
+          <p>Support: info@sirabaorganic.com</p>
           <span class="status-tag">● {{orderStatus}}</span>
         </div>
       </div>
 
+      <!-- Items Table -->
       <div class="items-section">
-        <div class="section-title">Order Items</div>
+        <div class="section-title">Supplied Goods</div>
         <table>
           <thead>
             <tr>
-              <th>DESCRIPTION</th>
-              <th style="width: 80px; text-align: center">HSN</th>
-              <th style="width: 50px; text-align: center">QTY</th>
-              <th style="width: 90px; text-align: right">UNIT PRICE</th>
-              <th style="width: 90px">AMOUNT</th>
+              <th style="width: 34%;">PRODUCT DESCRIPTION</th>
+              <th class="text-center" style="width: 11%;">HSN</th>
+              <th class="text-center" style="width: 7%;">QTY</th>
+              <th class="text-right" style="width: 12%;">UNIT PRICE</th>
+              <th class="text-right" style="width: 11%;">DISCOUNT</th>
+              <th class="text-right" style="width: 12%;">TAXABLE VAL</th>
+              <th class="text-center" style="width: 7%;">GST%</th>
+              <th class="text-right" style="width: 13%;">LINE TOTAL</th>
             </tr>
           </thead>
           <tbody>
@@ -408,16 +490,19 @@
             <tr>
               <td>
                 <div class="product-name">{{this.name}}</div>
-                <div class="product-desc">{{this.description}}</div>
+                {{#if this.sku}}<div class="product-sku">SKU: {{this.sku}}</div>{{/if}}
               </td>
-              <td style="text-align: center; font-size: 11px; color: #666">
+              <td class="text-center" style="font-weight: 600; color: #4a5568;">
                 {{this.hsn}}
               </td>
-              <td style="text-align: center; font-weight: 700">
+              <td class="text-center" style="font-weight: 700;">
                 {{this.quantity}}
               </td>
-              <td style="text-align: right">{{this.price}}</td>
-              <td style="text-align: right; font-weight: 700; color: #1a4d2e">
+              <td class="text-right">{{this.price}}</td>
+              <td class="text-right" style="color: #c53030;">{{this.discount}}</td>
+              <td class="text-right" style="font-weight: 600;">{{this.taxableAmount}}</td>
+              <td class="text-center">{{this.taxRate}}</td>
+              <td class="text-right" style="font-weight: 700; color: #1a4d2e;">
                 {{this.total}}
               </td>
             </tr>
@@ -426,72 +511,56 @@
         </table>
       </div>
 
-      <div class="totals-section">
+      <!-- Financial Reconciliation & Totals -->
+      <div class="totals-container">
+        <div class="words-container">
+          <strong>Invoice Amount in Words:</strong>
+          <p>{{amountInWords}}</p>
+          <div style="margin-top: 8px; font-size: 9.5px; color: #718096; line-height: 1.4;">
+            * Input Tax Credit (ITC) on GST is subject to provisions of the CGST/SGST/IGST Act.
+            {{#if buyerGST}}Buyer is registered under GST.{{else}}Consumer B2C supply — ITC not claimed.{{/if}}
+          </div>
+        </div>
+
         <div class="totals-box">
           <div class="total-row">
-            <span>Subtotal</span>
+            <span>Gross Subtotal</span>
             <span>{{subtotal}}</span>
           </div>
-          {{#if showGST}}
-          <div class="total-row">
-            <span>GST ({{gstPercentage}}%)</span>
-            <span>{{gstAmount}}</span>
+
+          {{#if hasDiscount}}
+          <div class="total-row discount-row">
+            <span>Less: Discount {{#if couponCode}}({{couponCode}}){{/if}}</span>
+            <span>-{{discountAmount}}</span>
           </div>
-          <div
-            style="
-              font-size: 10px;
-              color: #1a4d2e;
-              background: #f0f7f0;
-              border: 1px solid #7cb342;
-              border-left: 3px solid #7cb342;
-              padding: 10px 15px;
-              margin: 8px 0;
-              border-radius: 4px;
-            "
-          >
-            <p style="margin: 0 0 6px 0; font-weight: 700; color: #1a4d2e">
-              GST Details:
-            </p>
-            <p style="margin: 3px 0">
-              <strong>Vendor GSTIN:</strong> {{sellerGST}}
-            </p>
-            {{#if buyerGST}}
-            <p style="margin: 3px 0; color: #7cb342">
-              <strong>✓ Buyer GSTIN:</strong> {{buyerGST}}
-            </p>
-            <p
-              style="
-                margin: 6px 0 0 0;
-                font-size: 9px;
-                font-style: italic;
-                color: #666;
-              "
-            >
-              * Buyer is eligible to claim input tax credit with this GSTIN
-            </p>
-            {{else}}
-            <p
-              style="
-                margin: 6px 0 0 0;
-                font-size: 9px;
-                font-style: italic;
-                color: #999;
-              "
-            >
-              * GST paid by buyer, input credit not claimed
-            </p>
-            {{/if}}
-          </div>
-          {{else}}
-          <div class="total-row">
-            <span>GST / Tax</span>
-            <span>{{tax}}</span>
+          <div class="total-row" style="font-weight: 600;">
+            <span>Taxable Value</span>
+            <span>{{taxableSubtotal}}</span>
           </div>
           {{/if}}
+
+          <!-- Dynamic Statutory Tax Presentation -->
+          {{#if isInterState}}
+          <div class="total-row tax-component">
+            <span>Integrated GST (IGST @ {{igstRateDisplay}})</span>
+            <span>{{igstAmount}}</span>
+          </div>
+          {{else}}
+          <div class="total-row tax-component">
+            <span>Central GST (CGST @ {{cgstRateDisplay}})</span>
+            <span>{{cgstAmount}}</span>
+          </div>
+          <div class="total-row tax-component">
+            <span>State GST (SGST @ {{sgstRateDisplay}})</span>
+            <span>{{sgstAmount}}</span>
+          </div>
+          {{/if}}
+
           <div class="total-row">
-            <span>Shipping</span>
+            <span>Shipping Charge</span>
             <span>{{shipping}}</span>
           </div>
+
           <div class="total-row grand">
             <span>GRAND TOTAL</span>
             <span>{{grandTotal}}</span>
@@ -499,14 +568,35 @@
         </div>
       </div>
 
+      <!-- Footer & Declarations -->
       <div class="footer">
-        <p>
-          Thank you for choosing {{companyName}}. We appreciate your
-          business!<br />
-          For any queries, please contact our support team.
-        </p>
-        <div class="signature-section">
-          <div class="sig-line">Authorized Signatory</div>
+        <div class="footer-disclaimer">
+          Goods sold by <strong>{{companyName}}</strong> through the <strong>{{facilitatorName}}</strong> e-commerce marketplace platform.<br />
+          Siraba Organic acts as an e-commerce facilitator / marketplace operator under Section 79 of the Information Technology Act and applicable GST laws.<br />
+          Tax invoice issued on behalf of the supplier of goods.
+        </div>
+
+        <div class="signatory-row">
+          <div class="facilitator-note">
+            Marketplace Facilitator: <strong>{{facilitatorName}}</strong><br />
+            <span style="font-size: 8.5px; color: #718096;">E-Commerce Platform Operator (Sec 79 IT Act)</span>
+          </div>
+          <div class="sig-box">
+            <div class="sig-title">AUTHORIZED SIGNATORY</div>
+            {{#if stampBase64}}
+            <div class="stamp-container">
+              <img
+                src="data:image/png;base64,{{stampBase64}}"
+                alt="Siraba Organic Authorized Stamp"
+                class="stamp-img"
+              />
+            </div>
+            {{/if}}
+            <div class="sig-behalf">For and on behalf of the Supplier</div>
+            <div class="sig-disclaimer">
+              This is an electronically generated invoice and does not require a physical signature.
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -14,6 +14,16 @@ const orderSchema = mongoose.Schema(
           ref: "Product",
           required: true,
         },
+        sku: { type: String },
+        hsnCode: { type: String },
+        hsn: { type: String },
+        taxRate: { type: Number, default: 18 },
+        taxAmount: { type: Number, default: 0 },
+        taxableAmount: { type: Number },
+        discountAmount: { type: Number, default: 0 },
+        cgstAmount: { type: Number, default: 0 },
+        sgstAmount: { type: Number, default: 0 },
+        igstAmount: { type: Number, default: 0 },
       },
     ],
     shippingAddress: {
@@ -39,6 +49,17 @@ const orderSchema = mongoose.Schema(
     isDelivered: { type: Boolean, required: true, default: false },
     deliveredAt: { type: Date },
     status: { type: String, default: "Pending" }, // Pending, Approved, Shipped, Delivered
+
+    // ── Detailed Tax Breakdown Snapshot ───────────────────────────────────
+    taxBreakdown: {
+      isInterState: { type: Boolean, default: false },
+      supplierState: { type: String, default: "Jammu and Kashmir" },
+      customerState: { type: String },
+      cgst: { type: Number, default: 0 },
+      sgst: { type: Number, default: 0 },
+      igst: { type: Number, default: 0 },
+      totalTax: { type: Number, default: 0 },
+    },
 
     // ── Razorpay Payment State Machine ─────────────────────────────────────
     // Tracks the payment lifecycle independently of order fulfillment status.

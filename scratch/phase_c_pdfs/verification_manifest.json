@@ -1,0 +1,70 @@
+{
+  "case1": {
+    "file": "case1_single_vendor_intra_state.pdf",
+    "invoiceNumber": "VND-2F34D3/26-27/000001",
+    "seller": "Noor Saffron & Spice Guild",
+    "gstin": "01AAACN1234F1Z9",
+    "state": "Jammu and Kashmir",
+    "customerState": "Jammu and Kashmir",
+    "isInterState": false,
+    "cgst": 22.5,
+    "sgst": 22.5,
+    "igst": 0,
+    "total": 995,
+    "hsn": "09102010"
+  },
+  "case2": {
+    "file": "case2_single_vendor_inter_state.pdf",
+    "invoiceNumber": "VND-2F34D3/26-27/000002",
+    "seller": "Noor Saffron & Spice Guild",
+    "gstin": "01AAACN1234F1Z9",
+    "state": "Jammu and Kashmir",
+    "customerState": "Karnataka",
+    "isInterState": true,
+    "cgst": 0,
+    "sgst": 0,
+    "igst": 90,
+    "total": 1890,
+    "hsn": "09102010"
+  },
+  "case3A": {
+    "file": "case3_multivendor_vendorA_saffron.pdf",
+    "invoiceNumber": "VND-2F34D3/26-27/000003",
+    "seller": "Noor Saffron & Spice Guild",
+    "gstin": "01AAACN1234F1Z9",
+    "product": "Super Negin Mongra Saffron 2g",
+    "hsn": "09102010",
+    "total": 945
+  },
+  "case3B": {
+    "file": "case3_multivendor_vendorB_honey.pdf",
+    "invoiceNumber": "VND-2F34DA/26-27/000001",
+    "seller": "Chenab Valley Honey Cooperative",
+    "gstin": "01BBBCV5678G1Z2",
+    "product": "Wild Acacia Raw Honey 500g",
+    "hsn": "04090000",
+    "total": 682.5
+  },
+  "case4": {
+    "file": "case4_discounted_order.pdf",
+    "invoiceNumber": "VND-2F34D3/26-27/000004",
+    "seller": "Noor Saffron & Spice Guild",
+    "subtotal": 1800,
+    "discount": 200,
+    "taxable": 1600,
+    "tax": 80,
+    "total": 1680
+  },
+  "case5": {
+    "file": "case5_order_with_shipping.pdf",
+    "invoiceNumber": "VND-2F34DA/26-27/000002",
+    "seller": "Chenab Valley Honey Cooperative",
+    "shipping": 75,
+    "total": 757.5
+  },
+  "case6": {
+    "blocked": true,
+    "errorMessage": "Tax invoice cannot be issued while vendor order is pending approval",
+    "status": "BLOCKED_BY_LIFECYCLE_GATE"
+  }
+}

@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Credit Note - {{creditNoteNumber}}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm 15mm;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #ffffff;
+        color: #2d3748;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .invoice-container {
+        max-width: 210mm;
+        margin: 0 auto;
+        background: #ffffff;
+        position: relative;
+      }
+
+      .accent-bar {
+        height: 5px;
+        background: linear-gradient(90deg, #b91c1c 0%, #dc2626 50%, #ea580c 100%);
+        margin-bottom: 16px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+
+      .seller-brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        max-width: 60%;
+      }
+
+      .logo {
+        width: 62px;
+        height: 62px;
+        object-fit: contain;
+      }
+
+      .seller-info .seller-badge {
+        display: inline-block;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 3px;
+        margin-bottom: 4px;
+      }
+
+      .seller-info h1 {
+        font-size: 19px;
+        color: #7f1d1d;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 2px;
+      }
+
+      .seller-trade-name {
+        font-size: 11px;
+        color: #4a5568;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+
+      .seller-address {
+        color: #4a5568;
+        font-size: 10px;
+        line-height: 1.4;
+      }
+
+      .gst-box {
+        display: inline-block;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-top: 5px;
+        font-size: 10.5px;
+      }
+
+      .gst-box strong {
+        color: #991b1b;
+      }
+
+      .invoice-meta {
+        text-align: right;
+      }
+
+      .marketplace-tag {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #718096;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+
+      .doc-title {
+        font-size: 14px;
+        color: #991b1b;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+      }
+
+      .inv-number {
+        font-size: 18px;
+        color: #991b1b;
+        font-weight: 800;
+        margin: 2px 0 5px;
+        font-family: monospace;
+      }
+
+      .meta-row {
+        font-size: 10px;
+        color: #4a5568;
+        margin: 2px 0;
+      }
+
+      .original-ref-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        padding: 8px 12px;
+        border-radius: 5px;
+        margin-bottom: 14px;
+        font-size: 10px;
+        color: #92400e;
+        line-height: 1.45;
+      }
+
+      .detail-cards {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 0.8fr;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .card {
+        background: #f8fafc;
+        padding: 11px;
+        border-radius: 5px;
+        border-left: 3px solid #b91c1c;
+      }
+
+      .card h3 {
+        font-size: 9px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 5px;
+        font-weight: 700;
+      }
+
+      .card p {
+        font-size: 10.5px;
+        color: #2d3748;
+        line-height: 1.4;
+        margin: 2px 0;
+      }
+
+      .card .highlight {
+        color: #7f1d1d;
+        font-weight: 700;
+        font-size: 11.5px;
+      }
+
+      .items-section {
+        margin-bottom: 14px;
+      }
+
+      .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #7f1d1d;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 6px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead th {
+        background: #991b1b;
+        color: #ffffff;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 7px 8px;
+      }
+
+      tbody td {
+        padding: 9px 8px;
+        font-size: 10.5px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .text-center { text-align: center; }
+      .text-right { text-align: right; }
+
+      .totals-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .words-container {
+        flex: 1;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 10px 12px;
+        font-size: 10px;
+      }
+
+      .totals-box {
+        width: 260px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 10px 12px;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+        font-size: 10.5px;
+        color: #4a5568;
+      }
+
+      .total-row.tax-component {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+
+      .total-row.grand {
+        border-top: 2px solid #991b1b;
+        margin-top: 5px;
+        padding-top: 6px;
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #991b1b;
+      }
+
+      .footer {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
+        margin-top: 10px;
+      }
+
+      .footer-disclaimer {
+        font-size: 9px;
+        color: #718096;
+        line-height: 1.4;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+
+      .signatory-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0 6px;
+      }
+
+      .sig-box {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .sig-title {
+        font-size: 9.5px;
+        color: #1a4d2e;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 2px;
+      }
+
+      .stamp-container {
+        margin: 2px 0 3px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .stamp-img {
+        width: 76px;
+        height: auto;
+        max-height: 95px;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+        display: block;
+      }
+
+      .sig-behalf {
+        font-size: 9px;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 2px;
+      }
+
+      .sig-disclaimer {
+        font-size: 8px;
+        color: #718096;
+        line-height: 1.35;
+        max-width: 220px;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-container">
+      <div class="accent-bar"></div>
+
+      <!-- Header: Vendor as Seller -->
+      <div class="header">
+        <div class="seller-brand">
+          {{#if logoBase64}}
+          <img
+            src="data:image/png;base64,{{logoBase64}}"
+            alt="Siraba Organic"
+            class="logo"
+          />
+          {{/if}}
+          <div class="seller-info">
+            <span class="seller-badge">SUPPLIER / ISSUING SELLER</span>
+            <h1>{{companyName}}</h1>
+            {{#if tradeName}}
+            <div class="seller-trade-name">{{tradeName}}</div>
+            {{/if}}
+            <div class="seller-address">
+              {{companyAddress}}<br />
+              {{companyCityState}} (State Code: {{sellerStateCode}})<br />
+              {{#if companyEmail}}{{companyEmail}}{{/if}}{{#if companyPhone}} • {{companyPhone}}{{/if}}
+            </div>
+            {{#if sellerGST}}
+            <div class="gst-box">
+              <strong>GSTIN:</strong> {{sellerGST}}
+            </div>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="invoice-meta">
+          <div class="marketplace-tag">Marketplace: {{facilitatorName}}</div>
+          <div class="doc-title">CREDIT NOTE</div>
+          <div class="inv-number">{{creditNoteNumber}}</div>
+          <div class="meta-row"><strong>Date:</strong> {{creditNoteDate}}</div>
+          <div class="meta-row"><strong>Ground:</strong> Sec 34 CGST Act, 2017</div>
+          <div class="meta-row"><strong>Refund Ref:</strong> {{refundReference}}</div>
+        </div>
+      </div>
+
+      <!-- Statutory Linkage to Original Invoice -->
+      <div class="original-ref-box">
+        <strong>Original Tax Invoice Reference (Section 34 Requirement):</strong><br />
+        Issued against Original Tax Invoice: <strong>{{originalInvoiceNumber}}</strong>{{#if originalInvoiceDate}} dated <strong>{{originalInvoiceDate}}</strong>{{/if}}{{#if masterOrderId}} • Master Order: <strong>#{{masterOrderId}}</strong>{{/if}}<br />
+        <em>Audit Guarantee: The original tax invoice remains 100% immutable in the system ledger. This credit note adjusts outward tax liability without retroactively mutating historical invoice records.</em>
+      </div>
+
+      <!-- Detail Cards -->
+      <div class="detail-cards">
+        <div class="card">
+          <h3>Credited Customer</h3>
+          <p class="highlight">{{customerName}}</p>
+          <p>{{customerAddress}}</p>
+          <p>{{customerCityState}}</p>
+          {{#if customerPhone}}<p>Phone: {{customerPhone}}</p>{{/if}}
+          {{#if buyerGST}}
+          <p style="margin-top: 4px; color: #166534; font-weight: 700;">
+            ✓ Buyer GSTIN: {{buyerGST}}
+          </p>
+          {{/if}}
+        </div>
+
+        <div class="card">
+          <h3>Supply & Tax Jurisdiction</h3>
+          <p><strong>Place of Supply:</strong></p>
+          <p class="highlight">{{placeOfSupply}}</p>
+          <p style="margin-top: 4px;"><strong>Supply Nature:</strong> {{supplyType}}</p>
+          <p><strong>Tax Adjustment:</strong> Flat 18% GST Reversal</p>
+        </div>
+
+        <div class="card">
+          <h3>Credit Reason</h3>
+          <p class="highlight">{{reason}}</p>
+          <p style="font-size: 10px; color: #718096; margin-top: 3px;">Credited to source payment account</p>
+          <span style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 10px; font-size: 8.5px; font-weight: 700; text-transform: uppercase; margin-top: 4px;">● REFUND ISSUED</span>
+        </div>
+      </div>
+
+      <!-- Items Section -->
+      <div class="items-section">
+        <div class="section-title">Credited Goods Details</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40%;">PRODUCT DESCRIPTION</th>
+              <th class="text-center" style="width: 14%;">HSN CODE</th>
+              <th class="text-center" style="width: 8%;">QTY</th>
+              <th class="text-right" style="width: 12%;">CREDITED TAXABLE</th>
+              <th class="text-center" style="width: 10%;">GST RATE</th>
+              <th class="text-right" style="width: 16%;">TOTAL CREDIT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each items}}
+            <tr>
+              <td>
+                <div style="font-weight: 700; color: #1a202c;">{{this.name}}</div>
+                {{#if this.sku}}<div style="font-size: 9.5px; color: #718096;">SKU: {{this.sku}}</div>{{/if}}
+              </td>
+              <td class="text-center" style="font-weight: 600; color: #4a5568;">
+                {{this.hsn}}
+              </td>
+              <td class="text-center" style="font-weight: 700;">
+                {{this.quantity}}
+              </td>
+              <td class="text-right" style="font-weight: 600;">{{this.taxableAmount}}</td>
+              <td class="text-center">{{this.taxRate}}</td>
+              <td class="text-right" style="font-weight: 700; color: #991b1b;">
+                {{this.total}}
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Financial Totals -->
+      <div class="totals-container">
+        <div class="words-container">
+          <strong style="color: #991b1b;">Credit Amount in Words:</strong>
+          <p style="font-weight: 600; color: #1a202c; margin-top: 2px;">{{amountInWords}}</p>
+          <div style="margin-top: 8px; font-size: 9px; color: #718096; line-height: 1.4; border-top: 1px dashed #cbd5e0; padding-top: 6px;">
+            * In accordance with Section 34(2) of the CGST Act, any registered person who issues a credit note in relation to a supply of goods shall declare the details in the statutory return for the relevant period.
+          </div>
+        </div>
+
+        <div class="totals-box">
+          <div class="total-row">
+            <span>Credited Taxable Value</span>
+            <span>{{taxableSubtotal}}</span>
+          </div>
+
+          {{#if isInterState}}
+          <div class="total-row tax-component">
+            <span>Integrated GST Reversal (IGST @ 18%)</span>
+            <span>-{{igstAmount}}</span>
+          </div>
+          {{else}}
+          <div class="total-row tax-component">
+            <span>Central GST Reversal (CGST @ 9%)</span>
+            <span>-{{cgstAmount}}</span>
+          </div>
+          <div class="total-row tax-component">
+            <span>State GST Reversal (SGST @ 9%)</span>
+            <span>-{{sgstAmount}}</span>
+          </div>
+          {{/if}}
+
+          <div class="total-row grand">
+            <span>TOTAL REFUND CREDIT</span>
+            <span>{{grandTotal}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer & Declarations -->
+      <div class="footer">
+        <div class="footer-disclaimer">
+          Goods originally sold by <strong>{{companyName}}</strong> through the <strong>{{facilitatorName}}</strong> e-commerce platform.<br />
+          Credit Note issued on behalf of the supplier of goods under Section 34 of the Central Goods and Services Tax Act, 2017.
+        </div>
+
+        <div class="signatory-row">
+          <div style="font-size: 9.5px; color: #718096;">
+            Marketplace Facilitator: <strong>{{facilitatorName}}</strong><br />
+            <span style="font-size: 8.5px;">E-Commerce Platform Operator (Sec 79 IT Act)</span>
+          </div>
+          <div class="sig-box">
+            <div class="sig-title">AUTHORIZED SIGNATORY</div>
+            {{#if stampBase64}}
+            <div class="stamp-container">
+              <img src="data:image/png;base64,{{stampBase64}}" alt="Siraba Organic Authorized Stamp" class="stamp-img" />
+            </div>
+            {{/if}}
+            <div class="sig-behalf">For and on behalf of the Supplier</div>
+            <div class="sig-disclaimer">This is an electronically generated invoice and does not require a physical signature.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

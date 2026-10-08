@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platform Commission Tax Invoice - {{invoiceNumber}}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm 15mm;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #ffffff;
+        color: #2d3748;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .invoice-container {
+        max-width: 210mm;
+        margin: 0 auto;
+        background: #ffffff;
+        position: relative;
+      }
+
+      .accent-bar {
+        height: 5px;
+        background: linear-gradient(90deg, #1a4d2e 0%, #2e7d32 50%, #d97706 100%);
+        margin-bottom: 16px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+
+      .seller-brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        max-width: 60%;
+      }
+
+      .logo {
+        width: 62px;
+        height: 62px;
+        object-fit: contain;
+      }
+
+      .seller-info .seller-badge {
+        display: inline-block;
+        background: #e8f5e9;
+        color: #1a4d2e;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 3px;
+        margin-bottom: 4px;
+      }
+
+      .seller-info h1 {
+        font-size: 19px;
+        color: #1a4d2e;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 2px;
+      }
+
+      .seller-address {
+        color: #4a5568;
+        font-size: 10px;
+        line-height: 1.4;
+      }
+
+      .gst-box {
+        display: inline-block;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-top: 5px;
+        font-size: 10.5px;
+      }
+
+      .gst-box strong {
+        color: #166534;
+      }
+
+      .invoice-meta {
+        text-align: right;
+      }
+
+      .doc-title {
+        font-size: 13px;
+        color: #718096;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+      }
+
+      .inv-number {
+        font-size: 19px;
+        color: #1a4d2e;
+        font-weight: 800;
+        margin: 2px 0 5px;
+        font-family: monospace;
+      }
+
+      .meta-row {
+        font-size: 10px;
+        color: #4a5568;
+        margin: 2px 0;
+      }
+
+      .detail-cards {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 0.8fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .card {
+        background: #f8fafc;
+        padding: 11px;
+        border-radius: 5px;
+        border-left: 3px solid #1a4d2e;
+      }
+
+      .card h3 {
+        font-size: 9px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 5px;
+        font-weight: 700;
+      }
+
+      .card p {
+        font-size: 10.5px;
+        color: #2d3748;
+        line-height: 1.4;
+        margin: 2px 0;
+      }
+
+      .card .highlight {
+        color: #1a4d2e;
+        font-weight: 700;
+        font-size: 11.5px;
+      }
+
+      .items-section {
+        margin-bottom: 16px;
+      }
+
+      .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #1a4d2e;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 6px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead th {
+        background: #1a4d2e;
+        color: #ffffff;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 7px 8px;
+      }
+
+      tbody td {
+        padding: 9px 8px;
+        font-size: 10.5px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .text-center { text-align: center; }
+      .text-right { text-align: right; }
+
+      .totals-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .words-container {
+        flex: 1;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 10px 12px;
+        font-size: 10px;
+      }
+
+      .totals-box {
+        width: 250px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 10px 12px;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+        font-size: 10.5px;
+        color: #4a5568;
+      }
+
+      .total-row.tax-component {
+        color: #1a4d2e;
+        font-weight: 600;
+      }
+
+      .total-row.grand {
+        border-top: 2px solid #1a4d2e;
+        margin-top: 5px;
+        padding-top: 6px;
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #1a4d2e;
+      }
+
+      .sac-notice {
+        margin-top: 8px;
+        font-size: 9px;
+        color: #718096;
+        line-height: 1.4;
+        border-top: 1px dashed #cbd5e0;
+        padding-top: 6px;
+      }
+
+      .footer {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
+        margin-top: 12px;
+      }
+
+      .footer-disclaimer {
+        font-size: 9px;
+        color: #718096;
+        line-height: 1.4;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+
+      .signatory-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0 6px;
+      }
+
+      .sig-box {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .sig-title {
+        font-size: 9.5px;
+        color: #1a4d2e;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 2px;
+      }
+
+      .stamp-container {
+        margin: 2px 0 3px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .stamp-img {
+        width: 76px;
+        height: auto;
+        max-height: 95px;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+        display: block;
+      }
+
+      .sig-behalf {
+        font-size: 9px;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 2px;
+      }
+
+      .sig-disclaimer {
+        font-size: 8px;
+        color: #718096;
+        line-height: 1.35;
+        max-width: 220px;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-container">
+      <div class="accent-bar"></div>
+
+      <!-- Header: Siraba as Service Supplier -->
+      <div class="header">
+        <div class="seller-brand">
+          {{#if logoBase64}}
+          <img
+            src="data:image/png;base64,{{logoBase64}}"
+            alt="Siraba Organic"
+            class="logo"
+          />
+          {{/if}}
+          <div class="seller-info">
+            <span class="seller-badge">PLATFORM OPERATOR / SERVICE PROVIDER</span>
+            <h1>{{facilitatorLegalName}}</h1>
+            <div class="seller-address">
+              {{facilitatorAddress}}<br />
+              {{facilitatorCityState}} (State Code: {{facilitatorStateCode}})<br />
+              support@sirabaorganic.com • https://sirabaorganic.com
+            </div>
+            <div class="gst-box">
+              <strong>GSTIN:</strong> {{facilitatorGSTIN}}
+            </div>
+          </div>
+        </div>
+
+        <div class="invoice-meta">
+          <div class="doc-title">B2B TAX INVOICE</div>
+          <div class="inv-number">{{invoiceNumber}}</div>
+          <div class="meta-row"><strong>Invoice Date:</strong> {{invoiceDate}}</div>
+          <div class="meta-row"><strong>Transaction:</strong> Marketplace Commission</div>
+          {{#if vendorOrderShortId}}
+          <div class="meta-row"><strong>Sub-Order:</strong> #{{vendorOrderShortId}}</div>
+          {{/if}}
+        </div>
+      </div>
+
+      <!-- Detail Cards -->
+      <div class="detail-cards">
+        <div class="card">
+          <h3>Billed Merchant Partner</h3>
+          <p class="highlight">{{vendorLegalName}}</p>
+          {{#if vendorTradeName}}<p style="font-size: 10px; color: #4a5568;">{{vendorTradeName}}</p>{{/if}}
+          <p>{{vendorAddress}}</p>
+          <p>{{vendorCityState}}</p>
+          {{#if vendorGSTIN}}
+          <p style="margin-top: 4px; color: #166534; font-weight: 700;">
+            ✓ GSTIN: {{vendorGSTIN}}
+          </p>
+          {{/if}}
+        </div>
+
+        <div class="card">
+          <h3>Service & Supply Details</h3>
+          <p><strong>Place of Supply:</strong></p>
+          <p class="highlight">{{placeOfSupply}}</p>
+          <p style="margin-top: 4px;"><strong>Supply Type:</strong> {{supplyType}}</p>
+          <p><strong>Classification:</strong> SAC 998311 (E-Commerce Facilitation)</p>
+        </div>
+
+        <div class="card">
+          <h3>Commercial Settlement</h3>
+          <p class="highlight">Merchant Facilitation</p>
+          <p>Agreed Rate: <strong>{{commissionRate}}%</strong></p>
+          <p style="font-size: 10px; color: #718096; margin-top: 3px;">Auto-settled via marketplace settlement ledger</p>
+        </div>
+      </div>
+
+      <!-- Items Section -->
+      <div class="items-section">
+        <div class="section-title">Facilitation Services Rendered</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 44%;">SERVICE DESCRIPTION</th>
+              <th class="text-center" style="width: 14%;">SAC CODE</th>
+              <th class="text-center" style="width: 8%;">QTY</th>
+              <th class="text-right" style="width: 12%;">RATE</th>
+              <th class="text-right" style="width: 12%;">TAXABLE VALUE</th>
+              <th class="text-center" style="width: 8%;">GST%</th>
+              <th class="text-right" style="width: 12%;">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div style="font-weight: 700; color: #1a202c;">Platform Facilitation & Marketplace Support Services</div>
+                <div style="font-size: 9.5px; color: #718096; margin-top: 2px;">
+                  Facilitation fee for order consignment execution • SAC: 998311
+                </div>
+              </td>
+              <td class="text-center" style="font-weight: 700; color: #1a4d2e; font-family: monospace;">
+                998311
+              </td>
+              <td class="text-center">1</td>
+              <td class="text-right">{{commissionRate}}%</td>
+              <td class="text-right" style="font-weight: 600;">{{taxableValue}}</td>
+              <td class="text-center">18%</td>
+              <td class="text-right" style="font-weight: 700; color: #1a4d2e;">{{subtotal}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Financial Totals -->
+      <div class="totals-container">
+        <div class="words-container">
+          <strong style="color: #1a4d2e;">Invoice Amount in Words:</strong>
+          <p style="font-weight: 600; color: #1a202c; margin-top: 2px;">{{amountInWords}}</p>
+          <div class="sac-notice">
+            * <strong>Statutory Service Notice:</strong> This document represents B2B billing for Marketplace Platform Facilitation Services under SAC 998311 carrying 18% GST. Registered vendor recipient may claim Input Tax Credit (ITC) subject to Section 16 of the CGST Act.
+          </div>
+        </div>
+
+        <div class="totals-box">
+          <div class="total-row">
+            <span>Taxable Service Fee</span>
+            <span>{{taxableValue}}</span>
+          </div>
+
+          {{#if isInterState}}
+          <div class="total-row tax-component">
+            <span>Integrated GST (IGST @ 18%)</span>
+            <span>{{igstAmount}}</span>
+          </div>
+          {{else}}
+          <div class="total-row tax-component">
+            <span>Central GST (CGST @ 9%)</span>
+            <span>{{cgstAmount}}</span>
+          </div>
+          <div class="total-row tax-component">
+            <span>State GST (SGST @ 9%)</span>
+            <span>{{sgstAmount}}</span>
+          </div>
+          {{/if}}
+
+          <div class="total-row grand">
+            <span>TOTAL PAYABLE</span>
+            <span>{{grandTotal}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer & Declarations -->
+      <div class="footer">
+        <div class="footer-disclaimer">
+          Tax Invoice issued by Siraba Organic for e-commerce facilitation and marketplace technology services rendered under the Master Vendor Marketplace Agreement.
+        </div>
+
+        <div class="signatory-row">
+          <div style="font-size: 9.5px; color: #718096;">
+            Service Provider: <strong>{{facilitatorLegalName}}</strong><br />
+            <span style="font-size: 8.5px;">E-Commerce Platform Operator (Sec 79 IT Act)</span>
+          </div>
+          <div class="sig-box">
+            <div class="sig-title">AUTHORIZED SIGNATORY</div>
+            {{#if stampBase64}}
+            <div class="stamp-container">
+              <img src="data:image/png;base64,{{stampBase64}}" alt="Siraba Organic Authorized Stamp" class="stamp-img" />
+            </div>
+            {{/if}}
+            <div class="sig-behalf">For SIRABA ORGANIC</div>
+            <div class="sig-disclaimer">This is an electronically generated invoice and does not require a physical signature.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

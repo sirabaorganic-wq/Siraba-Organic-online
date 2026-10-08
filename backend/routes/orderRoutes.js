@@ -11,6 +11,12 @@ const { enqueueShipment } = require("../jobs/shiprocketQueue");
 const { getCommissionRate } = require("../config/vendorPlans");
 const { calculateShipping } = require("./shippingRoutes");
 const shiprocketService = require("../services/shiprocketService");
+const GSTSettings = require("../models/GSTSettings");
+const {
+  resolveProductTaxRate,
+  calculateLineItemTax,
+  determineJurisdiction,
+} = require("../utils/gstEngine");
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -91,6 +97,12 @@ router.post("/", protect, async (req, res) => {
     let calculatedItemsPrice = 0;
     const verifiedOrderItems = [];
 
+    // Fetch GST settings for authoritative tax rate resolution
+    const gstSettings = await GSTSettings.getInstance();
+    const effectiveGstRate = gstSettings.gst_enabled
+      ? ((gstSettings.default_gst_percentage !== undefined ? gstSettings.default_gst_percentage : 18) / 100)
+      : 0;
+
     for (const item of orderItems) {
       const dbProduct = await Product.findById(item.product);
       if (!dbProduct || !dbProduct.isActive) {
@@ -110,6 +122,7 @@ router.post("/", protect, async (req, res) => {
       }
 
       calculatedItemsPrice += itemPrice * item.quantity;
+      const itemTaxRate = resolveProductTaxRate(dbProduct, gstSettings);
       verifiedOrderItems.push({
         name: dbProduct.name,
         quantity: item.quantity,
@@ -117,6 +130,9 @@ router.post("/", protect, async (req, res) => {
         price: itemPrice,
         product: dbProduct._id,
         sku: dbProduct.sku || "",
+        hsnCode: dbProduct.hsnCode || dbProduct.hsn || "",
+        hsn: dbProduct.hsn || dbProduct.hsnCode || "",
+        taxRate: itemTaxRate,
       });
     }
 
@@ -137,13 +153,60 @@ router.post("/", protect, async (req, res) => {
     const verifiedDiscountAmount = discountAmount || 0;
     const discountedSubtotal = Math.max(0, verifiedItemsPrice - verifiedDiscountAmount);
 
-    // GST Logic & Dynamic Rate from GSTSettings
-    const GSTSettings = require("../models/GSTSettings");
-    const gstSettings = await GSTSettings.getInstance();
-    const effectiveGstRate = gstSettings.gst_enabled
-      ? ((gstSettings.default_gst_percentage !== undefined ? gstSettings.default_gst_percentage : 18) / 100)
-      : 0;
-    const verifiedTaxPrice = Math.round(discountedSubtotal * effectiveGstRate * 100) / 100;
+    const supplierState = gstSettings.company_address?.state || gstSettings.admin_state || "Jammu and Kashmir";
+    const customerState = verifiedShippingAddress.state || "";
+    const isInterState = determineJurisdiction(supplierState, customerState).isInterState;
+
+    // Check if any product has custom rate or non-default rate
+    const hasCustomRates = verifiedOrderItems.some(i => i.taxRate !== (gstSettings.default_gst_percentage || 18));
+
+    // Allocate discount and compute line-level tax snapshots
+    let remainingDiscount = verifiedDiscountAmount;
+    let computedTaxTotal = 0;
+    for (let i = 0; i < verifiedOrderItems.length; i++) {
+      const item = verifiedOrderItems[i];
+      const lineSubtotal = Math.round(item.price * item.quantity * 100) / 100;
+      let lineDiscount = 0;
+      if (verifiedItemsPrice > 0 && verifiedDiscountAmount > 0) {
+        if (i === verifiedOrderItems.length - 1) {
+          lineDiscount = Math.round(remainingDiscount * 100) / 100;
+        } else {
+          lineDiscount = Math.round((lineSubtotal / verifiedItemsPrice) * verifiedDiscountAmount * 100) / 100;
+          remainingDiscount = Math.max(0, Math.round((remainingDiscount - lineDiscount) * 100) / 100);
+        }
+      }
+
+      const lineTax = calculateLineItemTax({
+        unitPrice: item.price,
+        quantity: item.quantity,
+        discount: lineDiscount,
+        taxRate: gstSettings.gst_enabled ? item.taxRate : 0,
+        isInterState,
+      });
+
+      item.discountAmount = lineTax.discount;
+      item.taxableAmount = lineTax.taxableAmount;
+      item.taxAmount = lineTax.taxAmount;
+      item.cgstAmount = lineTax.cgstAmount;
+      item.sgstAmount = lineTax.sgstAmount;
+      item.igstAmount = lineTax.igstAmount;
+
+      computedTaxTotal = Math.round((computedTaxTotal + lineTax.taxAmount) * 100) / 100;
+    }
+
+    const verifiedTaxPrice = hasCustomRates
+      ? computedTaxTotal
+      : (Math.round(discountedSubtotal * effectiveGstRate * 100) / 100);
+
+    const verifiedTaxBreakdown = {
+      isInterState,
+      supplierState,
+      customerState,
+      cgst: isInterState ? 0 : Math.round(verifiedTaxPrice / 2 * 100) / 100,
+      sgst: isInterState ? 0 : Math.round((verifiedTaxPrice - Math.round(verifiedTaxPrice / 2 * 100) / 100) * 100) / 100,
+      igst: isInterState ? verifiedTaxPrice : 0,
+      totalTax: verifiedTaxPrice,
+    };
 
     // Handle Coupon Logic
     if (couponCode) {
@@ -251,6 +314,7 @@ router.post("/", protect, async (req, res) => {
       gstClaimed,
       buyerGstNumber,
       sellerGstNumber,
+      taxBreakdown: verifiedTaxBreakdown,
     });
 
     const createdOrder = await order.save();
@@ -285,6 +349,7 @@ router.post("/", protect, async (req, res) => {
         }
 
         const vendorData = vendorItemsMap.get(vendorId);
+        const itemTaxRate = resolveProductTaxRate(product, gstSettings);
         vendorData.items.push({
           product: product._id,
           name: item.name,
@@ -292,6 +357,9 @@ router.post("/", protect, async (req, res) => {
           price: item.price,
           image: item.image,
           sku: product.sku || "",
+          hsnCode: product.hsnCode || product.hsn || "",
+          hsn: product.hsn || product.hsnCode || "",
+          taxRate: itemTaxRate,
         });
         vendorData.subtotal += item.price * item.quantity;
       }
@@ -308,10 +376,46 @@ router.post("/", protect, async (req, res) => {
       const commission = (vendorData.subtotal * commissionRate) / 100;
       const netAmount = vendorData.subtotal - commission;
 
-      const vendorTax =
+      const vendorSupplierState = vendor?.address?.state || vendor?.pickupAddress?.state || supplierState;
+      const vendorIsInterState = determineJurisdiction(vendorSupplierState, customerState).isInterState;
+
+      let vendorTaxTotal = 0;
+      for (const vItem of vendorData.items) {
+        const matchedVerified = verifiedOrderItems.find(vi => vi.product.toString() === vItem.product.toString());
+        const itemDiscount = matchedVerified ? (matchedVerified.discountAmount || 0) : 0;
+        const vLineTax = calculateLineItemTax({
+          unitPrice: vItem.price,
+          quantity: vItem.quantity,
+          discount: itemDiscount,
+          taxRate: gstSettings.gst_enabled ? vItem.taxRate : 0,
+          isInterState: vendorIsInterState,
+        });
+
+        vItem.discountAmount = vLineTax.discount;
+        vItem.taxableAmount = vLineTax.taxableAmount;
+        vItem.taxAmount = vLineTax.taxAmount;
+        vItem.cgstAmount = vLineTax.cgstAmount;
+        vItem.sgstAmount = vLineTax.sgstAmount;
+        vItem.igstAmount = vLineTax.igstAmount;
+
+        vendorTaxTotal = Math.round((vendorTaxTotal + vLineTax.taxAmount) * 100) / 100;
+      }
+
+      const vendorTax = hasCustomRates ? vendorTaxTotal : (
         verifiedItemsPrice > 0
           ? Math.round(((vendorData.subtotal / verifiedItemsPrice) * verifiedTaxPrice) * 100) / 100
-          : 0;
+          : 0
+      );
+
+      const vendorTaxBreakdown = {
+        isInterState: vendorIsInterState,
+        supplierState: vendorSupplierState,
+        customerState,
+        cgst: vendorIsInterState ? 0 : Math.round(vendorTax / 2 * 100) / 100,
+        sgst: vendorIsInterState ? 0 : Math.round((vendorTax - Math.round(vendorTax / 2 * 100) / 100) * 100) / 100,
+        igst: vendorIsInterState ? vendorTax : 0,
+        totalTax: vendorTax,
+      };
 
       // Extract vendor shipping breakdown
       const vBreakdown = shippingBreakdownMap.get(vendorId);
@@ -329,6 +433,7 @@ router.post("/", protect, async (req, res) => {
         items: vendorData.items,
         subtotal: vendorData.subtotal,
         tax: vendorTax,
+        taxBreakdown: vendorTaxBreakdown,
         commission: commission,
         commissionRateAtOrder: commissionRate,
         planAtOrder: vendor?.subscription?.plan || "starter",

@@ -2,32 +2,25 @@ const express = require('express');
 const router = express.Router();
 const VendorOrder = require('../models/VendorOrder');
 const Vendor = require('../models/Vendor');
-const GSTSettings = require('../models/GSTSettings');
+const Invoice = require('../models/Invoice');
+const { getOrCreateVendorInvoice } = require('../services/invoiceService');
 const { protectVendor, approvedVendor } = require('../middleware/vendorMiddleware');
 const fs = require('fs').promises;
 const path = require('path');
 const handlebars = require('handlebars');
-const puppeteer = require('puppeteer');
 const {
-    launchBrowser,
+    renderHtmlToPdf,
     buildPureJsPdf,
     htmlToTextBlocks,
 } = require('../utils/puppeteerHelper');
 
-// Helper function to generate vendor invoice HTML
-const generateVendorInvoiceHTML = async (vendorOrder, vendor) => {
+// Helper function to generate vendor invoice HTML from snapshot
+const generateVendorInvoiceHTML = async (vendorOrder, vendor, invoice) => {
     const templatePath = path.join(__dirname, '../templates/invoices/vendor-invoice-template.html');
     const logoPath = path.join(__dirname, '../templates/invoices/logo.png');
+    const stampPath = path.join(__dirname, '../templates/invoices/sirabastamp.png');
 
-    // Try to read custom template first, fallback to customer template
-    let templateContent;
-    try {
-        templateContent = await fs.readFile(templatePath, 'utf8');
-    } catch (error) {
-        console.log('Custom vendor template not found, using customer template');
-        const customerTemplatePath = path.join(__dirname, '../templates/invoices/invoice-template.html');
-        templateContent = await fs.readFile(customerTemplatePath, 'utf8');
-    }
+    const templateContent = await fs.readFile(templatePath, 'utf8');
 
     // Read and convert logo to base64
     let logoBase64 = '';
@@ -38,108 +31,99 @@ const generateVendorInvoiceHTML = async (vendorOrder, vendor) => {
         console.warn('Logo not found, invoice will be generated without logo');
     }
 
-    // Get GST settings
-    const gstSettings = await GSTSettings.getInstance();
+    // Read and convert official Siraba stamp to base64
+    let stampBase64 = '';
+    try {
+        const stampBuffer = await fs.readFile(stampPath);
+        stampBase64 = stampBuffer.toString('base64');
+    } catch (error) {
+        console.warn('Stamp not found, invoice will be generated without stamp');
+    }
 
-    // Check if GST should be shown (for vendor invoices)
-    const showGST = gstSettings.gst_enabled && vendor.claim_gst;
+    // Ensure persistent invoice exists
+    const invoiceDoc = invoice || (await getOrCreateVendorInvoice(vendorOrder._id));
 
-    // Calculate totals
-    const itemsTotal = vendorOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const subtotal = vendorOrder.subtotal || itemsTotal;
-    const commission = vendorOrder.platformCommission || 0;
-    const netAmount = vendorOrder.netAmount || (subtotal - commission);
+    const totals = invoiceDoc.totalsSnapshot || {};
+    const seller = invoiceDoc.sellerSnapshot || {};
+    const buyer = invoiceDoc.buyerSnapshot || {};
 
-    // Prepare invoice data
+    const subtotal = totals.subtotal || vendorOrder.subtotal || 0;
+    const commission = totals.commissionAmount !== undefined ? totals.commissionAmount : (vendorOrder.commission || 0);
+    const commissionRate = totals.commissionRate !== undefined ? totals.commissionRate : (vendorOrder.commissionRateAtOrder || vendor?.commissionRate || 10);
+    const tax = totals.taxPrice !== undefined ? totals.taxPrice : (vendorOrder.tax || 0);
+    const customerShipping = totals.shippingPrice !== undefined ? totals.shippingPrice : (vendorOrder.customerShippingCharge || 0);
+    const netAmount = totals.netPayoutAmount !== undefined ? totals.netPayoutAmount : (vendorOrder.netAmount !== undefined ? vendorOrder.netAmount : (subtotal - commission));
+
     const invoiceData = {
         logoBase64,
-        // Vendor/Seller Information
-        companyName: vendor.businessName || 'Vendor',
-        companyAddress: vendor.address?.street || vendor.address?.city || '',
-        companyCity: `${vendor.address?.city || ''}, ${vendor.address?.state || ''} ${vendor.address?.postalCode || ''}`,
-        companyEmail: vendor.email || '',
-        companyPhone: vendor.phone || '',
-        gstNumber: showGST ? (vendor.gstNumber || gstSettings.admin_gst_number) : 'N/A',
+        stampBase64,
+        companyName: seller.legalName || vendor?.businessName || 'Vendor Partner',
+        companyAddress: seller.address || '',
+        companyCity: seller.city ? `${seller.city}${seller.state ? ', ' + seller.state : ''} ${seller.postalCode || ''}` : '',
+        companyEmail: seller.email || vendor?.email || '',
+        companyPhone: seller.phone || vendor?.phone || '',
+        sellerGST: seller.gstin || vendor?.gstNumber || null,
 
-        // Customer Information
-        customerName: vendorOrder.shippingAddress?.name || vendorOrder.customerName || 'Customer',
-        customerAddress: vendorOrder.shippingAddress?.address || vendorOrder.shippingAddress?.street || 'N/A',
-        customerCity: `${vendorOrder.shippingAddress?.city || 'City'}, ${vendorOrder.shippingAddress?.postalCode || '00000'}`,
-        customerCountry: vendorOrder.shippingAddress?.country || 'India',
-        customerPhone: vendorOrder.shippingAddress?.phone || 'N/A',
+        // Customer Destination
+        customerName: buyer.name || vendorOrder.shippingAddress?.name || 'Customer',
+        customerAddress: buyer.shippingAddress?.address || vendorOrder.shippingAddress?.address || 'N/A',
+        customerCity: `${buyer.shippingAddress?.city || vendorOrder.shippingAddress?.city || 'City'}, ${buyer.shippingAddress?.postalCode || vendorOrder.shippingAddress?.postalCode || '00000'}`,
+        customerCountry: buyer.shippingAddress?.country || vendorOrder.shippingAddress?.country || 'India',
+        customerPhone: buyer.shippingAddress?.phone || vendorOrder.shippingAddress?.phone || '',
 
-        // Invoice Details
-        invoiceNumber: `VND-${vendorOrder._id.toString().slice(-8).toUpperCase()}`,
-        invoiceDate: new Date(vendorOrder.createdAt).toLocaleDateString('en-IN'),
-        orderId: vendorOrder._id.toString(),
-        orderStatus: vendorOrder.status.toUpperCase(),
+        // Document Details
+        invoiceNumber: invoiceDoc.invoiceNumber,
+        invoiceDate: new Date(invoiceDoc.issuedAt).toLocaleDateString('en-IN'),
+        vendorOrderId: vendorOrder._id.toString(),
+        orderId: vendorOrder.order?._id ? vendorOrder.order._id.toString() : (vendorOrder.order ? vendorOrder.order.toString() : 'N/A'),
+        vendorOrderNumber: vendorOrder._id.toString().slice(-8).toUpperCase(),
+        orderNumber: vendorOrder.order?._id ? vendorOrder.order._id.toString().slice(-8).toUpperCase() : 'N/A',
+        orderStatus: (vendorOrder.status || 'pending').toUpperCase(),
+        paymentStatus: (vendorOrder.payoutStatus || 'pending').toUpperCase(),
+        shippingCarrier: vendorOrder.shippingCarrier || vendorOrder.courierName || 'Shiprocket Designated',
+        trackingNumber: vendorOrder.trackingNumber || vendorOrder.awbCode || null,
 
         // Items
-        items: vendorOrder.items.map(item => ({
+        items: (invoiceDoc.itemsSnapshot || vendorOrder.items || []).map(item => ({
             name: item.name,
-            description: item.description || 'Product from vendor',
-            hsn: item.hsn || '0909',
+            sku: item.sku || '',
+            hsn: item.hsn || '',
             quantity: item.quantity,
-            price: `₹${(item.price || 0).toFixed(2)}`,
-            total: `₹${((item.price || 0) * item.quantity).toFixed(2)}`
+            price: `₹${(item.unitPrice || item.price || 0).toFixed(2)}`,
+            total: `₹${(item.lineTotal || ((item.price || 0) * item.quantity)).toFixed(2)}`
         })),
 
-        // Financial Details
+        // Financial Settlement Details
         subtotal: `₹${subtotal.toFixed(2)}`,
+        commissionRate,
         platformCommission: `₹${commission.toFixed(2)}`,
-        tax: vendorOrder.taxAmount ? `₹${vendorOrder.taxAmount.toFixed(2)}` : '₹0.00',
-        shipping: vendorOrder.shippingCost ? `₹${vendorOrder.shippingCost.toFixed(2)}` : 'Free',
-        grandTotal: `₹${netAmount.toFixed(2)}`,
-
-        // Additional Info
-        paymentStatus: vendorOrder.paymentStatus || 'pending',
-        trackingNumber: vendorOrder.trackingNumber || 'Not available',
-        shippingCarrier: vendorOrder.shippingCarrier || 'To be assigned',
-
-        // Vendor Specific
-        isVendorInvoice: true,
-        commissionRate: vendor.commissionRate !== undefined && vendor.commissionRate !== null ? vendor.commissionRate : (vendor.subscription?.plan?.commission || 0),
-
-        // GST Information (conditional)
-        showGST: gstSettings.gst_enabled,
-        // For Vendor Invoice: Seller is the Vendor. 
-        sellerGST: gstSettings.gst_enabled ? (vendor.gstNumber || gstSettings.admin_gst_number) : null,
-        // Vendor invoices are usually B2C or B2B where Vendor is seller. 
-        // If Vendor claims GST (which they should if they have GST number), show it.
-        // Actually, for "Vendor Invoice" (Platform -> Vendor commission), Platform is seller, Vendor is buyer.
-        // But the previous template logic suggests this invoice is "Vendor -> Customer".
-        // If it is Vendor -> Customer invoice:
-        // Seller = Vendor
-        // Buyer = Customer (order.user)
-        // I need to fetch customer logic if I want Buyer GST here. 
-        // However, this route is distinct. Let's strictly force SellerGST.
-        buyerGST: null, // Vendor invoice route currently doesn't fetch User GST deeply often. Assume B2C for now or just Seller GST.
-
-        gstPercentage: gstSettings.gst_enabled ? gstSettings.default_gst_percentage : null,
-        gstAmount: gstSettings.gst_enabled ? `₹${(vendorOrder.taxAmount || 0).toFixed(2)}` : null
+        tax: tax > 0 ? `₹${tax.toFixed(2)}` : null,
+        shipping: customerShipping > 0 ? `₹${customerShipping.toFixed(2)}` : '₹0.00',
+        netAmount: `₹${netAmount.toFixed(2)}`,
+        grandTotal: `₹${netAmount.toFixed(2)}`, // Net payout labeled as NET VENDOR PAYOUT in template
     };
 
-    // Compile template with Handlebars
     const template = handlebars.compile(templateContent);
-    return template(invoiceData);
+    return { html: template(invoiceData), invoiceDoc };
 };
 
 // @desc    Get vendor invoice HTML preview
 // @route   GET /api/vendors/invoices/:orderId/preview
-// @access  Private/Vendor
+// @access  Private/Vendor or Admin
 router.get('/:orderId/preview', protectVendor, approvedVendor, async (req, res) => {
     try {
-        const vendorOrder = await VendorOrder.findOne({
-            _id: req.params.orderId,
-            vendor: req.vendor._id
-        }).populate('items.product');
-
-        if (!vendorOrder) {
-            return res.status(404).json({ message: 'Order not found' });
+        const query = { _id: req.params.orderId };
+        if (!req.isAdmin) {
+            query.vendor = req.vendor._id;
         }
 
-        const vendor = await Vendor.findById(req.vendor._id);
-        const html = await generateVendorInvoiceHTML(vendorOrder, vendor);
+        const vendorOrder = await VendorOrder.findOne(query).populate('items.product').populate('order');
+        if (!vendorOrder) {
+            return res.status(404).json({ message: 'Vendor order not found' });
+        }
+
+        const vendor = await Vendor.findById(vendorOrder.vendor);
+        const { html } = await generateVendorInvoiceHTML(vendorOrder, vendor);
 
         res.send(html);
     } catch (error) {
@@ -150,80 +134,60 @@ router.get('/:orderId/preview', protectVendor, approvedVendor, async (req, res) 
 
 // @desc    Download vendor invoice as PDF
 // @route   GET /api/vendors/invoices/:orderId/download
-// @access  Private/Vendor
+// @access  Private/Vendor or Admin
 router.get('/:orderId/download', protectVendor, approvedVendor, async (req, res) => {
-    let browser;
     try {
-        const vendorOrder = await VendorOrder.findOne({
-            _id: req.params.orderId,
-            vendor: req.vendor._id
-        }).populate('items.product');
-
-        if (!vendorOrder) {
-            return res.status(404).json({ message: 'Order not found' });
+        const query = { _id: req.params.orderId };
+        if (!req.isAdmin) {
+            query.vendor = req.vendor._id;
         }
 
-        const vendor = await Vendor.findById(req.vendor._id);
-        const html = await generateVendorInvoiceHTML(vendorOrder, vendor);
+        const vendorOrder = await VendorOrder.findOne(query).populate('items.product').populate('order');
+        if (!vendorOrder) {
+            return res.status(404).json({ message: 'Vendor order not found' });
+        }
+
+        const vendor = await Vendor.findById(vendorOrder.vendor);
+        const { html, invoiceDoc } = await generateVendorInvoiceHTML(vendorOrder, vendor);
 
         let pdf;
         try {
-            browser = await launchBrowser();
-            const page = await browser.newPage();
-            await page.setContent(html, {
-                waitUntil: 'domcontentloaded',
-                timeout: 60000
-            });
-
-            pdf = await page.pdf({
-                format: 'A4',
-                printBackground: true,
-                margin: {
-                    top: '15mm',
-                    right: '15mm',
-                    bottom: '15mm',
-                    left: '15mm'
-                },
-                preferCSSPageSize: true
-            });
-            await browser.close();
-            browser = null;
+            pdf = await renderHtmlToPdf(html);
         } catch (launchErr) {
             console.warn(`[vendorInvoiceRoutes] Puppeteer render failed (${launchErr.message}). Generating fallback PDF...`);
-            if (browser) {
-                await browser.close().catch(() => {});
-                browser = null;
-            }
-            const invoiceNumber = `VND-${vendorOrder._id.toString().slice(-8).toUpperCase()}`;
-            const textBlocks = htmlToTextBlocks(html, `VENDOR TAX INVOICE #${invoiceNumber}`);
-            pdf = buildPureJsPdf(`VENDOR TAX INVOICE #${invoiceNumber}`, textBlocks);
+            const textBlocks = htmlToTextBlocks(html, `VENDOR SETTLEMENT #${invoiceDoc.invoiceNumber}`);
+            pdf = buildPureJsPdf(`VENDOR SETTLEMENT #${invoiceDoc.invoiceNumber}`, textBlocks);
         }
 
-        // Set response headers for PDF download
-        const invoiceNumber = `VND-${vendorOrder._id.toString().slice(-8).toUpperCase()}`;
+        const safeFilenameNumber = invoiceDoc.invoiceNumber.replace(/[\/\\:]/g, '-');
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Vendor-Invoice-${invoiceNumber}.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename=Vendor-Statement-${safeFilenameNumber}.pdf`);
         res.send(pdf);
 
     } catch (error) {
         console.error('Vendor invoice download error:', error);
-        if (browser) await browser.close();
         res.status(500).json({ message: error.message });
     }
 });
 
 // @desc    Get all vendor invoices (list)
 // @route   GET /api/vendors/invoices
-// @access  Private/Vendor
+// @access  Private/Vendor or Admin
 router.get('/', protectVendor, approvedVendor, async (req, res) => {
     try {
         const { page = 1, limit = 20, status } = req.query;
 
-        const query = { vendor: req.vendor._id };
+        const query = {};
+        if (!req.isAdmin) {
+            query.vendor = req.vendor._id;
+        } else if (req.query.vendorId) {
+            query.vendor = req.query.vendorId;
+        }
+
         if (status) query.status = status;
 
         const orders = await VendorOrder.find(query)
-            .select('_id createdAt status subtotal platformCommission netAmount paymentStatus items')
+            .select('_id createdAt status subtotal commission netAmount payoutStatus items')
             .populate('items.product', 'name')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
@@ -231,23 +195,41 @@ router.get('/', protectVendor, approvedVendor, async (req, res) => {
 
         const total = await VendorOrder.countDocuments(query);
 
-        const invoices = orders.map(order => ({
-            _id: order._id,
-            invoiceNumber: `VND-${order._id.toString().slice(-8).toUpperCase()}`,
-            date: order.createdAt,
-            status: order.status,
-            subtotal: order.subtotal,
-            commission: order.platformCommission,
-            netAmount: order.netAmount,
-            paymentStatus: order.paymentStatus,
-            itemsCount: order.items.length
-        }));
+        // Fetch or create persistent invoice records for each
+        const invoices = await Promise.all(
+            orders.map(async (order) => {
+                let invoice = await Invoice.findOne({
+                    invoiceType: 'VENDOR_SETTLEMENT_STATEMENT',
+                    vendorOrder: order._id,
+                });
+
+                if (!invoice) {
+                    try {
+                        invoice = await getOrCreateVendorInvoice(order._id);
+                    } catch (e) {
+                        // Fallback formatting if generation deferred
+                    }
+                }
+
+                return {
+                    _id: order._id,
+                    invoiceNumber: invoice ? invoice.invoiceNumber : `VND-${order._id.toString().slice(-8).toUpperCase()}`,
+                    date: order.createdAt,
+                    status: order.status,
+                    subtotal: order.subtotal,
+                    commission: order.commission,
+                    netAmount: order.netAmount,
+                    paymentStatus: order.payoutStatus || 'pending',
+                    itemsCount: order.items.length,
+                };
+            })
+        );
 
         res.json({
             invoices,
             page: parseInt(page),
             pages: Math.ceil(total / limit),
-            total
+            total,
         });
     } catch (error) {
         console.error('Vendor invoices list error:', error);
@@ -257,21 +239,25 @@ router.get('/', protectVendor, approvedVendor, async (req, res) => {
 
 // @desc    Get vendor invoice summary/stats
 // @route   GET /api/vendors/invoices/stats
-// @access  Private/Vendor
+// @access  Private/Vendor or Admin
 router.get('/stats', protectVendor, approvedVendor, async (req, res) => {
     try {
-        const vendorId = req.vendor._id;
+        const query = {};
+        if (!req.isAdmin) {
+            query.vendor = req.vendor._id;
+        } else if (req.query.vendorId) {
+            query.vendor = req.query.vendorId;
+        }
 
-        // Get all vendor orders
-        const orders = await VendorOrder.find({ vendor: vendorId });
+        const orders = await VendorOrder.find(query);
 
         const stats = {
             totalInvoices: orders.length,
             totalRevenue: orders.reduce((sum, order) => sum + (order.subtotal || 0), 0),
-            totalCommission: orders.reduce((sum, order) => sum + (order.platformCommission || 0), 0),
+            totalCommission: orders.reduce((sum, order) => sum + (order.commission || 0), 0),
             totalNetAmount: orders.reduce((sum, order) => sum + (order.netAmount || 0), 0),
-            pendingPayments: orders.filter(o => o.paymentStatus === 'pending').length,
-            paidInvoices: orders.filter(o => o.paymentStatus === 'paid').length,
+            pendingPayments: orders.filter(o => o.payoutStatus === 'pending').length,
+            paidInvoices: orders.filter(o => o.payoutStatus === 'completed').length,
             statusBreakdown: {
                 pending: orders.filter(o => o.status === 'pending').length,
                 confirmed: orders.filter(o => o.status === 'confirmed').length,
