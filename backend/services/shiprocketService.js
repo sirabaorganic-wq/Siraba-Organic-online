@@ -1,5 +1,6 @@
 const axios = require('axios');
 const IORedis = require('ioredis');
+const { CUSTOMER_PRODUCT_GST_RATE } = require('../utils/gstEngine');
 
 class ShiprocketService {
   constructor() {
@@ -463,10 +464,20 @@ class ShiprocketService {
     ).replace(/\D/g, '');
     const cleanPhone = rawPhone.length === 10 ? rawPhone : (rawPhone.length > 10 ? rawPhone.slice(-10) : '9549892293');
 
+    const resellerName = (
+      vendor?.businessName ||
+      vendor?.tradeName ||
+      vendor?.brandName ||
+      vendor?.shopSettings?.shopName ||
+      vendor?.legalName ||
+      'SIRABA ORGANIC'
+    ).trim();
+
     const payload = {
       order_id: vendorOrder._id.toString(),
       order_date: new Date(vendorOrder.createdAt || Date.now()).toISOString().split('T')[0],
       pickup_location: verification.locationName || pickupLocation,
+      reseller_name: resellerName,
       billing_customer_name: vendorOrder.shippingAddress?.name || order.shippingAddress?.name || order.shippingAddress?.fullName || order.user?.name || 'Customer',
       billing_last_name: '',
       billing_address: vendorOrder.shippingAddress?.address || order.shippingAddress?.address || 'Main Street',
@@ -477,13 +488,36 @@ class ShiprocketService {
       billing_email: order.user?.email || 'customer@sirabaorganic.com',
       billing_phone: cleanPhone,
       shipping_is_billing: true,
-      order_items: vendorOrder.items.map((item) => ({
-        name: item.name,
-        sku: item.sku || 'SKU',
-        units: item.quantity,
-        selling_price: item.price,
-        discount: 0,
-      })),
+      order_items: vendorOrder.items.map((item) => {
+        const itemObj = {
+          name: item.name,
+          sku: item.sku || 'SKU',
+          units: item.quantity,
+          selling_price: item.price,
+          discount: item.discountAmount || 0,
+        };
+
+        const rawHsn =
+          item.hsnCode ||
+          item.hsn ||
+          (item.product && (item.product.hsnCode || item.product.hsn)) ||
+          '';
+        const cleanHsn = typeof rawHsn === 'string' ? rawHsn.trim() : String(rawHsn || '').trim();
+        if (cleanHsn) {
+          itemObj.hsn = cleanHsn;
+        }
+
+        const effectiveTaxRate =
+          typeof item.taxRate === 'number' && !isNaN(item.taxRate)
+            ? item.taxRate
+            : (typeof vendorOrder.taxBreakdown?.totalTax === 'number' && vendorOrder.subtotal > 0
+                ? Math.round((vendorOrder.taxBreakdown.totalTax / vendorOrder.subtotal) * 100)
+                : CUSTOMER_PRODUCT_GST_RATE);
+
+        itemObj.tax = effectiveTaxRate;
+
+        return itemObj;
+      }),
       payment_method: payment_method,
       sub_total: vendorOrder.subtotal,
       length: 10,
@@ -491,6 +525,18 @@ class ShiprocketService {
       height: 10,
       weight: totalWeight > 0 ? totalWeight : 0.5,
     };
+
+    console.log('[Shiprocket] Dispatching shipment payload:', {
+      vendorOrderId: vendorOrder._id?.toString(),
+      vendorId: vendor?._id?.toString() || 'direct_platform',
+      pickup_location: payload.pickup_location,
+      reseller_name: payload.reseller_name,
+      itemsCount: payload.order_items.length,
+      hasHsn: payload.order_items.every((it) => Boolean(it.hsn)),
+      hasTax: payload.order_items.every((it) => it.tax !== undefined && it.tax !== null),
+      payment_method: payload.payment_method,
+      sub_total: payload.sub_total,
+    });
 
     try {
       const response = await this.client.post('/orders/create/adhoc', payload, {
