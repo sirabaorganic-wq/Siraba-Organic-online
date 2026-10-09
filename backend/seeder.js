@@ -13,13 +13,14 @@ const seedAdmin = async () => {
 
         await User.deleteMany();
 
-        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const hashedPassword = await bcrypt.hash('Rajesh@2026', 10);
 
         const adminUser = await User.create({
-            name: 'Admin User',
-            email: 'admin@prasadshaswat.com',
+            name: 'Rajesh Thakur',
+            email: 'rajeshthakur2006@gmail.com',
             password: hashedPassword,
             isAdmin: true,
+            role: 'admin',
         });
 
         console.log(`✅ Admin created: ${adminUser.email}`);

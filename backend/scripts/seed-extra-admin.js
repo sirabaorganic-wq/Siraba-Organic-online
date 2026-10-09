@@ -14,7 +14,7 @@ const seedExtraAdmin = async () => {
         }
         await mongoose.connect(process.env.MONGO_URI);
 
-        const email = 'admin@gmail.com';
+        const email = 'rajeshthakur2006@gmail.com';
 
         // Check if exists
         const existing = await User.findOne({ email });
@@ -23,13 +23,14 @@ const seedExtraAdmin = async () => {
             process.exit(0);
         }
 
-        const hashedPassword = await bcrypt.hash('admin123@', 10);
+        const hashedPassword = await bcrypt.hash('Rajesh@2026', 10);
 
         const adminUser = await User.create({
-            name: 'Main Admin',
+            name: 'Rajesh Thakur',
             email: email,
             password: hashedPassword,
             isAdmin: true,
+            role: 'admin',
         });
 
         console.log(`✅ Admin created: ${adminUser.email}`);
